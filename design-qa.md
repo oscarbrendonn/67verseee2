@@ -1,0 +1,45 @@
+# 67VERSE Three.js Skate Lobby — Visual and Control QA
+
+## Evidence
+
+- Source visual truth: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/outputs/67verse-map-concepts/tutorial-map-threejs-style-v3.png`
+- Final implementation capture: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/work/lobby-skate-final.png`
+- Left-skate interaction capture: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/work/lobby-skate-left-test.png`
+- Route and state: `/lobby`, initial third-person gameplay plus directional skating.
+- Browser viewport: `1280 × 720`.
+
+## Findings and resolved issues
+
+- **Resolved P1 — The avatar walked instead of riding.** Character animation time is now frozen in the idle stance. The whole avatar and board translate and turn together, so the body does not run, bend, or break while skating.
+- **Resolved P1 — The avatar had no skateboard.** A native Three.js skateboard was added beneath the feet with a rounded deck, underside, trucks and four separate wheels. Wheel pivots rotate from actual horizontal speed.
+- **Resolved P1 — Directional input felt reversed.** Movement is camera-relative and the model heading uses the corrected `-Z` forward convention. Left, right, forward and backward now agree with the viewed direction.
+- **Resolved P1 — Diagonal input drifted while the follow camera caught up.** Movement no longer reads the lagging camera transform. It uses the stable orbit yaw directly, so `W+A` stays forward-left instead of sliding backward or sideways.
+- **Resolved P1 — Ramps and bowl were visual-only obstacles.** The park now has matching surface-height and surface-normal calculations for both curved ramps and the circular bowl. The skateboard follows those slopes, receives downhill acceleration and keeps upward slope velocity when it leaves a lip.
+- **Resolved P2 — The skate park felt too small.** The skate pad, plaza, road frontage, lawns, ramps, rails, landscaping and playable bounds were expanded by roughly 20–25% while keeping the compact Three.js game scale.
+- **Resolved P2 — Movement felt like walking.** Input now accelerates into a smooth glide and decelerates with skating inertia. The former roll action is a short skateboard push/boost instead of a body somersault.
+- **Resolved P2 — Buildings and grass parcels overlapped illogically.** Base terrain is now neutral hardscape; grass exists only as defined raised parcels. Storefronts sit on a continuous promenade, side residences sit on separate paved lots, and the buildings were moved clear of the lawn bounds.
+- **Resolved P2 — Mobile framing and touch controls.** The lobby uses device-width viewport settings, safe-area offsets, a portrait camera composition, a captured directional pad, and separate push/jump buttons. Portrait `390 × 844` and landscape-height rules were checked.
+- No actionable P0/P1/P2 findings remain in the requested scope.
+
+## Fidelity surfaces
+
+- Typography: the existing English 67VERSE interface hierarchy is preserved.
+- Layout: the larger park keeps the approved storefront, road, bowl, ramp, rail, stair, lawn, tree, bench and light hierarchy.
+- Color: the soft blue-gray atmosphere, neutral concrete, muted lawns and warm ramps remain aligned with the selected concept.
+- Geometry: the environment and skateboard are rendered from native Three.js meshes rather than a background image or CSS approximation.
+- Copy: the gameplay prompt now reads `WASD TO SKATE`.
+
+## Control verification
+
+- Direction mapping: `left → (-1, 0)`, `right → (1, 0)`, `forward → (0, -1)`, `back → (0, 1)` in the tested initial camera state.
+- Camera-relative input uses the stable orbit yaw and its derived forward/right vectors.
+- The avatar keeps a fixed idle pose while the board glides, turns and spins its wheels.
+- Jump moves the complete rider-and-board assembly vertically; push supplies a short forward boost.
+- Curved ramp and bowl normals tilt the deck while the rider pose remains frozen.
+
+## Technical verification
+
+- Browser console errors: `0` after the final reload.
+- `npm run build`: passed.
+- Scoped `npx eslint app`: passed with one unrelated existing warning in `/play`.
+- Final result: passed.

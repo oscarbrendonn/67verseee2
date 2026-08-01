@@ -211,8 +211,8 @@ export default function Home() {
 
   useEffect(() => {
     const wantsEditor = new URLSearchParams(window.location.search).get("editor") === "1";
-    if (wantsEditor) setEditorAccess(true);
-    else window.location.replace("/play");
+    if (wantsEditor) queueMicrotask(() => setEditorAccess(true));
+    else window.location.replace("/lobby");
   }, []);
 
   const selected = useMemo(
@@ -528,9 +528,11 @@ export default function Home() {
       const spawn = objects.find((item) => item.type === "spawn");
       player.position.set(spawn?.position[0] ?? 0, (spawn?.position[1] ?? 0) + 0.72, spawn?.position[2] ?? 1.5);
       velocityRef.current.set(0, 0, 0);
-      setRuntimeMessage("WASD ile hareket et · Space ile zıpla");
+      queueMicrotask(() => {
+        setRuntimeMessage("WASD ile hareket et · Space ile zıpla");
+        setSelectedId(null);
+      });
       orbit.target.copy(player.position).add(new THREE.Vector3(0, 0, -7));
-      setSelectedId(null);
     } else {
       orbit.target.set(0, 1, -10);
     }
@@ -573,16 +575,16 @@ export default function Home() {
   };
 
   const saveLocal = () => {
-    localStorage.setItem("eggnova-map", JSON.stringify({ version: 1, objects, world, rules, prefabs }));
+    localStorage.setItem("67verse-map", JSON.stringify({ version: 1, objects, world, rules, prefabs }));
     setToast("Harita bu cihaza kaydedildi");
   };
 
   const exportMap = () => {
-    const data = JSON.stringify({ engine: "EggNova Three.js", version: 1, objects, world, rules, prefabs }, null, 2);
+    const data = JSON.stringify({ engine: "67VERSE Three.js", version: 1, objects, world, rules, prefabs }, null, 2);
     const url = URL.createObjectURL(new Blob([data], { type: "application/json" }));
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "eggnova-map.json";
+    anchor.download = "67verse-map.json";
     anchor.click();
     URL.revokeObjectURL(url);
     setToast("Harita JSON olarak dışa aktarıldı");
@@ -603,7 +605,7 @@ export default function Home() {
         setSelectedId(null);
         setToast("Harita başarıyla içe aktarıldı");
       } catch {
-        setToast("Bu dosya geçerli bir EggNova haritası değil");
+        setToast("Bu dosya geçerli bir 67VERSE haritası değil");
       }
     };
     reader.readAsText(file);
@@ -611,7 +613,7 @@ export default function Home() {
   };
 
   const loadLocal = () => {
-    const raw = localStorage.getItem("eggnova-map");
+    const raw = localStorage.getItem("67verse-map") ?? localStorage.getItem("eggnova-map");
     if (!raw) {
       setToast("Bu cihazda kayıtlı harita bulunamadı");
       return;
@@ -665,7 +667,7 @@ export default function Home() {
         <div className="brand-block">
           <div className="brand-mark">E</div>
           <div>
-            <strong>EGGNOVA</strong>
+            <strong>67VERSE</strong>
             <span>THREE.JS WORLD EDITOR</span>
           </div>
         </div>
