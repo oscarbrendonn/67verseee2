@@ -23,6 +23,15 @@ type CharacterActionName = "idle" | "walk" | "run" | "jump" | "fall" | "land" | 
 type DistrictId = "gullcrest" | "hedgemont" | "market-mile" | "brickswich";
 type DistrictTheme = "coast" | "suburb" | "downtown" | "industrial";
 
+type VenueInfo = {
+  id: string;
+  districtId: DistrictId;
+  name: string;
+  category: string;
+  activity: string;
+  description: string;
+};
+
 type District = {
   id: DistrictId;
   index: string;
@@ -43,6 +52,35 @@ const DISTRICTS: District[] = [
   { id: "market-mile", index: "03", name: "Market Mile", zone: "Downtown nightlife", worldCenter: [0, 150], spawn: [0, 0.91, 150], cameraYaw: Math.PI, theme: "downtown", gateway: "DOWNTOWN", accent: "#75618f", locked: false },
   { id: "brickswich", index: "04", name: "Brickswich Works", zone: "Warehouse arts quarter", worldCenter: [-150, 0], spawn: [-150, 0.91, 0], cameraYaw: -Math.PI / 2, theme: "industrial", gateway: "WORKS", accent: "#9a6652", locked: false },
 ];
+
+const DISTRICT_VENUES: Record<DistrictTheme, Array<Omit<VenueInfo, "id" | "districtId">>> = {
+  coast: [
+    { name: "Surf Shop", category: "BOARD STORE", activity: "Build a coast setup", description: "Boards, wheels and laid-back waterfront gear for the Gullcrest line." },
+    { name: "Beach Cafe", category: "CAFE", activity: "Take a coffee break", description: "A bright neighborhood cafe facing the boardwalk and the Pacific water." },
+    { name: "Taco Bar", category: "FOOD", activity: "Grab the street special", description: "A small local counter serving the skaters and beach crowd all day." },
+    { name: "Bike Rental", category: "RENTAL", activity: "Inspect the city rides", description: "A practical rental shop for getting around the waterfront district." },
+  ],
+  suburb: [
+    { name: "Diner", category: "FOOD", activity: "Order the house plate", description: "A familiar all-day neighborhood diner at the Hedgemont crossroads." },
+    { name: "Grocery", category: "MARKET", activity: "Pick up supplies", description: "The local food market used by the surrounding homes and families." },
+    { name: "Pharmacy", category: "HEALTH", activity: "Restock first aid", description: "A quiet corner pharmacy serving the garden suburb." },
+    { name: "Barber", category: "STYLE", activity: "Preview a new look", description: "A clean neighborhood barbershop with a simple local atmosphere." },
+  ],
+  downtown: [
+    { name: "Night Club", category: "NIGHTLIFE", activity: "Check tonight's set", description: "Market Mile's main late-night room with a glowing city-floor interior." },
+    { name: "Cinema", category: "ENTERTAINMENT", activity: "Browse the screenings", description: "A compact downtown cinema below the Market Mile towers." },
+    { name: "Coffee", category: "CAFE", activity: "Meet at the counter", description: "A modern street cafe for the downtown morning and evening crowd." },
+    { name: "Records", category: "MUSIC", activity: "Dig through new releases", description: "Independent records, local mixes and listening stations." },
+  ],
+  industrial: [
+    { name: "Art Hall", category: "GALLERY", activity: "View the new exhibition", description: "A converted warehouse showing work from the Brickswich community." },
+    { name: "Garage", category: "WORKSHOP", activity: "Tune the board trucks", description: "A working neighborhood garage shared by riders and builders." },
+    { name: "Gym", category: "FITNESS", activity: "Start a training session", description: "An open industrial training floor inside a renovated warehouse unit." },
+    { name: "Brewery", category: "SOCIAL", activity: "Visit the tap room", description: "A warm brick gathering place at the end of the arts quarter." },
+  ],
+};
+
+const TOTAL_VENUES = Object.values(DISTRICT_VENUES).reduce((total, venues) => total + venues.length, 0);
 
 function surface(color: string, roughness = 0.78, metalness = 0.02) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -115,15 +153,29 @@ export default function LobbyPage() {
   const velocityRef = useRef(new THREE.Vector3());
   const jumpRequestRef = useRef(false);
   const rollRequestRef = useRef(false);
+  const interactRequestRef = useRef(false);
   const mapOpenRef = useRef(false);
+  const venueOpenRef = useRef(false);
   const teleportRef = useRef<(destination: DistrictId | "park") => void>(() => undefined);
   const [mapOpen, setMapOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [worldLoaded, setWorldLoaded] = useState(false);
   const [activeDistrict, setActiveDistrict] = useState<DistrictId | null>(null);
   const [travelNotice, setTravelNotice] = useState<string | null>(null);
+  const [nearbyVenue, setNearbyVenue] = useState<VenueInfo | null>(null);
+  const [activeVenue, setActiveVenue] = useState<VenueInfo | null>(null);
+  const [discoveredVenues, setDiscoveredVenues] = useState<string[]>([]);
 
   useEffect(() => { mapOpenRef.current = mapOpen; }, [mapOpen]);
+  useEffect(() => { venueOpenRef.current = Boolean(activeVenue); }, [activeVenue]);
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("67verse-discovered-venues");
+      if (saved) setDiscoveredVenues(JSON.parse(saved));
+    } catch {
+      // Progress remains available for the current session when storage is disabled.
+    }
+  }, []);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -565,8 +617,16 @@ export default function LobbyPage() {
       leftGlass.position.set(-(glassWidth / 2 + 0.72), 1.43, depth / 2 + 0.03);
       const rightGlass = leftGlass.clone();
       rightGlass.position.x *= -1;
-      const door = new THREE.Mesh(new RoundedBoxGeometry(1.12, 2.44, 0.08, 2, 0.03), glassMaterial);
-      door.position.set(0, 1.43, depth / 2 + 0.04);
+      const floor = new THREE.Mesh(new RoundedBoxGeometry(width - 0.62, 0.16, depth - 0.62, 3, 0.06), surface("#b8b3aa", 0.94));
+      floor.position.y = 0.12;
+      floor.receiveShadow = true;
+      const entryMat = surface("#3f474a", 0.72);
+      const entryLeft = new THREE.Mesh(new RoundedBoxGeometry(0.14, 2.7, 0.18, 2, 0.03), entryMat);
+      entryLeft.position.set(-0.72, 1.49, depth / 2 + 0.08);
+      const entryRight = entryLeft.clone();
+      entryRight.position.x = 0.72;
+      const entryTop = new THREE.Mesh(new RoundedBoxGeometry(1.58, 0.14, 0.18, 2, 0.03), entryMat);
+      entryTop.position.set(0, 2.79, depth / 2 + 0.08);
       const sign = new THREE.Mesh(new RoundedBoxGeometry(width - 1.2, 0.76, 0.16, 3, 0.05), makeSignMaterial(label, accent));
       sign.position.set(0, 3.02, depth / 2 + 0.13);
       sign.castShadow = true;
@@ -574,7 +634,29 @@ export default function LobbyPage() {
       awning.position.set(0, 2.58, depth / 2 + 0.47);
       awning.rotation.x = -0.08;
       awning.castShadow = true;
-      shop.add(upper, roof, rear, sideLeft, sideRight, leftGlass, rightGlass, door, sign, awning);
+      const counter = new THREE.Mesh(new RoundedBoxGeometry(width * 0.46, 1.05, 0.82, 3, 0.08), surface("#70665c", 0.84));
+      counter.position.set(0, 0.68, -depth / 2 + 1.18);
+      counter.castShadow = true;
+      const counterFace = new THREE.Mesh(new RoundedBoxGeometry(width * 0.38, 0.2, 0.08, 2, 0.025), surface(accent, 0.62));
+      counterFace.position.set(0, 0.76, -depth / 2 + 0.75);
+      const shelfMaterial = surface("#81796f", 0.88);
+      [-width * 0.32, width * 0.32].forEach((x) => {
+        const shelf = new THREE.Mesh(new RoundedBoxGeometry(1.5, 1.75, 0.48, 3, 0.05), shelfMaterial);
+        shelf.position.set(x, 1, -depth / 2 + 0.62);
+        shelf.castShadow = true;
+        shop.add(shelf);
+      });
+      const feature = new THREE.Mesh(
+        /CAFE|DINER|TACO|COFFEE|BREWERY/.test(label)
+          ? new THREE.CylinderGeometry(0.62, 0.72, 0.78, 18)
+          : new RoundedBoxGeometry(1.35, 0.78, 1.35, 3, 0.08),
+        surface(accent, 0.7),
+      );
+      feature.position.set(0, 0.53, 0.3);
+      feature.castShadow = true;
+      const ceilingLight = new THREE.Mesh(new RoundedBoxGeometry(3.8, 0.08, 0.72, 2, 0.025), new THREE.MeshStandardMaterial({ color: "#fff8df", emissive: "#fff0c8", emissiveIntensity: 0.72 }));
+      ceilingLight.position.set(0, 2.92, -0.55);
+      shop.add(upper, roof, rear, sideLeft, sideRight, leftGlass, rightGlass, floor, entryLeft, entryRight, entryTop, sign, awning, counter, counterFace, feature, ceilingLight);
       addWindowRows(shop, width, depth, height);
       return shop;
     };
@@ -769,17 +851,61 @@ export default function LobbyPage() {
       });
     });
 
-    const districtShopLabels: Record<DistrictTheme, string[]> = {
-      coast: ["SURF SHOP", "BEACH CAFE", "TACO BAR", "BIKE RENTAL"],
-      suburb: ["DINER", "GROCERY", "PHARMACY", "BARBER"],
-      downtown: ["NIGHT CLUB", "CINEMA", "COFFEE", "RECORDS"],
-      industrial: ["ART HALL", "GARAGE", "GYM", "BREWERY"],
-    };
     const districtPalettes: Record<DistrictTheme, { base: string; lot: string; facades: string[] }> = {
       coast: { base: "#b8b4a7", lot: "#d1c7ad", facades: ["#d5c4ad", "#b9d0cb", "#d9b7a9", "#aebfcb"] },
       suburb: { base: "#858f82", lot: "#78906c", facades: ["#b9a28e", "#9faeaa", "#c1b79e", "#a7a1b0"] },
       downtown: { base: "#777a7c", lot: "#a9a6a0", facades: ["#766d80", "#657b7c", "#8f746d", "#666d79"] },
       industrial: { base: "#8d8982", lot: "#918b81", facades: ["#9a6652", "#777c76", "#8b725f", "#6f777c"] },
+    };
+
+    const venuePoints: Array<VenueInfo & { x: number; z: number }> = [];
+    const streetActors: Array<{ group: THREE.Group; x: number; z: number; axis: "x" | "z"; range: number; speed: number; phase: number }> = [];
+
+    const addStreetActor = (x: number, z: number, accent: string, axis: "x" | "z", phase: number) => {
+      const actor = new THREE.Group();
+      const skin = surface(phase % 2 > 1 ? "#8f6f5d" : "#b8876e", 0.92);
+      const shirt = surface(accent, 0.86);
+      const trousers = surface(phase % 3 > 1.5 ? "#5c6265" : "#41484d", 0.9);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 10), skin);
+      head.position.y = 1.82;
+      const body = new THREE.Mesh(new RoundedBoxGeometry(0.62, 0.88, 0.38, 3, 0.1), shirt);
+      body.position.y = 1.15;
+      [-0.19, 0.19].forEach((legX) => {
+        const leg = new THREE.Mesh(new RoundedBoxGeometry(0.16, 0.72, 0.18, 2, 0.05), trousers);
+        leg.position.set(legX, 0.4, 0);
+        actor.add(leg);
+      });
+      actor.add(head, body);
+      actor.position.set(x, 0.11, z);
+      actor.traverse((object) => {
+        if (object instanceof THREE.Mesh) object.castShadow = true;
+      });
+      scene.add(actor);
+      streetActors.push({ group: actor, x, z, axis, range: 7 + (phase % 2) * 2, speed: 0.32 + (phase % 3) * 0.055, phase });
+    };
+
+    const addParkedVehicle = (x: number, z: number, rotation: number, color: string) => {
+      const vehicle = new THREE.Group();
+      const body = new THREE.Mesh(new RoundedBoxGeometry(1.78, 0.62, 3.65, 4, 0.2), surface(color, 0.58, 0.08));
+      body.position.y = 0.58;
+      const cabin = new THREE.Mesh(new RoundedBoxGeometry(1.5, 0.65, 1.75, 4, 0.16), new THREE.MeshStandardMaterial({ color: "#577079", roughness: 0.25, metalness: 0.16 }));
+      cabin.position.set(0, 1.08, -0.12);
+      const wheelMaterial = surface("#272b2d", 0.84);
+      [-0.9, 0.9].forEach((zWheel) => {
+        [-0.88, 0.88].forEach((xWheel) => {
+          const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.18, 16), wheelMaterial);
+          wheel.rotation.z = Math.PI / 2;
+          wheel.position.set(xWheel, 0.34, zWheel);
+          vehicle.add(wheel);
+        });
+      });
+      vehicle.add(body, cabin);
+      vehicle.position.set(x, 0.05, z);
+      vehicle.rotation.y = rotation;
+      vehicle.traverse((object) => {
+        if (object instanceof THREE.Mesh) object.castShadow = true;
+      });
+      scene.add(vehicle);
     };
 
     const buildDistrict = (district: District) => {
@@ -819,13 +945,28 @@ export default function LobbyPage() {
 
       const shopPositions: Array<[number, number, number]> = [[-18, -14.5, 0], [18, -14.5, 0], [-18, 14.5, Math.PI], [18, 14.5, Math.PI]];
       shopPositions.forEach(([x, z, rotation], index) => {
+        const venue = DISTRICT_VENUES[district.theme][index];
         const shopPad = box([12.4, 0.2, 10.2], "#aaa9a2", 0.95);
         shopPad.position.set(centerX + x, 0.025, centerZ + z);
-        const shop = createNeighborhoodShop(districtShopLabels[district.theme][index], district.accent, palette.facades[index]);
+        const shop = createNeighborhoodShop(venue.name.toUpperCase(), district.accent, palette.facades[index]);
         shop.position.set(centerX + x, 0, centerZ + z);
         shop.rotation.y = rotation;
         scene.add(shopPad, shop);
+        venuePoints.push({ ...venue, id: `${district.id}-${index}`, districtId: district.id, x: centerX + x, z: centerZ + z });
+        const rearZ = centerZ + z + (rotation === 0 ? -4.15 : 4.15);
+        const frontZ = centerZ + z + (rotation === 0 ? 4.15 : -4.15);
+        addDistrictObstacle(district.id, centerX + x, rearZ, 10.6, 0.18);
+        addDistrictObstacle(district.id, centerX + x - 5.2, centerZ + z, 0.18, 8.3);
+        addDistrictObstacle(district.id, centerX + x + 5.2, centerZ + z, 0.18, 8.3);
+        addDistrictObstacle(district.id, centerX + x - 3.25, frontZ, 3.7, 0.18);
+        addDistrictObstacle(district.id, centerX + x + 3.25, frontZ, 3.7, 0.18);
       });
+
+      [[-27, -7, "x", 0.2], [27, 7, "x", 1.7], [-7, -27, "z", 3.1], [7, 27, "z", 4.4]].forEach(([x, z, axis, phase]) => {
+        addStreetActor(centerX + Number(x), centerZ + Number(z), district.accent, axis as "x" | "z", Number(phase));
+      });
+      addParkedVehicle(centerX - 2.7, centerZ - 27, 0, palette.facades[0]);
+      addParkedVehicle(centerX + 2.7, centerZ + 27, Math.PI, palette.facades[2]);
 
       if (district.theme === "coast") {
         const water = new THREE.Mesh(new THREE.BoxGeometry(90, 0.08, 13), new THREE.MeshStandardMaterial({ color: "#5c9eaa", roughness: 0.3, metalness: 0.06 }));
@@ -1064,13 +1205,19 @@ export default function LobbyPage() {
       if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)) event.preventDefault();
       if (!event.repeat && (event.code === "Space" || event.code === "KeyJ")) jumpRequestRef.current = true;
       if (!event.repeat && (event.code === "ControlLeft" || event.code === "ControlRight" || event.code === "KeyK")) rollRequestRef.current = true;
-      if (event.code === "KeyM") setMapOpen((value) => !value);
+      if (!event.repeat && (event.code === "KeyE" || event.code === "Enter")) interactRequestRef.current = true;
+      if (event.code === "KeyM" && !venueOpenRef.current) setMapOpen((value) => !value);
+      if (event.code === "Escape" && venueOpenRef.current) {
+        venueOpenRef.current = false;
+        setActiveVenue(null);
+      }
     };
     const onKeyUp = (event: KeyboardEvent) => keysRef.current.delete(event.code);
     const clearControls = () => {
       keysRef.current.clear();
       jumpRequestRef.current = false;
       rollRequestRef.current = false;
+      interactRequestRef.current = false;
     };
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
@@ -1085,6 +1232,7 @@ export default function LobbyPage() {
     let cameraDragged = false;
     let travelNoticeTimer: number | undefined;
     let currentDistrictId: DistrictId | null = null;
+    let nearbyVenueId: string | null = null;
     const activeWorldCenter = new THREE.Vector3(0, 0, 0);
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
@@ -1144,6 +1292,10 @@ export default function LobbyPage() {
       }
       velocityRef.current.set(0, 0, 0);
       supported = true;
+      venueOpenRef.current = false;
+      nearbyVenueId = null;
+      setNearbyVenue(null);
+      setActiveVenue(null);
       mapOpenRef.current = false;
       setMapOpen(false);
       if (travelNoticeTimer) window.clearTimeout(travelNoticeTimer);
@@ -1219,7 +1371,21 @@ export default function LobbyPage() {
       sun.target.position.set(character.position.x, 0, character.position.z);
       sun.target.updateMatrixWorld();
 
-      if (!mapOpenRef.current) {
+      streetActors.forEach((actor) => {
+        const phase = now * 0.001 * actor.speed + actor.phase;
+        const offset = Math.sin(phase) * actor.range;
+        const direction = Math.cos(phase);
+        if (actor.axis === "x") {
+          actor.group.position.x = actor.x + offset;
+          actor.group.rotation.y = direction >= 0 ? -Math.PI / 2 : Math.PI / 2;
+        } else {
+          actor.group.position.z = actor.z + offset;
+          actor.group.rotation.y = direction >= 0 ? Math.PI : 0;
+        }
+        actor.group.position.y = 0.11 + Math.abs(Math.sin(phase * 8)) * 0.025;
+      });
+
+      if (!mapOpenRef.current && !venueOpenRef.current) {
         const keys = keysRef.current;
         const inputRight = Number(keys.has("KeyD") || keys.has("ArrowRight")) - Number(keys.has("KeyA") || keys.has("ArrowLeft"));
         const inputForward = Number(keys.has("KeyW") || keys.has("ArrowUp")) - Number(keys.has("KeyS") || keys.has("ArrowDown"));
@@ -1322,6 +1488,39 @@ export default function LobbyPage() {
         playAction("idle", 0.2);
       }
 
+      let closestVenue: (VenueInfo & { x: number; z: number }) | null = null;
+      if (currentDistrictId && !mapOpenRef.current && !venueOpenRef.current) {
+        let closestDistance = 5.4;
+        venuePoints.forEach((venue) => {
+          if (venue.districtId !== currentDistrictId) return;
+          const distance = Math.hypot(character.position.x - venue.x, character.position.z - venue.z);
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestVenue = venue;
+          }
+        });
+      }
+      const nextVenueId = closestVenue?.id ?? null;
+      if (nextVenueId !== nearbyVenueId) {
+        nearbyVenueId = nextVenueId;
+        setNearbyVenue(closestVenue);
+      }
+      if (interactRequestRef.current) {
+        interactRequestRef.current = false;
+        if (closestVenue) {
+          const selectedVenue: VenueInfo = closestVenue;
+          venueOpenRef.current = true;
+          velocityRef.current.set(0, 0, 0);
+          setActiveVenue(selectedVenue);
+          setDiscoveredVenues((current) => {
+            if (current.includes(selectedVenue.id)) return current;
+            const next = [...current, selectedVenue.id];
+            try { window.localStorage.setItem("67verse-discovered-venues", JSON.stringify(next)); } catch { /* Session-only progress. */ }
+            return next;
+          });
+        }
+      }
+
       if (mapOpenRef.current) {
         worldFog.near = currentDistrictId ? 88 : 280;
         worldFog.far = currentDistrictId ? 175 : 680;
@@ -1387,6 +1586,21 @@ export default function LobbyPage() {
     else keysRef.current.delete(code);
   };
   const activeDistrictInfo = activeDistrict ? DISTRICTS.find((district) => district.id === activeDistrict) ?? null : null;
+  const enterVenue = (venue: VenueInfo) => {
+    venueOpenRef.current = true;
+    velocityRef.current.set(0, 0, 0);
+    setActiveVenue(venue);
+    setDiscoveredVenues((current) => {
+      if (current.includes(venue.id)) return current;
+      const next = [...current, venue.id];
+      try { window.localStorage.setItem("67verse-discovered-venues", JSON.stringify(next)); } catch { /* Session-only progress. */ }
+      return next;
+    });
+  };
+  const leaveVenue = () => {
+    venueOpenRef.current = false;
+    setActiveVenue(null);
+  };
 
   return (
     <main className="lobby-shell">
@@ -1399,7 +1613,7 @@ export default function LobbyPage() {
         </div>
         <div className="lobby-actions">
           <span className="lobby-status"><UsersThree size={17} weight="fill" aria-hidden="true" />1 ONLINE</span>
-          <button type="button" onClick={() => setMapOpen((value) => !value)} aria-pressed={mapOpen}>
+          <button type="button" disabled={Boolean(activeVenue)} onClick={() => setMapOpen((value) => !value)} aria-pressed={mapOpen}>
             <MapTrifold size={18} weight="bold" aria-hidden="true" />{mapOpen ? "CLOSE MAP" : "MAP"}
           </button>
           <Link href="/play">PLAY COURSE</Link>
@@ -1432,9 +1646,35 @@ export default function LobbyPage() {
 
       {travelNotice && <div className="lobby-travel-notice" role="status">{travelNotice}</div>}
 
-      {!mapOpen && <div className="lobby-tip">{activeDistrictInfo ? "EXPLORE THE DISTRICT · M FOR CITY MAP · RETURN FROM THE LOCATION CARD" : "WASD TO SKATE · DRAG TO LOOK · FOUR DISTRICTS ARE OPEN · M FOR CITY MAP"}</div>}
+      {nearbyVenue && !activeVenue && !mapOpen && (
+        <button className="lobby-interaction" type="button" onClick={() => enterVenue(nearbyVenue)}>
+          <kbd>E</kbd>
+          <span><small>ENTER VENUE</small><strong>{nearbyVenue.name}</strong></span>
+        </button>
+      )}
 
-      {!mapOpen && (
+      {activeVenue && (
+        <section className="lobby-venue-panel" role="dialog" aria-modal="true" aria-label={`${activeVenue.name} venue`}>
+          <div className="lobby-venue-heading">
+            <span>{activeVenue.category}</span>
+            <em>OPEN NOW</em>
+          </div>
+          <h2>{activeVenue.name}</h2>
+          <p>{activeVenue.description}</p>
+          <div className="lobby-venue-activity">
+            <small>AVAILABLE ACTIVITY</small>
+            <strong>{activeVenue.activity}</strong>
+          </div>
+          <div className="lobby-venue-footer">
+            <span>{discoveredVenues.length}/{TOTAL_VENUES} CITY VENUES DISCOVERED</span>
+            <button type="button" onClick={leaveVenue}>BACK TO STREET</button>
+          </div>
+        </section>
+      )}
+
+      {!mapOpen && !activeVenue && <div className="lobby-tip">{activeDistrictInfo ? "SKATE INTO OPEN SHOPS · E TO INTERACT · M FOR CITY MAP" : "WASD TO SKATE · DRAG TO LOOK · FOUR DISTRICTS ARE OPEN · M FOR CITY MAP"}</div>}
+
+      {!mapOpen && !activeVenue && (
         <div className="lobby-mobile-controls" aria-label="Mobile lobby controls">
           <div className="lobby-stick" aria-label="Movement controls">
             <button className="up" aria-label="Move forward" onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyW", true); }} onPointerUp={() => press("KeyW", false)} onPointerCancel={() => press("KeyW", false)}><CaretUp size={22} weight="bold" aria-hidden="true" /></button>
@@ -1444,6 +1684,7 @@ export default function LobbyPage() {
             <button className="down" aria-label="Move backward" onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyS", true); }} onPointerUp={() => press("KeyS", false)} onPointerCancel={() => press("KeyS", false)}><CaretDown size={22} weight="bold" aria-hidden="true" /></button>
           </div>
           <div className="lobby-action-buttons">
+            {nearbyVenue && <button className="interact" aria-label={`Enter ${nearbyVenue.name}`} onPointerDown={() => { interactRequestRef.current = true; }}>E</button>}
             <button className="roll" aria-label="Push skateboard" onPointerDown={() => { rollRequestRef.current = true; }}><ArrowCounterClockwise size={24} weight="bold" aria-hidden="true" /></button>
             <button className="jump" aria-label="Jump" onPointerDown={() => { jumpRequestRef.current = true; }}><ArrowUp size={26} weight="bold" aria-hidden="true" /></button>
           </div>

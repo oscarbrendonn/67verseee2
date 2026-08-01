@@ -21,6 +21,9 @@
 - **Resolved P1 — The city ended in a blue void.** A neutral metro ground, four connector boulevards, transition blocks and a layered skyline now fill every map edge. The overhead view reads as one continuous city instead of separate floating zones.
 - **Resolved P2 — Every outer map looked the same.** The four open districts now have distinct architecture and daily-life destinations: Gullcrest Coast has palms, sand and boardwalk shops; Hedgemont Heights has detached homes and neighborhood services; Market Mile has towers, a cinema and night club; Brickswich Works has brick warehouses, studios and a brewery.
 - **Resolved P2 — District entry lacked believable street placement.** Each destination opens at a sidewalk/street arrival point inside its neighborhood, with traversable road grids, parcels, lamps, benches, trees and shops rather than exposing the district from outside.
+- **Resolved P2 — District storefronts were visual shells.** All sixteen venues now have open doorways, lit interiors, floors, counters, shelving and category-colored displays. Wall collisions keep the rider inside the room while leaving the entrance physically traversable.
+- **Resolved P2 — Streets felt unoccupied.** Each district now includes animated low-poly pedestrians following sidewalk routes and parked 3D vehicles that inherit the neighborhood palette.
+- **Resolved P2 — Venues had no gameplay feedback.** Entering a shop reveals a proximity interaction on keyboard and touch, opens a venue-specific activity card, and records local discovery progress across all sixteen locations.
 - **Resolved P2 — Mobile framing and touch controls.** The lobby uses device-width viewport settings, safe-area offsets, a portrait camera composition, a captured directional pad, and separate push/jump buttons. Portrait `390 × 844` and landscape-height rules were checked.
 - No actionable P0/P1/P2 findings remain in the requested scope.
 
