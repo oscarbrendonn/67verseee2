@@ -21,13 +21,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: "67VERSE — City Park Lobby",
     description: "Skate through Central Park and four connected 67VERSE neighborhoods.",
-    images: ["/og-city.png"],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     title: "67VERSE — City Park Lobby",
     description: "A playable Three.js city with a central skate park and four connected neighborhoods.",
-    images: ["/og-city.png"],
   },
 };
 
