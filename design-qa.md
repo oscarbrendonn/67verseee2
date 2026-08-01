@@ -18,7 +18,7 @@
 - **Resolved P2 — The skate park felt too small.** The skate pad, plaza, road frontage, lawns, ramps, rails, landscaping and playable bounds were expanded by roughly 20–25% while keeping the compact Three.js game scale.
 - **Resolved P2 — Movement felt like walking.** Input now accelerates into a smooth glide and decelerates with skating inertia. The former roll action is a short skateboard push/boost instead of a body somersault.
 - **Resolved P2 — Buildings and grass parcels overlapped illogically.** Base terrain is now neutral hardscape; grass exists only as defined raised parcels. Storefronts sit on a continuous promenade, side residences sit on separate paved lots, and the buildings were moved clear of the lawn bounds.
-- **Resolved P1 — The city ended in a blue void.** A neutral metro ground, four connector boulevards, transition blocks and a layered skyline now fill every map edge. The overhead view reads as one continuous city instead of separate floating zones.
+- **Resolved P1 — Other worlds leaked into the Central Park map.** Central Park and the four destination districts now live in separate render groups. Only the active world is visible; district geometry appears only after the player selects it from the map and teleports there.
 - **Resolved P2 — Every outer map looked the same.** The four open districts now have distinct architecture and daily-life destinations: Gullcrest Coast has palms, sand and boardwalk shops; Hedgemont Heights has detached homes and neighborhood services; Market Mile has towers, a cinema and night club; Brickswich Works has brick warehouses, studios and a brewery.
 - **Resolved P2 — District entry lacked believable street placement.** Each destination opens at a sidewalk/street arrival point inside its neighborhood, with traversable road grids, parcels, lamps, benches, trees and shops rather than exposing the district from outside.
 - **Resolved P2 — District storefronts were visual shells.** All sixteen venues now have open doorways, lit interiors, floors, counters, shelving and category-colored displays. Wall collisions keep the rider inside the room while leaving the entrance physically traversable.
@@ -33,7 +33,7 @@
 - Layout: the larger park keeps the approved storefront, road, bowl, ramp, rail, stair, lawn, tree, bench and light hierarchy.
 - Color: the soft blue-gray atmosphere, neutral concrete, muted lawns and warm ramps remain aligned with the selected concept.
 - Geometry: the environment and skateboard are rendered from native Three.js meshes rather than a background image or CSS approximation.
-- City structure: Central Park remains the main lobby while the four surrounding districts are connected spatially and remain individually enterable from the map and park portals.
+- World structure: Central Park remains an independent main lobby. Coast, suburb, downtown and industrial environments load independently and are entered from the map selector rather than existing around the park.
 - Copy: the gameplay prompt now reads `WASD TO SKATE`.
 
 ## Control verification

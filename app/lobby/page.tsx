@@ -232,6 +232,7 @@ export default function LobbyPage() {
     sun.shadow.bias = -0.0004;
     sun.shadow.radius = 3;
     scene.add(hemisphere, sun);
+    const globalSceneObjects = new Set(scene.children);
 
     const bowlCenterX = 3.4;
     const bowlCenterZ = -5.7;
@@ -851,6 +852,13 @@ export default function LobbyPage() {
       });
     });
 
+    const centralWorld = new THREE.Group();
+    centralWorld.name = "central-park-world";
+    scene.children
+      .filter((object) => !globalSceneObjects.has(object))
+      .forEach((object) => centralWorld.add(object));
+    scene.add(centralWorld);
+
     const districtPalettes: Record<DistrictTheme, { base: string; lot: string; facades: string[] }> = {
       coast: { base: "#b8b4a7", lot: "#d1c7ad", facades: ["#d5c4ad", "#b9d0cb", "#d9b7a9", "#aebfcb"] },
       suburb: { base: "#858f82", lot: "#78906c", facades: ["#b9a28e", "#9faeaa", "#c1b79e", "#a7a1b0"] },
@@ -1041,66 +1049,30 @@ export default function LobbyPage() {
       addBench(scene, centerX - 12, centerZ + 9, Math.PI, 0.08);
       addBench(scene, centerX + 12, centerZ - 9, 0, 0.08);
     };
-    DISTRICTS.forEach(buildDistrict);
-
-    const addCityConnector = (axis: "x" | "z", direction: -1 | 1) => {
-      const center = direction * 76.5;
-      const corridorBase = box(axis === "z" ? [24, 0.22, 63] : [63, 0.22, 24], "#8f928c", 0.97);
-      corridorBase.position.set(axis === "x" ? center : 0, -0.06, axis === "z" ? center : 0);
-      const road = new THREE.Mesh(new THREE.BoxGeometry(axis === "z" ? 10 : 63, 0.1, axis === "z" ? 63 : 10), roadMaterial);
-      road.position.set(axis === "x" ? center : 0, 0.02, axis === "z" ? center : 0);
-      road.receiveShadow = true;
-      scene.add(corridorBase, road);
-      [-7, 7].forEach((offset) => {
-        const walk = new THREE.Mesh(new THREE.BoxGeometry(axis === "z" ? 3.2 : 63, 0.12, axis === "z" ? 63 : 3.2), sidewalkMaterial);
-        walk.position.set(
-          axis === "z" ? offset : center,
-          0.075,
-          axis === "z" ? center : offset,
-        );
-        scene.add(walk);
-      });
-      [-18, 18].forEach((side, index) => {
-        const localX = axis === "z" ? side : center;
-        const localZ = axis === "z" ? center : side;
-        const pad = box([13, 0.2, 13], "#9b9b95", 0.96);
-        pad.position.set(localX, 0.01, localZ);
-        const transitionTower = createCityTower(10.5, 10.5, 13 + index * 4 + (direction > 0 ? 2 : 0), index ? "#8c7d75" : "#758687");
-        transitionTower.position.set(localX, 0, localZ);
-        transitionTower.rotation.y = axis === "x" ? Math.PI / 2 : 0;
-        scene.add(pad, transitionTower);
-      });
-    };
-    addCityConnector("z", -1);
-    addCityConnector("z", 1);
-    addCityConnector("x", -1);
-    addCityConnector("x", 1);
-
-    const transitionQuarters: Array<[number, number, string, string]> = [
-      [-80, -80, "#89786f", "#526c72"], [80, -80, "#84918b", "#4d6b70"],
-      [-80, 80, "#8e7164", "#505c68"], [80, 80, "#7f858a", "#4b596a"],
-    ];
-    transitionQuarters.forEach(([quarterX, quarterZ, color, glass], quarterIndex) => {
-      [[-13, -13], [13, -13], [-13, 13], [13, 13]].forEach(([offsetX, offsetZ], index) => {
-        const pad = box([14, 0.2, 14], quarterIndex % 2 ? "#92968f" : "#938f88", 0.97);
-        pad.position.set(quarterX + offsetX, -0.01, quarterZ + offsetZ);
-        const building = createCityTower(11, 11, 13 + ((index + quarterIndex) % 4) * 3.2, color, glass);
-        building.position.set(quarterX + offsetX, 0, quarterZ + offsetZ);
-        building.rotation.y = ((index + quarterIndex) % 2) * Math.PI / 2;
-        scene.add(pad, building);
-      });
+    const districtWorlds = new Map<DistrictId, THREE.Group>();
+    DISTRICTS.forEach((district) => {
+      const existingObjects = new Set(scene.children);
+      buildDistrict(district);
+      const districtWorld = new THREE.Group();
+      districtWorld.name = `${district.id}-world`;
+      scene.children
+        .filter((object) => !existingObjects.has(object))
+        .forEach((object) => districtWorld.add(object));
+      districtWorld.visible = false;
+      scene.add(districtWorld);
+      districtWorlds.set(district.id, districtWorld);
     });
     setWorldLoaded(true);
 
     [[-14, -24], [14, -24], [-35, 12], [35, 12]].forEach(([x, z], planterIndex) => {
       const planter = box([3.1, 0.58, 1.25], planterIndex % 2 ? "#81786d" : "#8a8175", 0.94);
       planter.position.set(x, 0.38, z);
-      scene.add(planter);
+      centralWorld.add(planter);
       [-0.82, 0, 0.82].forEach((offset, shrubIndex) => {
         const shrub = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42 + shrubIndex * 0.04, 1), surface("#526f4d", 0.99));
         shrub.position.set(x + offset, 0.9, z);
         shrub.castShadow = true;
-        scene.add(shrub);
+        centralWorld.add(shrub);
       });
     });
 
@@ -1240,6 +1212,7 @@ export default function LobbyPage() {
     const mapHitPoint = new THREE.Vector3();
 
     const districtAtPointer = (event: PointerEvent | MouseEvent) => {
+      if (!mapOpenRef.current) return null;
       const bounds = renderer.domElement.getBoundingClientRect();
       pointer.set(
         ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
@@ -1273,6 +1246,10 @@ export default function LobbyPage() {
         travelNoticeTimer = window.setTimeout(() => setTravelNotice(null), 2200);
         return;
       }
+      centralWorld.visible = !district;
+      districtWorlds.forEach((world, districtId) => {
+        world.visible = district?.id === districtId;
+      });
       if (district) {
         currentDistrictId = district.id;
         activeWorldCenter.set(district.worldCenter[0], 0, district.worldCenter[1]);
@@ -1522,10 +1499,10 @@ export default function LobbyPage() {
       }
 
       if (mapOpenRef.current) {
-        worldFog.near = currentDistrictId ? 88 : 280;
-        worldFog.far = currentDistrictId ? 175 : 680;
+        worldFog.near = 88;
+        worldFog.far = currentDistrictId ? 175 : 190;
         camera.up.set(0, 0, -1);
-        const mapHeight = currentDistrictId ? 110 : 420;
+        const mapHeight = currentDistrictId ? 110 : 105;
         camera.position.lerp(new THREE.Vector3(activeWorldCenter.x, mapHeight, activeWorldCenter.z + 0.1), 1 - Math.exp(-delta * 4));
         camera.lookAt(activeWorldCenter);
       } else {
@@ -1632,7 +1609,7 @@ export default function LobbyPage() {
       {mapOpen && (
         <section className="lobby-map-legend" aria-label="City park map locations">
           <small>WORLD GATES</small>
-          <h2>Other worlds</h2>
+          <h2>Select a world</h2>
           {DISTRICTS.map((district) => (
             <button key={district.id} className={district.locked ? "locked" : undefined} type="button" aria-disabled={district.locked} onClick={() => teleportRef.current(district.id)}>
               <span>{district.index}</span>
@@ -1640,7 +1617,7 @@ export default function LobbyPage() {
               <em>{district.locked ? "LOCKED" : "ENTER"}</em>
             </button>
           ))}
-          <p>Four connected neighborhoods surround the central park. Select one to enter.</p>
+          <p>Each world loads separately. Select one to leave Central Park and teleport there.</p>
         </section>
       )}
 
