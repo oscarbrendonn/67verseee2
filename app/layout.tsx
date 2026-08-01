@@ -17,17 +17,17 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL("https://eggnova-three-editor.tilkisarp.chatgpt.site"),
   title: "67VERSE — City Park Lobby",
-  description: "A playable Three.js city park lobby with a public skate plaza and obstacle course access.",
+  description: "A playable Three.js city with a central skate park and four connected neighborhoods.",
   openGraph: {
     title: "67VERSE — City Park Lobby",
-    description: "Explore the city park lobby, visit the skate plaza, or enter the Skybound Sprint course.",
-    images: ["/og-skate.png"],
+    description: "Skate through Central Park and four connected 67VERSE neighborhoods.",
+    images: ["/og-city.png"],
   },
   twitter: {
     card: "summary_large_image",
     title: "67VERSE — City Park Lobby",
-    description: "A playable Three.js city park and skate plaza lobby.",
-    images: ["/og-skate.png"],
+    description: "A playable Three.js city with a central skate park and four connected neighborhoods.",
+    images: ["/og-city.png"],
   },
 };
 

@@ -21,6 +21,7 @@ import { UsersThree } from "@phosphor-icons/react/UsersThree";
 
 type CharacterActionName = "idle" | "walk" | "run" | "jump" | "fall" | "land" | "celebrate";
 type DistrictId = "gullcrest" | "hedgemont" | "market-mile" | "brickswich";
+type DistrictTheme = "coast" | "suburb" | "downtown" | "industrial";
 
 type District = {
   id: DistrictId;
@@ -30,14 +31,17 @@ type District = {
   worldCenter: [number, number];
   spawn: [number, number, number];
   cameraYaw: number;
+  theme: DistrictTheme;
+  gateway: string;
+  accent: string;
   locked: boolean;
 };
 
 const DISTRICTS: District[] = [
-  { id: "gullcrest", index: "01", name: "Gullcrest Village", zone: "Northwest city", worldCenter: [0, -360], spawn: [0, 0.68, -360], cameraYaw: 0.35, locked: true },
-  { id: "hedgemont", index: "02", name: "Hedgemont", zone: "Northeast city", worldCenter: [360, 0], spawn: [360, 0.68, 0], cameraYaw: 0.85, locked: true },
-  { id: "market-mile", index: "03", name: "Market Mile", zone: "Southwest city", worldCenter: [0, 360], spawn: [0, 0.68, 360], cameraYaw: Math.PI - 0.35, locked: true },
-  { id: "brickswich", index: "04", name: "Brickswich", zone: "Southeast city", worldCenter: [-360, 0], spawn: [-360, 0.68, 0], cameraYaw: Math.PI + 0.35, locked: true },
+  { id: "gullcrest", index: "01", name: "Gullcrest Coast", zone: "Pacific waterfront", worldCenter: [0, -150], spawn: [0, 0.91, -150], cameraYaw: 0.15, theme: "coast", gateway: "COAST", accent: "#5f9fa7", locked: false },
+  { id: "hedgemont", index: "02", name: "Hedgemont Heights", zone: "Garden suburb", worldCenter: [150, 0], spawn: [150, 0.91, 0], cameraYaw: Math.PI / 2, theme: "suburb", gateway: "HEIGHTS", accent: "#70866a", locked: false },
+  { id: "market-mile", index: "03", name: "Market Mile", zone: "Downtown nightlife", worldCenter: [0, 150], spawn: [0, 0.91, 150], cameraYaw: Math.PI, theme: "downtown", gateway: "DOWNTOWN", accent: "#75618f", locked: false },
+  { id: "brickswich", index: "04", name: "Brickswich Works", zone: "Warehouse arts quarter", worldCenter: [-150, 0], spawn: [-150, 0.91, 0], cameraYaw: -Math.PI / 2, theme: "industrial", gateway: "WORKS", accent: "#9a6652", locked: false },
 ];
 
 function surface(color: string, roughness = 0.78, metalness = 0.02) {
@@ -128,10 +132,10 @@ export default function LobbyPage() {
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#c6d6dc");
-    const worldFog = new THREE.Fog("#c6d6dc", 48, 105);
+    const worldFog = new THREE.Fog("#c6d6dc", 72, 250);
     scene.fog = worldFog;
 
-    const camera = new THREE.PerspectiveCamera(52, host.clientWidth / host.clientHeight, 0.1, 180);
+    const camera = new THREE.PerspectiveCamera(52, host.clientWidth / host.clientHeight, 0.1, 800);
     camera.position.set(0, 5, 10);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -183,6 +187,10 @@ export default function LobbyPage() {
     const bowlFloorRadius = 2.3;
     const bowlFloorY = -1.6;
     const bowlRimY = 0.32;
+    const metroGround = new THREE.Mesh(new THREE.BoxGeometry(420, 0.35, 420), surface("#7f8581", 0.99));
+    metroGround.position.y = -0.37;
+    metroGround.receiveShadow = true;
+    scene.add(metroGround);
     const rampSpecs = [
       { x: -15.5, z: -7.2, rotation: 0, width: 7.4, depth: 5.5, height: 1.9 },
       { x: 17.5, z: -5.3, rotation: 0, width: 7.8, depth: 5.5, height: 1.95 },
@@ -537,6 +545,131 @@ export default function LobbyPage() {
       return building;
     };
 
+    const createNeighborhoodShop = (label: string, accent: string, color: string, width = 10.8, depth = 8.6, height = 7.4) => {
+      const shop = new THREE.Group();
+      const upper = new THREE.Mesh(new RoundedBoxGeometry(width, height - 3, depth, 4, 0.15), surface(color, 0.84));
+      upper.position.y = 3 + (height - 3) / 2 + 0.13;
+      upper.castShadow = true;
+      upper.receiveShadow = true;
+      const roof = new THREE.Mesh(new RoundedBoxGeometry(width + 0.45, 0.28, depth + 0.45, 3, 0.08), roofMaterial);
+      roof.position.y = height + 0.22;
+      roof.castShadow = true;
+      const rear = new THREE.Mesh(new THREE.BoxGeometry(width, 3, 0.3), trimMaterial);
+      rear.position.set(0, 1.63, -depth / 2 + 0.15);
+      const sideLeft = new THREE.Mesh(new THREE.BoxGeometry(0.34, 3, depth), trimMaterial);
+      sideLeft.position.set(-width / 2 + 0.17, 1.63, 0);
+      const sideRight = sideLeft.clone();
+      sideRight.position.x *= -1;
+      const glassWidth = (width - 2.2) / 2;
+      const leftGlass = new THREE.Mesh(new RoundedBoxGeometry(glassWidth, 2.42, 0.1, 2, 0.035), glassMaterial);
+      leftGlass.position.set(-(glassWidth / 2 + 0.72), 1.43, depth / 2 + 0.03);
+      const rightGlass = leftGlass.clone();
+      rightGlass.position.x *= -1;
+      const door = new THREE.Mesh(new RoundedBoxGeometry(1.12, 2.44, 0.08, 2, 0.03), glassMaterial);
+      door.position.set(0, 1.43, depth / 2 + 0.04);
+      const sign = new THREE.Mesh(new RoundedBoxGeometry(width - 1.2, 0.76, 0.16, 3, 0.05), makeSignMaterial(label, accent));
+      sign.position.set(0, 3.02, depth / 2 + 0.13);
+      sign.castShadow = true;
+      const awning = new THREE.Mesh(new RoundedBoxGeometry(width - 1.5, 0.16, 1.05, 3, 0.05), surface(accent, 0.76));
+      awning.position.set(0, 2.58, depth / 2 + 0.47);
+      awning.rotation.x = -0.08;
+      awning.castShadow = true;
+      shop.add(upper, roof, rear, sideLeft, sideRight, leftGlass, rightGlass, door, sign, awning);
+      addWindowRows(shop, width, depth, height);
+      return shop;
+    };
+
+    const createCityTower = (width: number, depth: number, height: number, color: string, glass = "#42616b") => {
+      const tower = new THREE.Group();
+      const body = new THREE.Mesh(new RoundedBoxGeometry(width, height, depth, 4, 0.18), surface(color, 0.82));
+      body.position.y = height / 2 + 0.15;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      const towerGlass = new THREE.MeshStandardMaterial({ color: glass, roughness: 0.22, metalness: 0.15, emissive: glass, emissiveIntensity: 0.035 });
+      const floorCount = Math.max(3, Math.floor(height / 2.7));
+      for (let floor = 1; floor < floorCount; floor += 1) {
+        const y = 1.2 + floor * 2.45;
+        [-0.27, 0, 0.27].forEach((ratio) => {
+          const window = new THREE.Mesh(new RoundedBoxGeometry(Math.max(0.75, width * 0.18), 1.08, 0.08, 2, 0.025), towerGlass);
+          window.position.set(width * ratio, y, depth / 2 + 0.05);
+          tower.add(window);
+        });
+      }
+      const crown = new THREE.Mesh(new RoundedBoxGeometry(width + 0.45, 0.35, depth + 0.45, 3, 0.09), roofMaterial);
+      crown.position.y = height + 0.28;
+      crown.castShadow = true;
+      tower.add(body, crown);
+      return tower;
+    };
+
+    const createSuburbanHouse = (color: string, roofColor: string) => {
+      const house = new THREE.Group();
+      const body = new THREE.Mesh(new RoundedBoxGeometry(7.4, 4.5, 7, 3, 0.14), surface(color, 0.9));
+      body.position.y = 2.38;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(5.25, 2.15, 4), surface(roofColor, 0.92));
+      roof.position.y = 5.45;
+      roof.rotation.y = Math.PI / 4;
+      roof.scale.z = 0.95;
+      roof.castShadow = true;
+      const door = new THREE.Mesh(new RoundedBoxGeometry(1.18, 2.25, 0.1, 2, 0.03), surface("#35434a", 0.58));
+      door.position.set(0, 1.3, 3.55);
+      [-2.15, 2.15].forEach((x) => {
+        const window = new THREE.Mesh(new RoundedBoxGeometry(1.25, 1.18, 0.09, 2, 0.035), windowMaterial);
+        window.position.set(x, 2.5, 3.57);
+        house.add(window);
+      });
+      house.add(body, roof, door);
+      return house;
+    };
+
+    const createWarehouse = (width: number, depth: number, color: string) => {
+      const warehouse = new THREE.Group();
+      const body = new THREE.Mesh(new RoundedBoxGeometry(width, 6.2, depth, 3, 0.13), surface(color, 0.9));
+      body.position.y = 3.25;
+      body.castShadow = true;
+      body.receiveShadow = true;
+      const roof = new THREE.Mesh(new RoundedBoxGeometry(width + 0.35, 0.32, depth + 0.35, 3, 0.08), roofMaterial);
+      roof.position.y = 6.48;
+      const shutter = new THREE.Mesh(new RoundedBoxGeometry(width * 0.48, 3.65, 0.12, 2, 0.035), surface("#4e595d", 0.62));
+      shutter.position.set(0, 2, depth / 2 + 0.05);
+      for (let line = -1; line <= 1; line += 1) {
+        const pane = new THREE.Mesh(new RoundedBoxGeometry(1.5, 0.72, 0.09, 2, 0.025), windowMaterial);
+        pane.position.set(line * 2.05, 4.75, depth / 2 + 0.07);
+        warehouse.add(pane);
+      }
+      const vent = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.48, 3.2, 12), surface("#596164", 0.55, 0.35));
+      vent.position.set(width * 0.28, 7.9, -depth * 0.18);
+      warehouse.add(body, roof, shutter, vent);
+      return warehouse;
+    };
+
+    const addPalm = (x: number, z: number, baseY = 0.1) => {
+      const palm = new THREE.Group();
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.28, 4.9, 9), surface("#876c51", 0.94));
+      trunk.position.y = 2.45;
+      trunk.rotation.z = 0.055;
+      trunk.castShadow = true;
+      palm.add(trunk);
+      for (let leaf = 0; leaf < 7; leaf += 1) {
+        const frond = new THREE.Mesh(new RoundedBoxGeometry(0.26, 0.1, 2.3, 3, 0.05), surface("#4f765a", 0.96));
+        frond.position.y = 5.02;
+        frond.rotation.y = (leaf / 7) * Math.PI * 2;
+        frond.rotation.x = 0.25;
+        frond.translateZ(0.85);
+        frond.castShadow = true;
+        palm.add(frond);
+      }
+      palm.position.set(x, baseY, z);
+      scene.add(palm);
+    };
+
+    const districtObstacles: Array<{ districtId: DistrictId; x: number; z: number; halfX: number; halfZ: number }> = [];
+    const addDistrictObstacle = (districtId: DistrictId, x: number, z: number, width: number, depth: number) => {
+      districtObstacles.push({ districtId, x, z, halfX: width / 2 + 0.45, halfZ: depth / 2 + 0.45 });
+    };
+
     const districtPickTargets: THREE.Object3D[] = [];
     const storefrontPromenade = box([53.5, 0.22, 11.5], "#aaa9a2", 0.95);
     storefrontPromenade.position.set(0, 0.04, -44);
@@ -553,15 +686,15 @@ export default function LobbyPage() {
     });
 
     const westResidence = createResidentialBuilding(9.5, 9.5, 11.5, "#7f908e");
-    westResidence.position.set(-47.5, 0, -4);
+    westResidence.position.set(-53, 0, -4);
     westResidence.rotation.y = Math.PI / 2;
     const eastResidence = createResidentialBuilding(9.5, 9.5, 10.2, "#a18978");
-    eastResidence.position.set(47.5, 0, -4);
+    eastResidence.position.set(53, 0, -4);
     eastResidence.rotation.y = -Math.PI / 2;
     const westResidenceLot = box([12.5, 0.22, 13], "#aaa9a2", 0.95);
-    westResidenceLot.position.set(-47.5, 0.04, -4);
+    westResidenceLot.position.set(-53, 0.04, -4);
     const eastResidenceLot = westResidenceLot.clone();
-    eastResidenceLot.position.x = 47.5;
+    eastResidenceLot.position.x = 53;
     scene.add(westResidenceLot, eastResidenceLot, westResidence, eastResidence);
 
     const trees: Array<[number, number, number, number]> = [
@@ -576,8 +709,6 @@ export default function LobbyPage() {
     addBench(scene, -39, 5, Math.PI / 2, 0.36);
     addBench(scene, 39, 5, -Math.PI / 2, 0.36);
     [[-39, -25], [-21, -25], [21, -25], [39, -25], [-39, 32], [-18, 32], [18, 32], [39, 32]].forEach(([x, z]) => addLamp(scene, x, z));
-    setWorldLoaded(true);
-
     const portalMaterial = new THREE.MeshStandardMaterial({
       color: "#ece8d9",
       roughness: 0.42,
@@ -585,14 +716,14 @@ export default function LobbyPage() {
       emissive: "#d8cfaa",
       emissiveIntensity: 0.22,
     });
-    const lockedPortalMaterial = makeSignMaterial("LOCKED", "#252a2d");
     const portalPlacements: Array<[DistrictId, number, number, number]> = [
       ["gullcrest", -39, -24.5, 0],
       ["hedgemont", 39, -24.5, 0],
-      ["market-mile", -39, 37, Math.PI],
-      ["brickswich", 39, 37, Math.PI],
+      ["brickswich", -39, 37, Math.PI],
+      ["market-mile", 39, 37, Math.PI],
     ];
     portalPlacements.forEach(([districtId, x, z, rotation]) => {
+      const district = DISTRICTS.find((item) => item.id === districtId)!;
       const portal = new THREE.Group();
       portal.userData.districtId = districtId;
       const platform = new THREE.Mesh(new THREE.CylinderGeometry(1.65, 1.65, 0.12, 32), surface("#d4d1c5", 0.82));
@@ -601,7 +732,7 @@ export default function LobbyPage() {
       const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.2, 0.16), surface("#343a3f", 0.48));
       post.position.set(0, 1.25, 0.35);
       post.castShadow = true;
-      const marker = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.72, 0.16), lockedPortalMaterial);
+      const marker = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.72, 0.16), makeSignMaterial(district.gateway, district.accent));
       marker.position.set(0, 2.03, 0.35);
       marker.castShadow = true;
       const ring = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.07, 10, 36), portalMaterial);
@@ -614,15 +745,211 @@ export default function LobbyPage() {
       scene.add(portal);
     });
 
-    const mountainMaterial = surface("#93a4a8", 0.99);
-    [[-42, -72, 18, 12], [-20, -75, 21, 15], [5, -78, 20, 13], [30, -74, 22, 16], [53, -72, 17, 11]].forEach(([x, z, radius, height], index) => {
-      const mountain = new THREE.Mesh(new THREE.ConeGeometry(radius, height, 6), mountainMaterial);
-      mountain.position.set(x, height / 2 - 2.8, z);
-      mountain.scale.x = 1.25 + (index % 2) * 0.25;
-      mountain.rotation.y = index * 0.37;
-      mountain.receiveShadow = true;
-      scene.add(mountain);
+    const northCityFoundation = box([112, 0.25, 18], "#969892", 0.96);
+    northCityFoundation.position.set(0, -0.01, -57);
+    scene.add(northCityFoundation);
+    const skylineSpecs: Array<[number, number, number, number, string]> = [
+      [-52, 10, 12, 18, "#7e8c91"], [-39, 10, 11, 25, "#9b877a"], [-26, 10, 12, 20, "#788b89"],
+      [-14, 10, 11, 28, "#8f8179"], [14, 10, 12, 23, "#7d8c95"], [26, 10, 11, 30, "#9b897c"],
+      [39, 10, 12, 21, "#798c87"], [52, 10, 11, 26, "#93837d"],
+    ];
+    skylineSpecs.forEach(([x, width, depth, height, color], index) => {
+      const tower = createCityTower(width, depth, height, color, index % 2 ? "#405c65" : "#4d6870");
+      tower.position.set(x, 0, -58 - (index % 2) * 1.5);
+      scene.add(tower);
     });
+    [-1, 1].forEach((side) => {
+      [-23, -7, 10, 27].forEach((z, index) => {
+        const pad = box([13, 0.22, 13], "#9fa09a", 0.95);
+        pad.position.set(side * 55, 0.02, z);
+        const tower = createCityTower(10.5, 10.5, 13 + index * 2.6, index % 2 ? "#8d8177" : "#748687");
+        tower.position.set(side * 55, 0, z);
+        tower.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+        scene.add(pad, tower);
+      });
+    });
+
+    const districtShopLabels: Record<DistrictTheme, string[]> = {
+      coast: ["SURF SHOP", "BEACH CAFE", "TACO BAR", "BIKE RENTAL"],
+      suburb: ["DINER", "GROCERY", "PHARMACY", "BARBER"],
+      downtown: ["NIGHT CLUB", "CINEMA", "COFFEE", "RECORDS"],
+      industrial: ["ART HALL", "GARAGE", "GYM", "BREWERY"],
+    };
+    const districtPalettes: Record<DistrictTheme, { base: string; lot: string; facades: string[] }> = {
+      coast: { base: "#b8b4a7", lot: "#d1c7ad", facades: ["#d5c4ad", "#b9d0cb", "#d9b7a9", "#aebfcb"] },
+      suburb: { base: "#858f82", lot: "#78906c", facades: ["#b9a28e", "#9faeaa", "#c1b79e", "#a7a1b0"] },
+      downtown: { base: "#777a7c", lot: "#a9a6a0", facades: ["#766d80", "#657b7c", "#8f746d", "#666d79"] },
+      industrial: { base: "#8d8982", lot: "#918b81", facades: ["#9a6652", "#777c76", "#8b725f", "#6f777c"] },
+    };
+
+    const buildDistrict = (district: District) => {
+      const [centerX, centerZ] = district.worldCenter;
+      const palette = districtPalettes[district.theme];
+      const districtBase = box([90, 0.3, 90], palette.base, 0.98);
+      districtBase.position.set(centerX, -0.16, centerZ);
+      scene.add(districtBase);
+
+      const roadX = new THREE.Mesh(new THREE.BoxGeometry(90, 0.1, 10), roadMaterial);
+      roadX.position.set(centerX, 0.015, centerZ);
+      roadX.receiveShadow = true;
+      const roadZ = new THREE.Mesh(new THREE.BoxGeometry(10, 0.105, 90), roadMaterial);
+      roadZ.position.set(centerX, 0.02, centerZ);
+      roadZ.receiveShadow = true;
+      scene.add(roadX, roadZ);
+      [-7, 7].forEach((offset) => {
+        const horizontalWalk = new THREE.Mesh(new THREE.BoxGeometry(90, 0.12, 3.2), sidewalkMaterial);
+        horizontalWalk.position.set(centerX, 0.075, centerZ + offset);
+        const verticalWalk = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.125, 90), sidewalkMaterial);
+        verticalWalk.position.set(centerX + offset, 0.08, centerZ);
+        scene.add(horizontalWalk, verticalWalk);
+      });
+      for (let dash = -4; dash <= 4; dash += 1) {
+        const horizontalDash = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.025, 0.16), roadMarkingMaterial);
+        horizontalDash.position.set(centerX + dash * 9, 0.08, centerZ);
+        const verticalDash = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.026, 4.2), roadMarkingMaterial);
+        verticalDash.position.set(centerX, 0.085, centerZ + dash * 9);
+        scene.add(horizontalDash, verticalDash);
+      }
+
+      [[-23, -23], [23, -23], [-23, 23], [23, 23]].forEach(([x, z]) => {
+        const lot = box([30, 0.12, 30], palette.lot, 0.97);
+        lot.position.set(centerX + x, -0.005, centerZ + z);
+        scene.add(lot);
+      });
+
+      const shopPositions: Array<[number, number, number]> = [[-18, -14.5, 0], [18, -14.5, 0], [-18, 14.5, Math.PI], [18, 14.5, Math.PI]];
+      shopPositions.forEach(([x, z, rotation], index) => {
+        const shopPad = box([12.4, 0.2, 10.2], "#aaa9a2", 0.95);
+        shopPad.position.set(centerX + x, 0.025, centerZ + z);
+        const shop = createNeighborhoodShop(districtShopLabels[district.theme][index], district.accent, palette.facades[index]);
+        shop.position.set(centerX + x, 0, centerZ + z);
+        shop.rotation.y = rotation;
+        scene.add(shopPad, shop);
+      });
+
+      if (district.theme === "coast") {
+        const water = new THREE.Mesh(new THREE.BoxGeometry(90, 0.08, 13), new THREE.MeshStandardMaterial({ color: "#5c9eaa", roughness: 0.3, metalness: 0.06 }));
+        water.position.set(centerX, 0.01, centerZ - 38.5);
+        const sand = box([90, 0.14, 8], "#d2bd93", 0.96);
+        sand.position.set(centerX, 0.015, centerZ - 29.5);
+        const boardwalk = box([90, 0.18, 4.2], "#9b8468", 0.87);
+        boardwalk.position.set(centerX, 0.07, centerZ - 23.5);
+        scene.add(water, sand, boardwalk);
+        addDistrictObstacle(district.id, centerX, centerZ - 38.5, 90, 13);
+        [-36, -24, -12, 12, 24, 36].forEach((x) => addPalm(centerX + x, centerZ - 22, 0.12));
+        [[-31, 26, 13], [31, 26, 16], [-32, -4, 12], [32, -4, 14]].forEach(([x, z, height], index) => {
+          const pad = box([13, 0.2, 13], "#b2afa6", 0.95);
+          pad.position.set(centerX + x, 0.02, centerZ + z);
+          const apartment = createCityTower(10.5, 10.5, height, palette.facades[index]);
+          apartment.position.set(centerX + x, 0, centerZ + z);
+          scene.add(pad, apartment);
+          addDistrictObstacle(district.id, centerX + x, centerZ + z, 10.5, 10.5);
+        });
+      }
+
+      if (district.theme === "suburb") {
+        const houses: Array<[number, number, number]> = [[-32, -28, 0], [-18, -31, 0], [18, -31, 0], [32, -28, 0], [-32, 27, Math.PI], [-18, 31, Math.PI], [18, 31, Math.PI], [32, 27, Math.PI]];
+        houses.forEach(([x, z, rotation], index) => {
+          const foundation = box([8.8, 0.18, 8.5], "#aaa9a2", 0.96);
+          foundation.position.set(centerX + x, 0.03, centerZ + z);
+          const house = createSuburbanHouse(index % 2 ? "#bda991" : "#a7b3ad", index % 3 ? "#555b5d" : "#735c50");
+          house.position.set(centerX + x, 0, centerZ + z);
+          house.rotation.y = rotation;
+          scene.add(foundation, house);
+          addDistrictObstacle(district.id, centerX + x, centerZ + z, 7.4, 7);
+        });
+        [[-39, -12], [-39, 11], [39, -12], [39, 11], [-11, -39], [11, -39], [-11, 39], [11, 39]].forEach(([x, z]) => addTree(scene, centerX + x, centerZ + z, 0.78, 0.06));
+      }
+
+      if (district.theme === "downtown") {
+        [[-33, -29, 18], [33, -29, 25], [-33, 28, 28], [33, 28, 21], [-31, 2, 23], [31, 2, 30]].forEach(([x, z, height], index) => {
+          const foundation = box([13, 0.2, 13], "#9d9b96", 0.96);
+          foundation.position.set(centerX + x, 0.02, centerZ + z);
+          const tower = createCityTower(10.5, 10.5, height, palette.facades[index % palette.facades.length], index % 2 ? "#384d60" : "#4a5368");
+          tower.position.set(centerX + x, 0, centerZ + z);
+          scene.add(foundation, tower);
+          addDistrictObstacle(district.id, centerX + x, centerZ + z, 10.5, 10.5);
+        });
+        [[-14, 34, 27], [14, 34, 32]].forEach(([x, z, height], index) => {
+          const foundation = box([12.5, 0.2, 12.5], "#9d9b96", 0.96);
+          foundation.position.set(centerX + x, 0.02, centerZ + z);
+          const tower = createCityTower(10, 10, height, index ? "#6f7584" : "#807185", index ? "#394d63" : "#4a5368");
+          tower.position.set(centerX + x, 0, centerZ + z);
+          scene.add(foundation, tower);
+          addDistrictObstacle(district.id, centerX + x, centerZ + z, 10, 10);
+        });
+        [[-38, -8], [-38, 8], [38, -8], [38, 8]].forEach(([x, z]) => addLamp(scene, centerX + x, centerZ + z));
+      }
+
+      if (district.theme === "industrial") {
+        [[-31, -28, 16, 13], [31, -28, 15, 12], [-31, 28, 17, 13], [31, 28, 14, 12], [-33, 1, 15, 12], [33, 1, 15, 12]].forEach(([x, z, width, depth], index) => {
+          const foundation = box([width + 1.4, 0.2, depth + 1.4], "#99958d", 0.96);
+          foundation.position.set(centerX + x, 0.02, centerZ + z);
+          const warehouse = createWarehouse(width, depth, palette.facades[index % palette.facades.length]);
+          warehouse.position.set(centerX + x, 0, centerZ + z);
+          warehouse.rotation.y = z > 0 ? Math.PI : 0;
+          scene.add(foundation, warehouse);
+          addDistrictObstacle(district.id, centerX + x, centerZ + z, width, depth);
+        });
+      }
+
+      [-37, -18, 18, 37].forEach((position) => {
+        addLamp(scene, centerX + position, centerZ - 7);
+        addLamp(scene, centerX + position, centerZ + 7);
+      });
+      addBench(scene, centerX - 12, centerZ + 9, Math.PI, 0.08);
+      addBench(scene, centerX + 12, centerZ - 9, 0, 0.08);
+    };
+    DISTRICTS.forEach(buildDistrict);
+
+    const addCityConnector = (axis: "x" | "z", direction: -1 | 1) => {
+      const center = direction * 76.5;
+      const corridorBase = box(axis === "z" ? [24, 0.22, 63] : [63, 0.22, 24], "#8f928c", 0.97);
+      corridorBase.position.set(axis === "x" ? center : 0, -0.06, axis === "z" ? center : 0);
+      const road = new THREE.Mesh(new THREE.BoxGeometry(axis === "z" ? 10 : 63, 0.1, axis === "z" ? 63 : 10), roadMaterial);
+      road.position.set(axis === "x" ? center : 0, 0.02, axis === "z" ? center : 0);
+      road.receiveShadow = true;
+      scene.add(corridorBase, road);
+      [-7, 7].forEach((offset) => {
+        const walk = new THREE.Mesh(new THREE.BoxGeometry(axis === "z" ? 3.2 : 63, 0.12, axis === "z" ? 63 : 3.2), sidewalkMaterial);
+        walk.position.set(
+          axis === "z" ? offset : center,
+          0.075,
+          axis === "z" ? center : offset,
+        );
+        scene.add(walk);
+      });
+      [-18, 18].forEach((side, index) => {
+        const localX = axis === "z" ? side : center;
+        const localZ = axis === "z" ? center : side;
+        const pad = box([13, 0.2, 13], "#9b9b95", 0.96);
+        pad.position.set(localX, 0.01, localZ);
+        const transitionTower = createCityTower(10.5, 10.5, 13 + index * 4 + (direction > 0 ? 2 : 0), index ? "#8c7d75" : "#758687");
+        transitionTower.position.set(localX, 0, localZ);
+        transitionTower.rotation.y = axis === "x" ? Math.PI / 2 : 0;
+        scene.add(pad, transitionTower);
+      });
+    };
+    addCityConnector("z", -1);
+    addCityConnector("z", 1);
+    addCityConnector("x", -1);
+    addCityConnector("x", 1);
+
+    const transitionQuarters: Array<[number, number, string, string]> = [
+      [-80, -80, "#89786f", "#526c72"], [80, -80, "#84918b", "#4d6b70"],
+      [-80, 80, "#8e7164", "#505c68"], [80, 80, "#7f858a", "#4b596a"],
+    ];
+    transitionQuarters.forEach(([quarterX, quarterZ, color, glass], quarterIndex) => {
+      [[-13, -13], [13, -13], [-13, 13], [13, 13]].forEach(([offsetX, offsetZ], index) => {
+        const pad = box([14, 0.2, 14], quarterIndex % 2 ? "#92968f" : "#938f88", 0.97);
+        pad.position.set(quarterX + offsetX, -0.01, quarterZ + offsetZ);
+        const building = createCityTower(11, 11, 13 + ((index + quarterIndex) % 4) * 3.2, color, glass);
+        building.position.set(quarterX + offsetX, 0, quarterZ + offsetZ);
+        building.rotation.y = ((index + quarterIndex) % 2) * Math.PI / 2;
+        scene.add(pad, building);
+      });
+    });
+    setWorldLoaded(true);
 
     [[-14, -24], [14, -24], [-35, 12], [35, 12]].forEach(([x, z], planterIndex) => {
       const planter = box([3.1, 0.58, 1.25], planterIndex % 2 ? "#81786d" : "#8a8175", 0.94);
@@ -781,10 +1108,11 @@ export default function LobbyPage() {
         }
       }
       if (mapOpenRef.current && !currentDistrictId && raycaster.ray.intersectPlane(mapGroundPlane, mapHitPoint)) {
-        if (mapHitPoint.x < -40 && mapHitPoint.z < -38) return "gullcrest";
-        if (mapHitPoint.x > 40 && mapHitPoint.z < -38) return "hedgemont";
-        if (mapHitPoint.x < -40 && mapHitPoint.z > 38) return "market-mile";
-        if (mapHitPoint.x > 40 && mapHitPoint.z > 38) return "brickswich";
+        const selectedDistrict = DISTRICTS.find((district) => Math.hypot(
+          mapHitPoint.x - district.worldCenter[0],
+          mapHitPoint.z - district.worldCenter[1],
+        ) < 54);
+        if (selectedDistrict) return selectedDistrict.id;
       }
       return null;
     };
@@ -930,21 +1258,19 @@ export default function LobbyPage() {
         const previousX = character.position.x;
         const previousZ = character.position.z;
         character.position.addScaledVector(velocityRef.current, delta);
-        const localX = character.position.x - activeWorldCenter.x;
-        const localZ = character.position.z - activeWorldCenter.z;
         character.position.x = THREE.MathUtils.clamp(character.position.x, activeWorldCenter.x - 42.5, activeWorldCenter.x + 42.5);
-        character.position.z = THREE.MathUtils.clamp(character.position.z, activeWorldCenter.z - 26, activeWorldCenter.z + 38);
+        character.position.z = THREE.MathUtils.clamp(
+          character.position.z,
+          activeWorldCenter.z + (currentDistrictId ? -42.5 : -26),
+          activeWorldCenter.z + (currentDistrictId ? 42.5 : 38),
+        );
         if (currentDistrictId) {
-          const streetCenters = [-42, 0, 42];
-          const onStreet = streetCenters.some((street) => Math.abs(localX - street) < 6.2) || streetCenters.some((street) => Math.abs(localZ - street) < 6.2);
-          const storefrontWalkable = [[-21, -21, 1], [21, -21, 1], [-21, 21, -1], [21, 21, -1]].some(([blockX, blockZ, frontDirection]) => {
-            const storefrontCenterZ = blockZ + frontDirection * 5.8;
-            const depthFromCenter = (localZ - storefrontCenterZ) * frontDirection;
-            const insideStore = Math.abs(localX - blockX) < 5.7 && depthFromCenter > -4.6 && depthFromCenter < 4.72;
-            const throughDoor = Math.abs(localX - blockX) < 1.18 && depthFromCenter >= 4.5 && depthFromCenter < 10.1;
-            return insideStore || throughDoor;
-          });
-          if (!onStreet && !storefrontWalkable) {
+          const hitBuilding = districtObstacles.some((obstacle) => (
+            obstacle.districtId === currentDistrictId
+            && Math.abs(character.position.x - obstacle.x) < obstacle.halfX
+            && Math.abs(character.position.z - obstacle.z) < obstacle.halfZ
+          ));
+          if (hitBuilding) {
             character.position.x = previousX;
             character.position.z = previousZ;
             velocityRef.current.x = 0;
@@ -997,15 +1323,15 @@ export default function LobbyPage() {
       }
 
       if (mapOpenRef.current) {
-        worldFog.near = 88;
-        worldFog.far = 150;
+        worldFog.near = currentDistrictId ? 88 : 280;
+        worldFog.far = currentDistrictId ? 175 : 680;
         camera.up.set(0, 0, -1);
-        const mapHeight = currentDistrictId ? 110 : 96;
+        const mapHeight = currentDistrictId ? 110 : 420;
         camera.position.lerp(new THREE.Vector3(activeWorldCenter.x, mapHeight, activeWorldCenter.z + 0.1), 1 - Math.exp(-delta * 4));
         camera.lookAt(activeWorldCenter);
       } else {
-        worldFog.near = 48;
-        worldFog.far = 105;
+        worldFog.near = 72;
+        worldFog.far = 250;
         camera.up.set(0, 1, 0);
         const portraitMobile = camera.aspect < 0.72;
         const cameraDistance = (portraitMobile ? 16.2 : 13.8) * Math.cos(cameraPitch);
@@ -1083,7 +1409,7 @@ export default function LobbyPage() {
       <section className="lobby-location" aria-label="Current lobby location">
         <small>{activeDistrictInfo ? activeDistrictInfo.zone.toUpperCase() : "PUBLIC LOBBY"}</small>
         <strong>{activeDistrictInfo ? activeDistrictInfo.name : "67VERSE City Park"}</strong>
-        <span>{loaded && worldLoaded ? (activeDistrictInfo ? "Street network · Open session" : "Central hub · Four worlds locked") : "Loading city district…"}</span>
+        <span>{loaded && worldLoaded ? (activeDistrictInfo ? "Street network · Open session" : "Central hub · Four districts open") : "Loading city district…"}</span>
         {activeDistrictInfo && (
           <button className="lobby-return" type="button" onClick={() => teleportRef.current("park")}>RETURN TO CENTRAL PARK</button>
         )}
@@ -1100,13 +1426,13 @@ export default function LobbyPage() {
               <em>{district.locked ? "LOCKED" : "ENTER"}</em>
             </button>
           ))}
-          <p>These 3D neighborhood worlds are locked during the lobby phase.</p>
+          <p>Four connected neighborhoods surround the central park. Select one to enter.</p>
         </section>
       )}
 
       {travelNotice && <div className="lobby-travel-notice" role="status">{travelNotice}</div>}
 
-      {!mapOpen && <div className="lobby-tip">{activeDistrictInfo ? "EXPLORE THE DISTRICT · M FOR CITY MAP · RETURN FROM THE LOCATION CARD" : "WASD TO SKATE · DRAG TO LOOK · FOUR WORLD GATES ARE CURRENTLY LOCKED · M FOR MAP"}</div>}
+      {!mapOpen && <div className="lobby-tip">{activeDistrictInfo ? "EXPLORE THE DISTRICT · M FOR CITY MAP · RETURN FROM THE LOCATION CARD" : "WASD TO SKATE · DRAG TO LOOK · FOUR DISTRICTS ARE OPEN · M FOR CITY MAP"}</div>}
 
       {!mapOpen && (
         <div className="lobby-mobile-controls" aria-label="Mobile lobby controls">
