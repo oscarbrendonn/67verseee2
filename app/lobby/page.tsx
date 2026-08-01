@@ -787,10 +787,11 @@ export default function LobbyPage() {
     scene.add(westResidenceLot, eastResidenceLot, westResidence, eastResidence);
 
     const trees: Array<[number, number, number, number]> = [
-      [-39, -14, 0.92, 0.36], [-39, -3, 1.02, 0.36], [-31, 21, 1.05, 0.36], [-22, 23, 0.96, 0.36],
-      [-13, 22, 0.88, 0.36], [15, 22, 0.92, 0.36], [24, 23, 1.04, 0.36], [33, 20, 0.9, 0.36],
-      [-10.5, 24, 0.76, 0.36], [10.5, 24, 0.76, 0.36],
-      [39, -14, 0.96, 0.36], [-25, -24, 0.86, 0.14], [25, -24, 0.88, 0.14],
+      [-39, -14, 0.92, 0.36], [-39, -3, 1.02, 0.36],
+      [39, -14, 0.96, 0.36], [39, -3, 1.02, 0.36],
+      [-32, 21, 1, 0.36], [-23, 24, 0.92, 0.36], [-13, 21, 0.88, 0.36],
+      [13, 21, 0.9, 0.36], [24, 24, 1, 0.36], [34, 21, 0.9, 0.36],
+      [-25, -24, 0.86, 0.14], [25, -24, 0.88, 0.14],
     ];
     trees.forEach(([x, z, scale, baseY]) => addTree(scene, x, z, scale, baseY));
     addBench(scene, -23, 20, Math.PI, 0.36);
@@ -863,9 +864,9 @@ export default function LobbyPage() {
       scene.add(dash);
     }
     const southSkylineSpecs: Array<[number, number, number, number, string]> = [
-      [-52, 10, 11, 22, "#8b7c73"], [-39, 10, 12, 17, "#748889"], [-26, 11, 11, 27, "#968277"],
-      [-13, 10, 12, 20, "#73848e"], [0, 11, 11, 24, "#8e857b"], [14, 10, 12, 18, "#7b8f88"],
-      [27, 11, 11, 29, "#8e7972"], [40, 10, 12, 21, "#77898f"], [52, 10, 11, 25, "#97867a"],
+      [-50, 10, 11, 22, "#8b7c73"], [-37.5, 10, 12, 17, "#748889"], [-25, 11, 11, 27, "#968277"],
+      [-12.5, 10, 12, 20, "#73848e"], [0, 11, 11, 24, "#8e857b"], [12.5, 10, 12, 18, "#7b8f88"],
+      [25, 11, 11, 29, "#8e7972"], [37.5, 10, 12, 21, "#77898f"], [50, 10, 11, 25, "#97867a"],
     ];
     southSkylineSpecs.forEach(([x, width, depth, height, color], index) => {
       const tower = createCityTower(width, depth, height, color, index % 2 ? "#425e66" : "#4b6269");
@@ -873,8 +874,9 @@ export default function LobbyPage() {
       tower.rotation.y = Math.PI;
       scene.add(tower);
     });
+    const sideSkylineZ = [-40, -25, -10, 5, 20, 33];
     [-1, 1].forEach((side) => {
-      [-40, -23, -7, 10, 27, 43].forEach((z, index) => {
+      sideSkylineZ.forEach((z, index) => {
         const pad = box([13, 0.22, 13], "#9fa09a", 0.95);
         pad.position.set(side * 55, 0.02, z);
         const tower = createCityTower(10.5, 10.5, 13 + (index % 4) * 2.8, index % 2 ? "#8d8177" : "#748687");
