@@ -544,7 +544,7 @@ export default function PlayPage() {
       <div ref={hostRef} className="game-canvas" aria-label="EggNova oynanabilir Three.js parkuru" />
 
       <header className="game-topbar">
-        <a href="/" className="game-logo" aria-label="EggNova editörüne dön"><span>E</span><div><b>EGGNOVA</b><small>BULUT PARKURU</small></div></a>
+        <a href="/?editor=1" className="game-logo" aria-label="EggNova editörüne dön"><span>E</span><div><b>EGGNOVA</b><small>BULUT PARKURU</small></div></a>
         <div className="game-progress"><span style={{ width: `${Math.min(100, Math.max(0, (-((playerRef.current?.position.z ?? 3) - 3) / 60) * 100))}%` }} /><i>BAŞLANGIÇ</i><i>FİNAL</i></div>
         <button className="pause-button" onClick={() => started && !finished && setPaused((value) => !value)} aria-label="Oyunu duraklat">{paused ? "▶" : "Ⅱ"}</button>
       </header>
@@ -565,14 +565,14 @@ export default function PlayPage() {
             <p>Hareketli adaları geç, dönen engele yakalanma, yıldızları topla ve final kapısına ulaş.</p>
             <div className="control-guide"><span><kbd>WASD</kbd> HAREKET</span><span><kbd>SPACE</kbd> ZIPLA</span><span><kbd>SHIFT</kbd> KOŞ</span></div>
             <button onClick={() => { setStarted(true); showMessage("Hazır… Başla!", 1.8); tone(440, 0.08); tone(660, 0.12, 0.035, 0.08); }}>OYUNA BAŞLA <b>→</b></button>
-            <a href="/">Harita editörüne dön</a>
+            <a href="/?editor=1">Harita editörüne dön</a>
           </div>
         </section>
       )}
 
       {paused && !finished && (
         <section className="game-overlay pause-overlay">
-          <div className="game-card compact-card"><span className="eyebrow">OYUN DURAKLATILDI</span><h2>Mola zamanı</h2><button onClick={() => setPaused(false)}>DEVAM ET <b>▶</b></button><button className="secondary" onClick={restart}>BAŞTAN BAŞLA</button><a href="/">Editöre dön</a></div>
+          <div className="game-card compact-card"><span className="eyebrow">OYUN DURAKLATILDI</span><h2>Mola zamanı</h2><button onClick={() => setPaused(false)}>DEVAM ET <b>▶</b></button><button className="secondary" onClick={restart}>BAŞTAN BAŞLA</button><a href="/?editor=1">Editöre dön</a></div>
         </section>
       )}
 
@@ -583,7 +583,7 @@ export default function PlayPage() {
             <span className="finish-crown">★</span><span className="eyebrow">PARKUR TAMAMLANDI</span><h2>Harika koştun!</h2>
             <div className="final-score"><small>TOPLAM PUAN</small><strong>{score.toLocaleString("tr-TR")}</strong></div>
             <div className="result-grid"><span><small>SÜRE</small><b>{formattedTime}</b></span><span><small>YILDIZ</small><b>{coins}/{TOTAL_COINS}</b></span><span><small>DÜŞME</small><b>{deaths}</b></span></div>
-            <button onClick={restart}>TEKRAR OYNA <b>↻</b></button><a href="/">Haritayı editörde aç</a>
+            <button onClick={restart}>TEKRAR OYNA <b>↻</b></button><a href="/?editor=1">Haritayı editörde aç</a>
           </div>
         </section>
       )}

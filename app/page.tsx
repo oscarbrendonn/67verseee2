@@ -207,6 +207,13 @@ export default function Home() {
   const [toast, setToast] = useState("Sahne hazır");
   const [stats, setStats] = useState({ fps: 60, calls: 0, triangles: 0 });
   const [runtimeMessage, setRuntimeMessage] = useState("WASD ile hareket et · Space ile zıpla");
+  const [editorAccess, setEditorAccess] = useState(false);
+
+  useEffect(() => {
+    const wantsEditor = new URLSearchParams(window.location.search).get("editor") === "1";
+    if (wantsEditor) setEditorAccess(true);
+    else window.location.replace("/play");
+  }, []);
 
   const selected = useMemo(
     () => objects.find((item) => item.id === selectedId) ?? null,
@@ -647,6 +654,10 @@ export default function Home() {
       </div>
     </div>
   );
+
+  if (!editorAccess) {
+    return <main className="route-loader"><span>E</span><b>OYUN YÜKLENİYOR</b><i /></main>;
+  }
 
   return (
     <main className="editor-shell">

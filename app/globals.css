@@ -16,6 +16,7 @@ html, body { margin: 0; min-height: 100%; overflow: hidden; }
 body { color: var(--ink); background: #dfe8f4; font-family: var(--font-geist-sans), Arial, sans-serif; }
 button, input, select, textarea { font: inherit; }
 button { color: inherit; }
+.route-loader { width: 100vw; height: 100dvh; display: grid; place-content: center; justify-items: center; gap: 12px; color: #fff; background: radial-gradient(circle at 50% 35%, #7d8ee8, #2a254b 66%); }.route-loader span { width: 64px; height: 64px; display: grid; place-items: center; border-radius: 22px 22px 22px 8px; color: #28213f; background: #d6f66d; font-size: 34px; font-weight: 950; transform: rotate(-4deg); }.route-loader b { font: 800 9px var(--font-geist-mono); letter-spacing: .18em; }.route-loader i { width: 90px; height: 3px; border-radius: 3px; background: linear-gradient(90deg, transparent, #d6f66d, transparent); animation: route-pulse 1s ease-in-out infinite; }@keyframes route-pulse { 50% { transform: scaleX(.5); opacity: .45; } }
 
 .editor-shell {
   width: 100vw;
