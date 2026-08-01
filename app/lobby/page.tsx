@@ -99,10 +99,12 @@ function addTree(scene: THREE.Scene, x: number, z: number, scale = 1, baseY = 0)
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.18 * scale, 0.23 * scale, 2.2 * scale, 10), surface("#6f5d4d", 0.94));
   trunk.position.y = 1.1 * scale;
   trunk.castShadow = true;
-  const crownMaterial = surface("#657a58", 0.96);
-  [[0, 2.6, 0, 1.05], [0.7, 2.55, 0.12, 0.72], [-0.68, 2.48, -0.08, 0.78], [0.12, 3.22, 0, 0.76]].forEach(([cx, cy, cz, radius]) => {
-    const crown = new THREE.Mesh(new THREE.SphereGeometry(radius * scale, 16, 12), crownMaterial);
+  const crownMaterials = [surface("#5f7754", 0.98), surface("#6f845e", 0.98), surface("#536d4d", 0.98)];
+  [[0, 2.6, 0, 1.05], [0.7, 2.55, 0.12, 0.72], [-0.68, 2.48, -0.08, 0.78], [0.12, 3.22, 0, 0.76], [0.15, 2.62, 0.72, 0.65], [-0.15, 2.7, -0.64, 0.62]].forEach(([cx, cy, cz, radius], index) => {
+    const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(radius * scale, 2), crownMaterials[index % crownMaterials.length]);
     crown.position.set(cx * scale, cy * scale, cz * scale);
+    crown.scale.set(1 + (index % 2) * 0.12, 0.92 + (index % 3) * 0.08, 1.04 - (index % 2) * 0.08);
+    crown.rotation.set(index * 0.21, index * 0.67, index * 0.13);
     crown.castShadow = true;
     tree.add(crown);
   });
@@ -728,13 +730,15 @@ export default function LobbyPage() {
       return warehouse;
     };
 
+    const meshyPalmAnchors: Array<{ anchor: THREE.Group; fallback: THREE.Group }> = [];
     const addPalm = (x: number, z: number, baseY = 0.1) => {
       const palm = new THREE.Group();
+      const fallbackPalm = new THREE.Group();
       const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.28, 4.9, 9), surface("#876c51", 0.94));
       trunk.position.y = 2.45;
       trunk.rotation.z = 0.055;
       trunk.castShadow = true;
-      palm.add(trunk);
+      fallbackPalm.add(trunk);
       for (let leaf = 0; leaf < 7; leaf += 1) {
         const frond = new THREE.Mesh(new RoundedBoxGeometry(0.26, 0.1, 2.3, 3, 0.05), surface("#4f765a", 0.96));
         frond.position.y = 5.02;
@@ -742,10 +746,12 @@ export default function LobbyPage() {
         frond.rotation.x = 0.25;
         frond.translateZ(0.85);
         frond.castShadow = true;
-        palm.add(frond);
+        fallbackPalm.add(frond);
       }
+      palm.add(fallbackPalm);
       palm.position.set(x, baseY, z);
       scene.add(palm);
+      meshyPalmAnchors.push({ anchor: palm, fallback: fallbackPalm });
     };
 
     const districtObstacles: Array<{ districtId: DistrictId; x: number; z: number; halfX: number; halfZ: number }> = [];
@@ -1088,6 +1094,32 @@ export default function LobbyPage() {
       scene.add(districtWorld);
       districtWorlds.set(district.id, districtWorld);
     });
+    new GLTFLoader().load(
+      "/models/meshy/coconut-palm-tree.glb",
+      (gltf) => {
+        if (disposed) return;
+        gltf.scene.updateMatrixWorld(true);
+        const bounds = new THREE.Box3().setFromObject(gltf.scene);
+        const height = Math.max(bounds.max.y - bounds.min.y, 0.001);
+        const scale = 6.2 / height;
+        meshyPalmAnchors.forEach(({ anchor, fallback: palmFallback }, index) => {
+          const model = gltf.scene.clone(true);
+          model.scale.setScalar(scale * (0.9 + (index % 3) * 0.055));
+          model.position.y = -bounds.min.y * model.scale.y;
+          model.rotation.y = index * 1.17;
+          model.traverse((object) => {
+            if (object instanceof THREE.Mesh) {
+              object.castShadow = true;
+              object.receiveShadow = true;
+            }
+          });
+          palmFallback.visible = false;
+          anchor.add(model);
+        });
+      },
+      undefined,
+      () => undefined,
+    );
     setWorldLoaded(true);
 
     [[-14, -24], [14, -24], [-35, 12], [35, 12]].forEach(([x, z], planterIndex) => {
