@@ -841,11 +841,37 @@ export default function LobbyPage() {
       tower.position.set(x, 0, -58 - (index % 2) * 1.5);
       scene.add(tower);
     });
+
+    const southCityFoundation = box([112, 0.25, 18], "#97958f", 0.96);
+    southCityFoundation.position.set(0, -0.01, 58);
+    const southRoad = new THREE.Mesh(new THREE.BoxGeometry(112, 0.09, 9.5), roadMaterial);
+    southRoad.position.set(0, 0.015, 45);
+    southRoad.receiveShadow = true;
+    const southSidewalk = new THREE.Mesh(new THREE.BoxGeometry(112, 0.13, 4.2), sidewalkMaterial);
+    southSidewalk.position.set(0, 0.08, 50.9);
+    southSidewalk.receiveShadow = true;
+    scene.add(southCityFoundation, southRoad, southSidewalk);
+    for (let index = -6; index <= 6; index += 1) {
+      const dash = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.025, 0.16), roadMarkingMaterial);
+      dash.position.set(index * 8.2, 0.075, 45);
+      scene.add(dash);
+    }
+    const southSkylineSpecs: Array<[number, number, number, number, string]> = [
+      [-52, 10, 11, 22, "#8b7c73"], [-39, 10, 12, 17, "#748889"], [-26, 11, 11, 27, "#968277"],
+      [-13, 10, 12, 20, "#73848e"], [0, 11, 11, 24, "#8e857b"], [14, 10, 12, 18, "#7b8f88"],
+      [27, 11, 11, 29, "#8e7972"], [40, 10, 12, 21, "#77898f"], [52, 10, 11, 25, "#97867a"],
+    ];
+    southSkylineSpecs.forEach(([x, width, depth, height, color], index) => {
+      const tower = createCityTower(width, depth, height, color, index % 2 ? "#425e66" : "#4b6269");
+      tower.position.set(x, 0, 58 + (index % 2) * 1.2);
+      tower.rotation.y = Math.PI;
+      scene.add(tower);
+    });
     [-1, 1].forEach((side) => {
-      [-23, -7, 10, 27].forEach((z, index) => {
+      [-40, -23, -7, 10, 27, 43].forEach((z, index) => {
         const pad = box([13, 0.22, 13], "#9fa09a", 0.95);
         pad.position.set(side * 55, 0.02, z);
-        const tower = createCityTower(10.5, 10.5, 13 + index * 2.6, index % 2 ? "#8d8177" : "#748687");
+        const tower = createCityTower(10.5, 10.5, 13 + (index % 4) * 2.8, index % 2 ? "#8d8177" : "#748687");
         tower.position.set(side * 55, 0, z);
         tower.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
         scene.add(pad, tower);
