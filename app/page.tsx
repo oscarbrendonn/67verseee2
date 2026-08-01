@@ -674,6 +674,7 @@ export default function Home() {
         </nav>
 
         <div className="top-actions">
+          <a className="game-link" href="/play">★ TAM EKRAN OYUN</a>
           <button className="quiet" onClick={loadLocal}>Yükle</button>
           <button className="quiet" onClick={saveLocal}>Kaydet</button>
           <button className="quiet" onClick={exportMap}>JSON ↓</button>
