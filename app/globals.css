@@ -636,7 +636,9 @@ button { color: inherit; }
   .party-stick .left { top: 41px; left: 2px; }
   .party-stick .right { top: 41px; right: 2px; }
   .party-stick > span { position: absolute; top: 50%; left: 50%; width: 30px; height: 30px; transform: translate(-50%, -50%); border-radius: 50%; background: #deded9; }
+  .party-action-stack { display: flex; align-items: flex-end; gap: 9px; pointer-events: auto; }
   .party-action { width: 70px; height: 70px; display: grid; place-items: center; padding: 0; border: 1px solid rgba(255, 255, 255, .4); border-radius: 22px; color: #fff; background: #171c1f; box-shadow: 0 14px 34px rgba(21, 29, 32, .2); }
+  .party-action.dash { width: 54px; height: 54px; border-radius: 18px; background: #596c64; }
   .party-action:active { transform: scale(.91); background: #343b3e; }
 }
 

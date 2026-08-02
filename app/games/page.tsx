@@ -22,6 +22,7 @@ import { UsersThree } from "@phosphor-icons/react/UsersThree";
 
 type Mode = "tag" | "balloon" | "skyway";
 type Screen = "menu" | "intro" | "playing" | "result" | "series";
+type CharacterActionName = "idle" | "walk" | "run" | "jump" | "fall" | "land" | "celebrate";
 
 type ModeInfo = {
   id: Mode;
@@ -237,7 +238,8 @@ export default function PartyGamesPage() {
   const hostRef = useRef<HTMLDivElement>(null);
   const keysRef = useRef(new Set<string>());
   const inputPulseRef = useRef(new THREE.Vector3());
-  const actionRef = useRef(false);
+  const jumpRequestRef = useRef(false);
+  const dashRequestRef = useRef(false);
   const phaseRef = useRef<Screen>("menu");
   const finishRef = useRef<(result: RoundResult) => void>(() => undefined);
   const [screen, setScreen] = useState<Screen>("menu");
@@ -280,7 +282,8 @@ export default function PartyGamesPage() {
 
   const startMatch = () => {
     keysRef.current.clear();
-    actionRef.current = false;
+    jumpRequestRef.current = false;
+    dashRequestRef.current = false;
     phaseRef.current = "playing";
     setScreen("playing");
     window.requestAnimationFrame(() => hostRef.current?.focus({ preventScroll: true }));
@@ -443,6 +446,20 @@ export default function PartyGamesPage() {
     scene.add(player);
     if (mode === "balloon") attachBalloons(player, "#ef5e6b");
 
+    const actionSpeed: Record<CharacterActionName, number> = { idle: 0.82, walk: 1.5, run: 1.08, jump: 1.18, fall: 0.94, land: 1.24, celebrate: 1 };
+    const playerActions: Partial<Record<CharacterActionName, THREE.AnimationAction>> = {};
+    let playerMixer: THREE.AnimationMixer | null = null;
+    let currentPlayerAction: THREE.AnimationAction | null = null;
+    const playPlayerAction = (name: CharacterActionName, fade = 0.14) => {
+      const next = playerActions[name];
+      if (!next || next === currentPlayerAction) return;
+      next.reset().setEffectiveTimeScale(actionSpeed[name]).setEffectiveWeight(1);
+      next.setLoop(THREE.LoopRepeat, Infinity);
+      next.play();
+      if (currentPlayerAction) currentPlayerAction.crossFadeTo(next, fade, false);
+      currentPlayerAction = next;
+    };
+
     new GLTFLoader().load("/models/sixseven-superhero-hero-v6.glb", (gltf) => {
       if (disposed) return;
       const model = gltf.scene;
@@ -462,6 +479,15 @@ export default function PartyGamesPage() {
       });
       (player.userData.fallback as THREE.Object3D[]).forEach((object) => { object.visible = false; });
       (player.userData.visual as THREE.Group).add(model);
+      playerMixer = new THREE.AnimationMixer(model);
+      gltf.animations.forEach((clip) => {
+        const name = clip.name.toLowerCase() as CharacterActionName;
+        if (["idle", "walk", "run", "jump", "fall", "land", "celebrate"].includes(name)) {
+          const stableClip = new THREE.AnimationClip(name, clip.duration, clip.tracks.filter((track) => track.name.endsWith(".quaternion")));
+          playerActions[name] = playerMixer?.clipAction(stableClip);
+        }
+      });
+      playPlayerAction("idle", 0);
     }, undefined, () => undefined);
 
     const bots: Bot[] = BOT_COLORS.map((color, index) => {
@@ -502,14 +528,16 @@ export default function PartyGamesPage() {
         if (controlCode === "KeyA" || controlCode === "ArrowLeft") inputPulse.x -= 1;
         if (controlCode === "KeyD" || controlCode === "ArrowRight") inputPulse.x += 1;
       }
-      const actionKeys = mode === "skyway" ? ["Space"] : ["Space", "ShiftLeft", "ShiftRight", "KeyE"];
-      if (!event.repeat && actionKeys.includes(controlCode)) actionRef.current = true;
+      if (!event.repeat && (controlCode === "Space" || controlCode === "KeyJ")) jumpRequestRef.current = true;
+      if (!event.repeat && mode !== "skyway" && ["ShiftLeft", "ShiftRight", "KeyE"].includes(controlCode)) dashRequestRef.current = true;
       if (!event.repeat && controlCode === "Escape") returnToMenu();
     };
     const onKeyUp = (event: KeyboardEvent) => keysRef.current.delete(controlCodeFromEvent(event));
     const clearKeys = () => {
       keysRef.current.clear();
       inputPulse.set(0, 0, 0);
+      jumpRequestRef.current = false;
+      dashRequestRef.current = false;
     };
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
@@ -574,7 +602,7 @@ export default function PartyGamesPage() {
       tagCooldown = Math.max(0, tagCooldown - delta);
       playerDash = Math.max(0, playerDash - delta);
       playerDashCooldown = Math.max(0, playerDashCooldown - delta);
-      if (actionRef.current && playerDashCooldown <= 0) {
+      if (dashRequestRef.current && playerDashCooldown <= 0) {
         playerDash = 0.34;
         playerDashCooldown = 1.45;
       }
@@ -601,7 +629,7 @@ export default function PartyGamesPage() {
         bot.root.position.addScaledVector(bot.velocity, delta);
         bot.root.position.x = THREE.MathUtils.clamp(bot.root.position.x, -20.5, 20.5);
         bot.root.position.z = THREE.MathUtils.clamp(bot.root.position.z, -20.5, 20.5);
-        if (bot.velocity.lengthSq() > 0.1) bot.root.rotation.y = Math.atan2(bot.velocity.x, bot.velocity.z);
+        if (bot.velocity.lengthSq() > 0.1) bot.root.rotation.y = Math.atan2(-bot.velocity.x, -bot.velocity.z);
 
         if (tagCooldown <= 0 && bot.root.position.distanceTo(player.position) < 1.35) {
           if (playerIsIt) {
@@ -624,7 +652,7 @@ export default function PartyGamesPage() {
       playerDash = Math.max(0, playerDash - delta);
       playerDashCooldown = Math.max(0, playerDashCooldown - delta);
       const finalGust = remaining < 20;
-      if (actionRef.current && playerDashCooldown <= 0 && playerBalloons > 0) {
+      if (dashRequestRef.current && playerDashCooldown <= 0 && playerBalloons > 0) {
         playerDash = 0.42;
         playerDashCooldown = finalGust ? 0.85 : 1.5;
       }
@@ -651,7 +679,7 @@ export default function PartyGamesPage() {
         bot.root.position.addScaledVector(bot.velocity, delta * (bot.dash > 0 ? 13 : 5.2));
         bot.root.position.x = THREE.MathUtils.clamp(bot.root.position.x, -20.5, 20.5);
         bot.root.position.z = THREE.MathUtils.clamp(bot.root.position.z, -20.5, 20.5);
-        if (bot.velocity.lengthSq() > 0.1) bot.root.rotation.y = Math.atan2(bot.velocity.x, bot.velocity.z);
+        if (bot.velocity.lengthSq() > 0.1) bot.root.rotation.y = Math.atan2(-bot.velocity.x, -bot.velocity.z);
 
         const hitDistance = bot.root.position.distanceTo(player.position);
         if (hitDistance < 1.38 && bot.hitCooldown <= 0) {
@@ -676,8 +704,8 @@ export default function PartyGamesPage() {
       }
     };
 
-    const updateSkyway = (delta: number) => {
-      if (actionRef.current && grounded) {
+    const updatePlayerJump = (delta: number) => {
+      if (jumpRequestRef.current && grounded) {
         verticalVelocity = 7.8;
         grounded = false;
       }
@@ -688,6 +716,9 @@ export default function PartyGamesPage() {
         verticalVelocity = 0;
         grounded = true;
       }
+    };
+
+    const updateSkyway = (delta: number) => {
       if (checkpoint < 1 && player.position.z < -27) checkpoint = 1;
       if (checkpoint < 2 && player.position.z < -64) checkpoint = 2;
       sweepers.forEach((sweeper, index) => {
@@ -705,7 +736,7 @@ export default function PartyGamesPage() {
         if (!bot.alive) return;
         bot.root.position.z -= delta * (7.2 + index * 0.32);
         bot.root.position.x = -5.2 + index * 2.6 + Math.sin(elapsed * 0.9 + index) * 0.45;
-        bot.root.rotation.y = Math.PI;
+        bot.root.rotation.y = 0;
         if (bot.root.position.z < -100) bot.alive = false;
       });
       if (player.position.z <= -99 || remaining <= 0) {
@@ -721,8 +752,10 @@ export default function PartyGamesPage() {
       animation = requestAnimationFrame(animate);
       timer.update();
       const delta = Math.min(timer.getDelta(), 0.04);
+      playerMixer?.update(delta);
       const playing = phaseRef.current === "playing" && !finished;
       let playerMoveAmount = 0;
+      let playerBoosting = false;
       if (playing) {
         elapsed += delta;
         remaining -= delta;
@@ -735,18 +768,20 @@ export default function PartyGamesPage() {
         if (keysRef.current.has("KeyD") || keysRef.current.has("ArrowRight")) input.x += 1;
         input.add(inputPulse);
         inputPulse.set(0, 0, 0);
-        // Skyway is a race, so the rider rolls forward automatically. W/Shift
-        // boosts the run, A/D steer, and S acts as a brake.
-        const skywayBraking = mode === "skyway" && backHeld && !forwardHeld;
-        if (mode === "skyway") input.z = skywayBraking ? 0 : -1;
         if (input.lengthSq() > 0) input.normalize();
         playerMoveAmount = Math.min(1, input.length());
         const isDash = (mode === "tag" || mode === "balloon") && playerDash > 0;
         const boost = mode === "skyway" && (forwardHeld || keysRef.current.has("ShiftLeft") || keysRef.current.has("ShiftRight"));
+        playerBoosting = isDash || boost;
         const baseSpeed = mode === "tag" ? 8.1 : mode === "balloon" ? 7.3 : 9.2;
         const speed = baseSpeed * (isDash ? 1.9 : boost ? 1.28 : 1);
         player.position.addScaledVector(input, delta * speed);
-        if (input.lengthSq() > 0.01) player.rotation.y = Math.atan2(input.x, input.z);
+        if (input.lengthSq() > 0.01) {
+          const targetHeading = Math.atan2(-input.x, -input.z);
+          const headingDelta = Math.atan2(Math.sin(targetHeading - player.rotation.y), Math.cos(targetHeading - player.rotation.y));
+          player.rotation.y += headingDelta * (1 - Math.exp(-14 * delta));
+        }
+        updatePlayerJump(delta);
         if (mode === "skyway") {
           player.position.x = THREE.MathUtils.clamp(player.position.x, -7.1, 7.1);
           player.position.z = THREE.MathUtils.clamp(player.position.z, -101, 28);
@@ -757,7 +792,8 @@ export default function PartyGamesPage() {
           if (mode === "tag") updateTag(delta);
           else updateBalloon(delta);
         }
-        actionRef.current = false;
+        jumpRequestRef.current = false;
+        dashRequestRef.current = false;
         if (performance.now() - uiSample > 90) {
           updateHud();
           uiSample = performance.now();
@@ -770,6 +806,13 @@ export default function PartyGamesPage() {
       playerVisual.rotation.x = THREE.MathUtils.damp(playerVisual.rotation.x, input.z * 0.055, 12, delta);
       const strideScale = playing && playerMoveAmount > 0.01 ? 1 + Math.sin(elapsed * 11) * 0.018 : 1;
       playerVisual.scale.set(1, strideScale, 1);
+      if (playing) {
+        if (!grounded) playPlayerAction(verticalVelocity > 0 ? "jump" : "fall", 0.1);
+        else if (playerMoveAmount > 0.01) playPlayerAction(playerBoosting ? "run" : "walk", 0.12);
+        else playPlayerAction("idle", 0.14);
+      } else {
+        playPlayerAction("idle", 0.16);
+      }
       bots.forEach((bot, index) => {
         const botVisual = bot.root.userData.visual as THREE.Group;
         const botMoving = playing && bot.root.visible;
@@ -836,7 +879,8 @@ export default function PartyGamesPage() {
     window.requestAnimationFrame(() => press(code, false));
   };
 
-  const triggerAction = () => { actionRef.current = true; };
+  const triggerJump = () => { jumpRequestRef.current = true; };
+  const triggerDash = () => { dashRequestRef.current = true; };
   const activeInfo = activeMode ? MODES[activeMode] : null;
   const totalSeriesScore = seriesResults.reduce((total, result) => total + result.score, 0);
   const averagePlacement = seriesResults.length
@@ -935,8 +979,9 @@ export default function PartyGamesPage() {
             <h1>{activeInfo.name}</h1>
             <p>{activeInfo.objective}</p>
             <div className="party-control-guide">
-              <span><kbd>{activeMode === "skyway" ? "A / D" : "WASD"}</kbd><small>{activeMode === "skyway" ? "STEER" : "MOVE"}</small></span>
-              <span><kbd>{activeMode === "skyway" ? "SPACE" : "SHIFT"}</kbd><small>{activeMode === "skyway" ? "JUMP" : "DASH"}</small></span>
+              <span><kbd>WASD</kbd><small>MOVE</small></span>
+              <span><kbd>SPACE</kbd><small>JUMP</small></span>
+              <span><kbd>SHIFT</kbd><small>{activeMode === "skyway" ? "BOOST" : "DASH"}</small></span>
             </div>
             <button type="button" onClick={startMatch}>JOIN PUBLIC MATCH</button>
             <button type="button" className="party-text-action" onClick={returnToMenu}>BACK TO GAME SELECT</button>
@@ -954,7 +999,7 @@ export default function PartyGamesPage() {
           </section>
           <div className="party-progress"><span style={{ width: `${Math.min(100, Math.max(0, hud.progress))}%` }} /></div>
           <div className="party-objective">{hud.message}</div>
-          <div className="party-desktop-tip">{activeMode === "skyway" ? "AUTO-RUN · A/D TO STEER · S TO BRAKE · SPACE TO JUMP" : "WASD TO MOVE · SHIFT OR E TO DASH"}</div>
+          <div className="party-desktop-tip">{activeMode === "skyway" ? "WASD TO MOVE · SHIFT TO BOOST · SPACE TO JUMP" : "WASD TO MOVE · SHIFT OR E TO DASH · SPACE TO JUMP"}</div>
           <div className="party-mobile-controls" aria-label="Mobile game controls">
             <div className="party-stick">
               <button className="up" aria-label="Move forward" onClick={() => tapMove("KeyW")} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyW", true); }} onPointerUp={() => press("KeyW", false)} onPointerCancel={() => press("KeyW", false)} onLostPointerCapture={() => press("KeyW", false)}><CaretUp size={22} weight="bold" /></button>
@@ -963,9 +1008,10 @@ export default function PartyGamesPage() {
               <button className="right" aria-label="Move right" onClick={() => tapMove("KeyD")} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyD", true); }} onPointerUp={() => press("KeyD", false)} onPointerCancel={() => press("KeyD", false)} onLostPointerCapture={() => press("KeyD", false)}><CaretRight size={22} weight="bold" /></button>
               <button className="down" aria-label="Move backward" onClick={() => tapMove("KeyS")} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyS", true); }} onPointerUp={() => press("KeyS", false)} onPointerCancel={() => press("KeyS", false)} onLostPointerCapture={() => press("KeyS", false)}><CaretDown size={22} weight="bold" /></button>
             </div>
-            <button type="button" className="party-action" aria-label={activeMode === "skyway" ? "Jump" : "Dash"} onPointerDown={triggerAction}>
-              {activeMode === "skyway" ? <ArrowUp size={27} weight="bold" /> : <Lightning size={27} weight="fill" />}
-            </button>
+            <div className="party-action-stack">
+              {activeMode !== "skyway" && <button type="button" className="party-action dash" aria-label="Dash" onPointerDown={triggerDash}><Lightning size={24} weight="fill" /></button>}
+              <button type="button" className="party-action jump" aria-label="Jump" onPointerDown={triggerJump}><ArrowUp size={27} weight="bold" /></button>
+            </div>
           </div>
         </>
       )}
