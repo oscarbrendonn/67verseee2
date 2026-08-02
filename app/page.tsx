@@ -50,34 +50,34 @@ type LogicRule = {
 };
 
 const palette: Array<{ type: ObjectType; title: string; icon: string; color: string }> = [
-  { type: "block", title: "Blok", icon: "■", color: "#ffcc66" },
-  { type: "sphere", title: "Küre", icon: "●", color: "#ff7e8f" },
-  { type: "ramp", title: "Rampa", icon: "◢", color: "#77d7c8" },
-  { type: "spinner", title: "Döner Engel", icon: "✣", color: "#9d86ff" },
-  { type: "moving", title: "Hareketli", icon: "↔", color: "#79b8ff" },
-  { type: "bounce", title: "Zıplatıcı", icon: "⌃", color: "#ff8ed7" },
-  { type: "spawn", title: "Doğma", icon: "◎", color: "#7be0b5" },
-  { type: "finish", title: "Bitiş", icon: "⚑", color: "#ffcf4f" },
-  { type: "trigger", title: "Tetik Alanı", icon: "◇", color: "#63d5ff" },
-  { type: "light", title: "Işık", icon: "✦", color: "#fff1a8" },
+  { type: "block", title: "Block", icon: "■", color: "#ffcc66" },
+  { type: "sphere", title: "Sphere", icon: "●", color: "#ff7e8f" },
+  { type: "ramp", title: "Ramp", icon: "◢", color: "#77d7c8" },
+  { type: "spinner", title: "Spinner", icon: "✣", color: "#9d86ff" },
+  { type: "moving", title: "Moving Platform", icon: "↔", color: "#79b8ff" },
+  { type: "bounce", title: "Bounce Pad", icon: "⌃", color: "#ff8ed7" },
+  { type: "spawn", title: "Spawn", icon: "◎", color: "#7be0b5" },
+  { type: "finish", title: "Finish", icon: "⚑", color: "#ffcf4f" },
+  { type: "trigger", title: "Trigger Zone", icon: "◇", color: "#63d5ff" },
+  { type: "light", title: "Light", icon: "✦", color: "#fff1a8" },
 ];
 
 const initialObjects: MapObject[] = [
-  { id: "ground-a", label: "Başlangıç Platformu", type: "block", position: [0, -0.5, 0], rotation: [0, 0, 0], scale: [6, 0.5, 6], color: "#cfd8ff", motion: "none" },
-  { id: "ramp-a", label: "Yumuşak Rampa", type: "ramp", position: [0, 0.4, -5], rotation: [-0.3, 0, 0], scale: [3.2, 0.45, 4], color: "#77d7c8", motion: "none" },
-  { id: "island-b", label: "Orta Ada", type: "block", position: [0, 1.3, -10], rotation: [0, 0, 0], scale: [6, 0.55, 5], color: "#ffd277", motion: "none" },
-  { id: "spinner-a", label: "Döner Engel", type: "spinner", position: [0, 2.05, -10], rotation: [0, 0, 0], scale: [1, 1, 1], color: "#9d86ff", motion: "spin" },
-  { id: "move-a", label: "Gezinen Platform", type: "moving", position: [0, 2.2, -16], rotation: [0, 0, 0], scale: [2.7, 0.35, 2.7], color: "#79b8ff", motion: "patrol" },
-  { id: "island-c", label: "Final Adası", type: "block", position: [0, 0.6, -22], rotation: [0, 0, 0], scale: [6, 0.55, 5], color: "#ffc4df", motion: "none" },
-  { id: "spawn-a", label: "Oyuncu Doğma Noktası", type: "spawn", position: [0, 0.25, 1.5], rotation: [0, 0, 0], scale: [1, 1, 1], color: "#7be0b5", motion: "none" },
-  { id: "finish-a", label: "Bitiş Kapısı", type: "finish", position: [0, 1.3, -22], rotation: [0, 0, 0], scale: [1.3, 1.3, 1.3], color: "#ffcf4f", motion: "none" },
-  { id: "trigger-a", label: "Final Tetik Alanı", type: "trigger", position: [0, 0.7, -20.5], rotation: [0, 0, 0], scale: [3, 1.3, 2], color: "#63d5ff", motion: "none" },
-  { id: "light-a", label: "Final Işığı", type: "light", position: [0, 5.5, -21], rotation: [0, 0, 0], scale: [1, 1, 1], color: "#fff1a8", motion: "float" },
+  { id: "ground-a", label: "Start Platform", type: "block", position: [0, -0.5, 0], rotation: [0, 0, 0], scale: [6, 0.5, 6], color: "#cfd8ff", motion: "none" },
+  { id: "ramp-a", label: "Soft Ramp", type: "ramp", position: [0, 0.4, -5], rotation: [-0.3, 0, 0], scale: [3.2, 0.45, 4], color: "#77d7c8", motion: "none" },
+  { id: "island-b", label: "Middle Island", type: "block", position: [0, 1.3, -10], rotation: [0, 0, 0], scale: [6, 0.55, 5], color: "#ffd277", motion: "none" },
+  { id: "spinner-a", label: "Spinner", type: "spinner", position: [0, 2.05, -10], rotation: [0, 0, 0], scale: [1, 1, 1], color: "#9d86ff", motion: "spin" },
+  { id: "move-a", label: "Patrol Platform", type: "moving", position: [0, 2.2, -16], rotation: [0, 0, 0], scale: [2.7, 0.35, 2.7], color: "#79b8ff", motion: "patrol" },
+  { id: "island-c", label: "Finish Island", type: "block", position: [0, 0.6, -22], rotation: [0, 0, 0], scale: [6, 0.55, 5], color: "#ffc4df", motion: "none" },
+  { id: "spawn-a", label: "Player Spawn", type: "spawn", position: [0, 0.25, 1.5], rotation: [0, 0, 0], scale: [1, 1, 1], color: "#7be0b5", motion: "none" },
+  { id: "finish-a", label: "Finish Gate", type: "finish", position: [0, 1.3, -22], rotation: [0, 0, 0], scale: [1.3, 1.3, 1.3], color: "#ffcf4f", motion: "none" },
+  { id: "trigger-a", label: "Finish Trigger", type: "trigger", position: [0, 0.7, -20.5], rotation: [0, 0, 0], scale: [3, 1.3, 2], color: "#63d5ff", motion: "none" },
+  { id: "light-a", label: "Finish Light", type: "light", position: [0, 5.5, -21], rotation: [0, 0, 0], scale: [1, 1, 1], color: "#fff1a8", motion: "float" },
 ];
 
 const initialRules: LogicRule[] = [
-  { id: "rule-1", event: "Oyuncu Final Tetik Alanına girer", condition: "Oyuncu aktif ve tur bitmemiş", action: "Bitiş kapısını aç + başarı mesajını göster", enabled: true },
-  { id: "rule-2", event: "Oyun başlar", condition: "Her zaman", action: "Döner engeli ve gezinen platformu başlat", enabled: true },
+  { id: "rule-1", event: "Player enters the finish trigger", condition: "Player is active and the round is not complete", action: "Open the finish gate and show the success message", enabled: true },
+  { id: "rule-2", event: "Game starts", condition: "Always", action: "Start the spinner and moving platform", enabled: true },
 ];
 
 const initialWorld: WorldSettings = {
@@ -204,9 +204,9 @@ export default function Home() {
   const [world, setWorld] = useState<WorldSettings>(initialWorld);
   const [rules, setRules] = useState<LogicRule[]>(initialRules);
   const [prefabs, setPrefabs] = useState<MapObject[]>([]);
-  const [toast, setToast] = useState("Sahne hazır");
+  const [toast, setToast] = useState("Scene ready");
   const [stats, setStats] = useState({ fps: 60, calls: 0, triangles: 0 });
-  const [runtimeMessage, setRuntimeMessage] = useState("WASD ile hareket et · Space ile zıpla");
+  const [runtimeMessage, setRuntimeMessage] = useState("Use WASD to move · Press Space to jump");
   const [editorAccess, setEditorAccess] = useState(false);
 
   useEffect(() => {
@@ -429,7 +429,7 @@ export default function Home() {
         }
         if (player.position.z < -19.5 && !won) {
           won = true;
-          setRuntimeMessage("Harika! Final tetiklendi · Harita tamamlandı");
+          setRuntimeMessage("Great run! Finish triggered · Map complete");
         }
         if (player.position.z > -19.5 && won) won = false;
       }
@@ -529,7 +529,7 @@ export default function Home() {
       player.position.set(spawn?.position[0] ?? 0, (spawn?.position[1] ?? 0) + 0.72, spawn?.position[2] ?? 1.5);
       velocityRef.current.set(0, 0, 0);
       queueMicrotask(() => {
-        setRuntimeMessage("WASD ile hareket et · Space ile zıpla");
+        setRuntimeMessage("Use WASD to move · Press Space to jump");
         setSelectedId(null);
       });
       orbit.target.copy(player.position).add(new THREE.Vector3(0, 0, -7));
@@ -556,14 +556,14 @@ export default function Home() {
     setObjects((current) => [...current, item]);
     setSelectedId(id);
     setTab("object");
-    setToast(`${item.label} sahneye eklendi`);
+    setToast(`${item.label} added to the scene`);
   };
 
   const removeSelected = () => {
     if (!selected) return;
     setObjects((current) => current.filter((item) => item.id !== selected.id));
     setSelectedId(null);
-    setToast(`${selected.label} silindi`);
+    setToast(`${selected.label} deleted`);
   };
 
   const duplicateSelected = () => selected && addObject(selected.type, selected);
@@ -571,12 +571,12 @@ export default function Home() {
   const savePrefab = () => {
     if (!selected) return;
     setPrefabs((current) => [...current, { ...selected, id: nextId(), label: `${selected.label} Prefab` }]);
-    setToast("Prefab kütüphaneye kaydedildi");
+    setToast("Prefab saved to the library");
   };
 
   const saveLocal = () => {
     localStorage.setItem("67verse-map", JSON.stringify({ version: 1, objects, world, rules, prefabs }));
-    setToast("Harita bu cihaza kaydedildi");
+    setToast("Map saved to this device");
   };
 
   const exportMap = () => {
@@ -587,7 +587,7 @@ export default function Home() {
     anchor.download = "67verse-map.json";
     anchor.click();
     URL.revokeObjectURL(url);
-    setToast("Harita JSON olarak dışa aktarıldı");
+    setToast("Map exported as JSON");
   };
 
   const importMap = (event: ChangeEvent<HTMLInputElement>) => {
@@ -603,9 +603,9 @@ export default function Home() {
         if (Array.isArray(data.rules)) setRules(data.rules);
         if (Array.isArray(data.prefabs)) setPrefabs(data.prefabs);
         setSelectedId(null);
-        setToast("Harita başarıyla içe aktarıldı");
+        setToast("Map imported successfully");
       } catch {
-        setToast("Bu dosya geçerli bir 67VERSE haritası değil");
+        setToast("This file is not a valid 67VERSE map");
       }
     };
     reader.readAsText(file);
@@ -615,7 +615,7 @@ export default function Home() {
   const loadLocal = () => {
     const raw = localStorage.getItem("67verse-map") ?? localStorage.getItem("eggnova-map");
     if (!raw) {
-      setToast("Bu cihazda kayıtlı harita bulunamadı");
+      setToast("No saved map was found on this device");
       return;
     }
     try {
@@ -625,9 +625,9 @@ export default function Home() {
       setRules(data.rules ?? initialRules);
       setPrefabs(data.prefabs ?? []);
       setSelectedId(null);
-      setToast("Yerel kayıt yüklendi");
+      setToast("Local map loaded");
     } catch {
-      setToast("Yerel kayıt okunamadı");
+      setToast("The local save could not be read");
     }
   };
 
@@ -658,7 +658,7 @@ export default function Home() {
   );
 
   if (!editorAccess) {
-    return <main className="route-loader"><span>E</span><b>OYUN YÜKLENİYOR</b><i /></main>;
+    return <main className="route-loader"><span>67</span><b>LOADING GAME</b><i /></main>;
   }
 
   return (
@@ -675,84 +675,84 @@ export default function Home() {
         <div className="project-chip">
           <span className="status-dot" />
           <div>
-            <small>PROJE</small>
-            <b>Sky Sprint / Bölüm 01</b>
+            <small>PROJECT</small>
+            <b>Sky Sprint / Chapter 01</b>
           </div>
         </div>
 
-        <nav className="tool-cluster" aria-label="Dönüşüm araçları">
-          <button className={tool === "translate" ? "active" : ""} onClick={() => setTool("translate")} title="Taşı (W)">↗ <kbd>W</kbd></button>
-          <button className={tool === "rotate" ? "active" : ""} onClick={() => setTool("rotate")} title="Döndür (E)">↻ <kbd>E</kbd></button>
-          <button className={tool === "scale" ? "active" : ""} onClick={() => setTool("scale")} title="Ölçekle (R)">⤢ <kbd>R</kbd></button>
+        <nav className="tool-cluster" aria-label="Transform tools">
+          <button className={tool === "translate" ? "active" : ""} onClick={() => setTool("translate")} title="Move (W)">↗ <kbd>W</kbd></button>
+          <button className={tool === "rotate" ? "active" : ""} onClick={() => setTool("rotate")} title="Rotate (E)">↻ <kbd>E</kbd></button>
+          <button className={tool === "scale" ? "active" : ""} onClick={() => setTool("scale")} title="Scale (R)">⤢ <kbd>R</kbd></button>
         </nav>
 
         <div className="top-actions">
-          <a className="game-link" href="/play">★ TAM EKRAN OYUN</a>
-          <button className="quiet" onClick={loadLocal}>Yükle</button>
-          <button className="quiet" onClick={saveLocal}>Kaydet</button>
+          <a className="game-link" href="/games">★ PARTY GAMES</a>
+          <button className="quiet" onClick={loadLocal}>Load</button>
+          <button className="quiet" onClick={saveLocal}>Save</button>
           <button className="quiet" onClick={exportMap}>JSON ↓</button>
           <button className={`play-button ${isPlaying ? "playing" : ""}`} onClick={() => setIsPlaying((value) => !value)}>
-            {isPlaying ? "■ Düzenlemeye dön" : "▶ Haritayı oyna"}
+            {isPlaying ? "■ Return to editing" : "▶ Play map"}
           </button>
         </div>
       </header>
 
       <aside className="asset-panel">
         <div className="panel-heading">
-          <div><span>VARLIK KÜTÜPHANESİ</span><strong>Komponentler</strong></div>
-          <button className="icon-button" title="Ara">⌕</button>
+          <div><span>ASSET LIBRARY</span><strong>Components</strong></div>
+          <button className="icon-button" title="Search">⌕</button>
         </div>
         <div className="asset-scroll">
-          <p className="section-kicker">TEMEL PARÇALAR</p>
+          <p className="section-kicker">BASIC PARTS</p>
           <div className="asset-grid">
             {palette.slice(0, 3).map((item) => (
               <button key={item.type} className="asset-card" onClick={() => addObject(item.type)}>
                 <span className="asset-icon" style={{ "--asset": item.color } as React.CSSProperties}>{item.icon}</span>
-                <b>{item.title}</b><small>Sahneye ekle</small>
+                <b>{item.title}</b><small>Add to scene</small>
               </button>
             ))}
           </div>
-          <p className="section-kicker">MEKANİZMALAR</p>
+          <p className="section-kicker">MECHANISMS</p>
           <div className="asset-grid">
             {palette.slice(3, 6).map((item) => (
               <button key={item.type} className="asset-card" onClick={() => addObject(item.type)}>
                 <span className="asset-icon" style={{ "--asset": item.color } as React.CSSProperties}>{item.icon}</span>
-                <b>{item.title}</b><small>Davranışlı</small>
+                <b>{item.title}</b><small>Interactive</small>
               </button>
             ))}
           </div>
-          <p className="section-kicker">OYUN AKIŞI</p>
+          <p className="section-kicker">GAME FLOW</p>
           <div className="asset-grid">
             {palette.slice(6).map((item) => (
               <button key={item.type} className="asset-card" onClick={() => addObject(item.type)}>
                 <span className="asset-icon" style={{ "--asset": item.color } as React.CSSProperties}>{item.icon}</span>
-                <b>{item.title}</b><small>Mantık öğesi</small>
+                <b>{item.title}</b><small>Logic item</small>
               </button>
             ))}
           </div>
           {prefabs.length > 0 && (
             <>
-              <p className="section-kicker">BENİM PREFABLARIM</p>
+              <p className="section-kicker">MY PREFABS</p>
               <div className="prefab-list">
                 {prefabs.map((item) => <button key={item.id} onClick={() => addObject(item.type, item)}>◆ {item.label}</button>)}
               </div>
             </>
           )}
         </div>
-        <button className="import-button" onClick={() => inputRef.current?.click()}>↑ Harita dosyası içe aktar</button>
+        <button className="import-button" onClick={() => inputRef.current?.click()}>↑ Import map file</button>
         <input ref={inputRef} type="file" accept="application/json,.json" hidden onChange={importMap} />
       </aside>
 
       <section className="viewport-wrap">
-        <div ref={viewportRef} className="viewport" aria-label="Three.js üç boyutlu harita sahnesi" />
-        <div className="viewport-badge"><span>3D</span> PERSPEKTİF <b>48°</b></div>
-        <div className="scene-path"><span>SAHNE</span><b>/</b><span>Sky Sprint</span><b>/</b><strong>{selected?.label ?? "Kök"}</strong></div>
-        {!isPlaying && <div className="viewport-help">Sol tık: seç · Sağ tık: kamerayı döndür · Tekerlek: yakınlaş</div>}
+        <div ref={viewportRef} className="viewport" aria-label="Three.js 3D map scene" />
+        <div className="viewport-badge"><span>3D</span> PERSPECTIVE <b>48°</b></div>
+        <div className="scene-path"><span>SCENE</span><b>/</b><span>Sky Sprint</span><b>/</b><strong>{selected?.label ?? "Root"}</strong></div>
+        {!isPlaying && <div className="viewport-help">Left click: select · Right click: orbit camera · Wheel: zoom</div>}
         {isPlaying && (
           <div className="runtime-hud">
-            <span>CAN <b>100</b></span>
+            <span>HEALTH <b>100</b></span>
             <strong>{runtimeMessage}</strong>
-            <span>SÜRE <b>00:42</b></span>
+            <span>TIME <b>00:42</b></span>
           </div>
         )}
         <div className="axis-widget"><i className="x">X</i><i className="y">Y</i><i className="z">Z</i></div>
@@ -760,9 +760,9 @@ export default function Home() {
 
       <aside className="inspector-panel">
         <div className="inspector-tabs">
-          <button className={tab === "object" ? "active" : ""} onClick={() => setTab("object")}>NESNE</button>
+          <button className={tab === "object" ? "active" : ""} onClick={() => setTab("object")}>OBJECT</button>
           <button className={tab === "logic" ? "active" : ""} onClick={() => setTab("logic")}>EGGY CODE</button>
-          <button className={tab === "world" ? "active" : ""} onClick={() => setTab("world")}>DÜNYA</button>
+          <button className={tab === "world" ? "active" : ""} onClick={() => setTab("world")}>WORLD</button>
         </div>
 
         {tab === "object" && (
@@ -770,44 +770,44 @@ export default function Home() {
             <div className="inspector-scroll">
               <div className="selected-header">
                 <div className="selected-glyph" style={{ background: selected.color }}>{palette.find((p) => p.type === selected.type)?.icon}</div>
-                <div><small>SEÇİLİ NESNE</small><input value={selected.label} onChange={(event) => updateObject(selected.id, { label: event.target.value })} /></div>
-                <span className="live-pill">CANLI</span>
+                <div><small>SELECTED OBJECT</small><input value={selected.label} onChange={(event) => updateObject(selected.id, { label: event.target.value })} /></div>
+                <span className="live-pill">LIVE</span>
               </div>
               <div className="inspector-section">
-                <h3>DÖNÜŞÜM <span>⌄</span></h3>
-                {vectorField("Konum", selected.position, "position")}
-                {vectorField("Dönüş", selected.rotation, "rotation", true)}
-                {vectorField("Ölçek", selected.scale, "scale")}
+                <h3>TRANSFORM <span>⌄</span></h3>
+                {vectorField("Position", selected.position, "position")}
+                {vectorField("Rotation", selected.rotation, "rotation", true)}
+                {vectorField("Scale", selected.scale, "scale")}
               </div>
               <div className="inspector-section">
-                <h3>GÖRÜNÜM <span>⌄</span></h3>
-                <label className="wide-field"><span>Renk / Albedo</span><input type="color" value={selected.color} onChange={(event) => updateObject(selected.id, { color: event.target.value })} /></label>
+                <h3>APPEARANCE <span>⌄</span></h3>
+                <label className="wide-field"><span>Color / Albedo</span><input type="color" value={selected.color} onChange={(event) => updateObject(selected.id, { color: event.target.value })} /></label>
                 <div className="material-preview" style={{ "--material": selected.color } as React.CSSProperties}><span /><div><b>Soft Plastic</b><small>Roughness 0.58 · Metal 0.04</small></div></div>
               </div>
               <div className="inspector-section">
-                <h3>DAVRANIŞ <span>⌄</span></h3>
-                <label className="wide-field"><span>Hareket</span><select value={selected.motion} onChange={(event) => updateObject(selected.id, { motion: event.target.value as Motion })}><option value="none">Yok / Statik</option><option value="spin">Sürekli dön</option><option value="float">Süzül</option><option value="patrol">Yatay devriye</option></select></label>
-                <label className="toggle-row"><span>Fizik çarpışması<small>Basit kutu çarpışma</small></span><input type="checkbox" defaultChecked /></label>
-                <label className="toggle-row"><span>Gölge üret<small>Yumuşak gölge</small></span><input type="checkbox" defaultChecked /></label>
+                <h3>BEHAVIOR <span>⌄</span></h3>
+                <label className="wide-field"><span>Motion</span><select value={selected.motion} onChange={(event) => updateObject(selected.id, { motion: event.target.value as Motion })}><option value="none">None / Static</option><option value="spin">Continuous spin</option><option value="float">Float</option><option value="patrol">Horizontal patrol</option></select></label>
+                <label className="toggle-row"><span>Physics collision<small>Simple box collider</small></span><input type="checkbox" defaultChecked /></label>
+                <label className="toggle-row"><span>Cast shadow<small>Soft shadow</small></span><input type="checkbox" defaultChecked /></label>
               </div>
-              <div className="object-actions"><button onClick={duplicateSelected}>Kopyala</button><button onClick={savePrefab}>Prefab yap</button><button className="danger" onClick={removeSelected}>Sil</button></div>
+              <div className="object-actions"><button onClick={duplicateSelected}>Duplicate</button><button onClick={savePrefab}>Make prefab</button><button className="danger" onClick={removeSelected}>Delete</button></div>
             </div>
-          ) : <div className="empty-state"><span>◇</span><h2>Bir nesne seç</h2><p>Sahnedeki bir nesneye dokun veya kütüphaneden yeni komponent ekle.</p></div>
+          ) : <div className="empty-state"><span>◇</span><h2>Select an object</h2><p>Choose an object in the scene or add a new component from the library.</p></div>
         )}
 
         {tab === "logic" && (
           <div className="inspector-scroll logic-panel">
-            <div className="logic-title"><div><small>GÖRSEL OYUN MANTIĞI</small><h2>Eggy Code</h2></div><button onClick={() => setRules((current) => [...current, { id: nextId(), event: "Yeni olay", condition: "Her zaman", action: "Yeni eylem", enabled: true }])}>＋ Kural</button></div>
-            <p className="logic-intro">Olayı dinle, koşulu kontrol et ve haritada bir eylem çalıştır.</p>
+            <div className="logic-title"><div><small>VISUAL GAME LOGIC</small><h2>Eggy Code</h2></div><button onClick={() => setRules((current) => [...current, { id: nextId(), event: "New event", condition: "Always", action: "New action", enabled: true }])}>＋ Rule</button></div>
+            <p className="logic-intro">Listen for an event, check the condition and run an action in the map.</p>
             {rules.map((rule, index) => (
               <div className={`logic-flow ${rule.enabled ? "" : "disabled"}`} key={rule.id}>
-                <div className="logic-flow-head"><span>KURAL {String(index + 1).padStart(2, "0")}</span><label><input type="checkbox" checked={rule.enabled} onChange={() => setRules((current) => current.map((item) => item.id === rule.id ? { ...item, enabled: !item.enabled } : item))} /> Etkin</label></div>
-                <label className="node event-node"><span>OLAY</span><input value={rule.event} onChange={(event) => setRules((current) => current.map((item) => item.id === rule.id ? { ...item, event: event.target.value } : item))} /></label>
+                <div className="logic-flow-head"><span>RULE {String(index + 1).padStart(2, "0")}</span><label><input type="checkbox" checked={rule.enabled} onChange={() => setRules((current) => current.map((item) => item.id === rule.id ? { ...item, enabled: !item.enabled } : item))} /> Enabled</label></div>
+                <label className="node event-node"><span>EVENT</span><input value={rule.event} onChange={(event) => setRules((current) => current.map((item) => item.id === rule.id ? { ...item, event: event.target.value } : item))} /></label>
                 <i className="connector">↓</i>
-                <label className="node condition-node"><span>KOŞUL</span><input value={rule.condition} onChange={(event) => setRules((current) => current.map((item) => item.id === rule.id ? { ...item, condition: event.target.value } : item))} /></label>
+                <label className="node condition-node"><span>CONDITION</span><input value={rule.condition} onChange={(event) => setRules((current) => current.map((item) => item.id === rule.id ? { ...item, condition: event.target.value } : item))} /></label>
                 <i className="connector">↓</i>
-                <label className="node action-node"><span>EYLEM</span><textarea value={rule.action} onChange={(event) => setRules((current) => current.map((item) => item.id === rule.id ? { ...item, action: event.target.value } : item))} /></label>
-                <button className="delete-rule" onClick={() => setRules((current) => current.filter((item) => item.id !== rule.id))}>Kuralı sil</button>
+                <label className="node action-node"><span>ACTION</span><textarea value={rule.action} onChange={(event) => setRules((current) => current.map((item) => item.id === rule.id ? { ...item, action: event.target.value } : item))} /></label>
+                <button className="delete-rule" onClick={() => setRules((current) => current.filter((item) => item.id !== rule.id))}>Delete rule</button>
               </div>
             ))}
           </div>
@@ -815,20 +815,20 @@ export default function Home() {
 
         {tab === "world" && (
           <div className="inspector-scroll world-panel">
-            <div className="world-hero"><span>☀</span><div><small>DÜNYA AYARLARI</small><h2>Yumuşak Gökyüzü</h2></div></div>
+            <div className="world-hero"><span>☀</span><div><small>WORLD SETTINGS</small><h2>Soft Sky</h2></div></div>
             <div className="inspector-section">
-              <h3>ÇEVRE <span>⌄</span></h3>
-              <label className="wide-field"><span>Gökyüzü rengi</span><input type="color" value={world.sky} onChange={(event) => setWorld({ ...world, sky: event.target.value })} /></label>
-              <label className="wide-field"><span>Sis rengi</span><input type="color" value={world.fog} onChange={(event) => setWorld({ ...world, fog: event.target.value })} /></label>
-              <label className="range-field"><span>Güneş yoğunluğu <b>{world.sun.toFixed(1)}</b></span><input type="range" min="0" max="5" step="0.1" value={world.sun} onChange={(event) => setWorld({ ...world, sun: Number(event.target.value) })} /></label>
-              <label className="range-field"><span>Yer çekimi <b>{world.gravity}</b></span><input type="range" min="4" max="32" step="1" value={world.gravity} onChange={(event) => setWorld({ ...world, gravity: Number(event.target.value) })} /></label>
-              <label className="toggle-row"><span>Düzenleme ızgarası<small>90 × 90 dünya birimi</small></span><input type="checkbox" checked={world.grid} onChange={(event) => setWorld({ ...world, grid: event.target.checked })} /></label>
+              <h3>ENVIRONMENT <span>⌄</span></h3>
+              <label className="wide-field"><span>Sky color</span><input type="color" value={world.sky} onChange={(event) => setWorld({ ...world, sky: event.target.value })} /></label>
+              <label className="wide-field"><span>Fog color</span><input type="color" value={world.fog} onChange={(event) => setWorld({ ...world, fog: event.target.value })} /></label>
+              <label className="range-field"><span>Sun intensity <b>{world.sun.toFixed(1)}</b></span><input type="range" min="0" max="5" step="0.1" value={world.sun} onChange={(event) => setWorld({ ...world, sun: Number(event.target.value) })} /></label>
+              <label className="range-field"><span>Gravity <b>{world.gravity}</b></span><input type="range" min="4" max="32" step="1" value={world.gravity} onChange={(event) => setWorld({ ...world, gravity: Number(event.target.value) })} /></label>
+              <label className="toggle-row"><span>Editor grid<small>90 × 90 world units</small></span><input type="checkbox" checked={world.grid} onChange={(event) => setWorld({ ...world, grid: event.target.checked })} /></label>
             </div>
             <div className="inspector-section">
-              <h3>HARİTA KURALI <span>⌄</span></h3>
-              <label className="wide-field"><span>Oyun türü</span><select defaultValue="race"><option value="race">Yarış / Parkur</option><option value="survival">Hayatta kalma</option><option value="score">Skor</option><option value="sandbox">Sandbox</option></select></label>
-              <label className="wide-field"><span>Süre sınırı</span><div className="unit-input"><input type="number" defaultValue="180" /><i>sn</i></div></label>
-              <label className="toggle-row"><span>Düşünce yeniden doğ<small>Son kontrol noktasında</small></span><input type="checkbox" defaultChecked /></label>
+              <h3>MAP RULE <span>⌄</span></h3>
+              <label className="wide-field"><span>Game type</span><select defaultValue="race"><option value="race">Race / Course</option><option value="survival">Survival</option><option value="score">Score</option><option value="sandbox">Sandbox</option></select></label>
+              <label className="wide-field"><span>Time limit</span><div className="unit-input"><input type="number" defaultValue="180" /><i>sec</i></div></label>
+              <label className="toggle-row"><span>Respawn after falling<small>At the last checkpoint</small></span><input type="checkbox" defaultChecked /></label>
             </div>
           </div>
         )}
@@ -836,7 +836,7 @@ export default function Home() {
 
       <footer className="statusbar">
         <div className="toast"><span>✓</span>{toast}</div>
-        <div className="perf"><span><i className="green" /> {stats.fps} FPS</span><span>{stats.calls} DRAW</span><span>{stats.triangles.toLocaleString("tr-TR")} ÜÇGEN</span><span>{objects.length} NESNE</span><span>THREE r185</span></div>
+        <div className="perf"><span><i className="green" /> {stats.fps} FPS</span><span>{stats.calls} DRAW</span><span>{stats.triangles.toLocaleString("en-US")} TRIANGLES</span><span>{objects.length} OBJECTS</span><span>THREE r185</span></div>
       </footer>
     </main>
   );
