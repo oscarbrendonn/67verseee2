@@ -149,6 +149,72 @@ const getVenueHighlights = (venue: VenueInfo): Array<[string, string]> => {
   return [["NEW", "Latest arrivals"], ["CITY", "Local selection"], ["HELP", "Staff available"]];
 };
 
+type VenueServiceOption = {
+  name: string;
+  detail: string;
+  price: string;
+};
+
+const getVenueServiceOptions = (venue: VenueInfo): VenueServiceOption[] => {
+  if (venue.id === CENTRAL_STARBUCKS.id) return [
+    { name: "Flat White", detail: "Double espresso · steamed milk", price: "45 CR" },
+    { name: "Iced Matcha", detail: "Matcha · oat milk · ice", price: "52 CR" },
+    { name: "Butter Croissant", detail: "Fresh from the bakery case", price: "34 CR" },
+  ];
+  if (venue.id === CENTRAL_CITY_MARKET.id) return [
+    { name: "Fresh Fruit Pack", detail: "Seasonal fruit · ready to go", price: "38 CR" },
+    { name: "City Snacks", detail: "Three neighborhood favorites", price: "42 CR" },
+    { name: "Sparkling Water", detail: "Chilled · lime", price: "18 CR" },
+  ];
+  if (venue.id === CENTRAL_SKATE_SHOP.id || venue.category.includes("BOARD")) return [
+    { name: "Street Deck", detail: "8.25 inch · medium concave", price: "260 CR" },
+    { name: "City Wheels", detail: "54 mm · soft street setup", price: "140 CR" },
+    { name: "Workshop Tune", detail: "Trucks · bearings · grip check", price: "65 CR" },
+  ];
+
+  const { kind } = getVenueInteriorProfile(venue);
+  if (kind === "cafe") return [
+    { name: "House Coffee", detail: "Fresh brew · hot or iced", price: "32 CR" },
+    { name: "Oat Latte", detail: "Espresso · oat milk", price: "44 CR" },
+    { name: "Bakery Set", detail: "Pastry · house coffee", price: "58 CR" },
+  ];
+  if (kind === "food") return [
+    { name: "House Special", detail: "The neighborhood favorite", price: "72 CR" },
+    { name: "Street Plate", detail: "Made fresh at the counter", price: "64 CR" },
+    { name: "Cold Drink", detail: "Chilled house selection", price: "22 CR" },
+  ];
+  if (kind === "market") return [
+    { name: "Daily Essentials", detail: "A practical neighborhood bundle", price: "70 CR" },
+    { name: "Fresh Selection", detail: "Produce picked today", price: "48 CR" },
+    { name: "Quick Snack", detail: "Ready for the road", price: "24 CR" },
+  ];
+  if (kind === "nightlife") return [
+    { name: "Tonight's Pass", detail: "Main room · live set", price: "90 CR" },
+    { name: "Lounge Table", detail: "Reserved city-floor seating", price: "120 CR" },
+    { name: "House Soda", detail: "Citrus · zero alcohol", price: "28 CR" },
+  ];
+  if (kind === "fitness") return [
+    { name: "Open Session", detail: "Full training floor access", price: "55 CR" },
+    { name: "Coach Session", detail: "One guided city workout", price: "110 CR" },
+    { name: "Recovery Drink", detail: "Cold · citrus", price: "25 CR" },
+  ];
+  if (kind === "culture") return [
+    { name: "General Entry", detail: "Current city program", price: "45 CR" },
+    { name: "Local Edition", detail: "Limited neighborhood release", price: "80 CR" },
+    { name: "Member Pass", detail: "Return access this season", price: "150 CR" },
+  ];
+  if (kind === "service") return [
+    { name: "Quick Service", detail: "Standard inspection and setup", price: "55 CR" },
+    { name: "Full Service", detail: "Complete specialist session", price: "125 CR" },
+    { name: "Pickup", detail: "Collect a prepared order", price: "READY" },
+  ];
+  return [
+    { name: "City Essential", detail: "Everyday local selection", price: "45 CR" },
+    { name: "New Arrival", detail: "Latest in-store release", price: "85 CR" },
+    { name: "Staff Pick", detail: "Selected by the shop team", price: "60 CR" },
+  ];
+};
+
 const TOTAL_VENUES = Object.values(DISTRICT_VENUES).reduce((total, venues) => total + venues.length, 4);
 
 function surface(color: string, roughness = 0.78, metalness = 0.02) {
@@ -229,6 +295,7 @@ export default function LobbyPage() {
   const skatingRef = useRef(false);
   const mapOpenRef = useRef(false);
   const venueOpenRef = useRef(false);
+  const venueServiceOpenRef = useRef(false);
   const teleportRef = useRef<(destination: DistrictId | "park") => void>(() => undefined);
   const enterVenueRef = useRef<(venue: VenueInfo) => void>(() => undefined);
   const leaveVenueRef = useRef<() => void>(() => undefined);
@@ -241,6 +308,9 @@ export default function LobbyPage() {
   const [travelNotice, setTravelNotice] = useState<string | null>(null);
   const [nearbyVenue, setNearbyVenue] = useState<VenueInfo | null>(null);
   const [activeVenue, setActiveVenue] = useState<VenueInfo | null>(null);
+  const [nearVenueService, setNearVenueService] = useState(false);
+  const [venueServiceOpen, setVenueServiceOpen] = useState(false);
+  const [lastVenueOrder, setLastVenueOrder] = useState<VenueServiceOption | null>(null);
   const [discoveredVenues, setDiscoveredVenues] = useState<string[]>(() => {
     if (typeof window === "undefined") return [];
     try {
@@ -253,6 +323,7 @@ export default function LobbyPage() {
 
   useEffect(() => { mapOpenRef.current = mapOpen; }, [mapOpen]);
   useEffect(() => { venueOpenRef.current = Boolean(activeVenue); }, [activeVenue]);
+  useEffect(() => { venueServiceOpenRef.current = venueServiceOpen; }, [venueServiceOpen]);
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
@@ -1980,7 +2051,13 @@ export default function LobbyPage() {
       if (!event.repeat && (event.code === "KeyE" || event.code === "Enter")) interactRequestRef.current = true;
       if (event.code === "KeyM" && !venueOpenRef.current) setMapOpen((value) => !value);
       if (event.code === "Escape" && venueOpenRef.current) {
-        leaveVenueRef.current();
+        if (venueServiceOpenRef.current) {
+          venueServiceOpenRef.current = false;
+          setVenueServiceOpen(false);
+          keysRef.current.clear();
+        } else {
+          leaveVenueRef.current();
+        }
       }
     };
     const onKeyUp = (event: KeyboardEvent) => keysRef.current.delete(event.code);
@@ -2004,6 +2081,7 @@ export default function LobbyPage() {
     let travelNoticeTimer: number | undefined;
     let currentDistrictId: DistrictId | null = null;
     let nearbyVenueId: string | null = null;
+    let serviceNearby = false;
     let activeVenueInterior: THREE.Group | null = null;
     const venueReturnPosition = new THREE.Vector3();
     let venueReturnYaw = 0;
@@ -2072,9 +2150,14 @@ export default function LobbyPage() {
       velocityRef.current.set(0, 0, 0);
       supported = true;
       venueOpenRef.current = false;
+      venueServiceOpenRef.current = false;
       nearbyVenueId = null;
+      serviceNearby = false;
       setNearbyVenue(null);
       setActiveVenue(null);
+      setNearVenueService(false);
+      setVenueServiceOpen(false);
+      setLastVenueOrder(null);
       mapOpenRef.current = false;
       setMapOpen(false);
       if (travelNoticeTimer) window.clearTimeout(travelNoticeTimer);
@@ -2093,6 +2176,7 @@ export default function LobbyPage() {
 
     const enterVenueWorld = (venue: VenueInfo) => {
       venueOpenRef.current = true;
+      venueServiceOpenRef.current = false;
       velocityRef.current.set(0, 0, 0);
       const interior = venueInteriors.get(venue.id);
       if (interior && !activeVenueInterior) {
@@ -2108,13 +2192,25 @@ export default function LobbyPage() {
         cameraYaw = 0;
         supported = true;
       }
+      nearbyVenueId = null;
+      serviceNearby = false;
+      setNearbyVenue(null);
+      setNearVenueService(false);
+      setVenueServiceOpen(false);
+      setLastVenueOrder(null);
       setActiveVenue(venue);
       rememberVenue(venue);
     };
 
     const leaveVenueWorld = () => {
       venueOpenRef.current = false;
+      venueServiceOpenRef.current = false;
+      serviceNearby = false;
       setActiveVenue(null);
+      setNearVenueService(false);
+      setVenueServiceOpen(false);
+      setLastVenueOrder(null);
+      keysRef.current.clear();
       if (activeVenueInterior) {
         activeVenueInterior.visible = false;
         activeVenueInterior = null;
@@ -2232,7 +2328,66 @@ export default function LobbyPage() {
         traffic.vehicle.position.x = -64 + ((now * 0.001 * traffic.speed) % 128);
       });
 
-      if (!mapOpenRef.current && !venueOpenRef.current) {
+      if (!mapOpenRef.current && venueOpenRef.current && activeVenueInterior && !venueServiceOpenRef.current) {
+        const keys = keysRef.current;
+        const inputRight = Number(keys.has("KeyD") || keys.has("ArrowRight")) - Number(keys.has("KeyA") || keys.has("ArrowLeft"));
+        const inputForward = Number(keys.has("KeyW") || keys.has("ArrowUp")) - Number(keys.has("KeyS") || keys.has("ArrowDown"));
+        const controlForward = new THREE.Vector3(-Math.sin(cameraYaw), 0, -Math.cos(cameraYaw));
+        const controlRight = new THREE.Vector3(Math.cos(cameraYaw), 0, -Math.sin(cameraYaw));
+        const input = controlForward.multiplyScalar(inputForward).add(controlRight.multiplyScalar(inputRight));
+        if (input.lengthSq() > 0) input.normalize();
+        const running = keys.has("ShiftLeft") || keys.has("ShiftRight");
+        const walkSpeed = running ? 5.7 : 3.9;
+        velocityRef.current.x = THREE.MathUtils.damp(velocityRef.current.x, input.x * walkSpeed, 13, delta);
+        velocityRef.current.z = THREE.MathUtils.damp(velocityRef.current.z, input.z * walkSpeed, 13, delta);
+        velocityRef.current.y = 0;
+
+        const previousX = character.position.x;
+        const previousZ = character.position.z;
+        character.position.addScaledVector(velocityRef.current, delta);
+        character.position.x = THREE.MathUtils.clamp(character.position.x, -7.45, 7.45);
+        character.position.z = THREE.MathUtils.clamp(character.position.z, -8.35, 8.35);
+        const touchesCounter = character.position.x > -0.65
+          && character.position.x < 7.35
+          && character.position.z < -5.28;
+        if (touchesCounter) {
+          character.position.x = previousX;
+          character.position.z = previousZ;
+          velocityRef.current.x = 0;
+          velocityRef.current.z = 0;
+        }
+        character.position.y = 0.68;
+        supported = true;
+        activeGrind = null;
+        skateboard.visible = false;
+        skateboard.quaternion.identity();
+        rollPivot.quaternion.identity();
+        rollPivot.position.y = THREE.MathUtils.damp(rollPivot.position.y, 0.46, 12, delta);
+        jumpRequestRef.current = false;
+        rollRequestRef.current = false;
+        speedMeterRef.current?.style.setProperty("--speed-ratio", "0");
+        speedMeterRef.current?.classList.remove("boosting");
+
+        const moving = input.lengthSq() > 0.01;
+        if (moving) {
+          const targetHeading = Math.atan2(-input.x, -input.z);
+          const headingDelta = Math.atan2(
+            Math.sin(targetHeading - character.rotation.y),
+            Math.cos(targetHeading - character.rotation.y),
+          );
+          character.rotation.y += headingDelta * (1 - Math.exp(-11 * delta));
+          playAction(running ? "run" : "walk", 0.14);
+        } else {
+          playAction("idle", 0.16);
+        }
+        motionPivot.scale.set(1, 1, 1);
+
+        const nextServiceNearby = Math.hypot(character.position.x - 3.4, character.position.z + 5.15) < 2.65;
+        if (nextServiceNearby !== serviceNearby) {
+          serviceNearby = nextServiceNearby;
+          setNearVenueService(nextServiceNearby);
+        }
+      } else if (!mapOpenRef.current && !venueOpenRef.current) {
         const keys = keysRef.current;
         if (currentDistrictId) activeGrind = null;
         const inputRight = Number(keys.has("KeyD") || keys.has("ArrowRight")) - Number(keys.has("KeyA") || keys.has("ArrowLeft"));
@@ -2432,7 +2587,12 @@ export default function LobbyPage() {
       }
       if (interactRequestRef.current) {
         interactRequestRef.current = false;
-        if (closestVenue) {
+        if (venueOpenRef.current && activeVenueInterior && serviceNearby && !venueServiceOpenRef.current) {
+          venueServiceOpenRef.current = true;
+          setVenueServiceOpen(true);
+          keysRef.current.clear();
+          velocityRef.current.set(0, 0, 0);
+        } else if (closestVenue) {
           const selectedVenue: VenueInfo = closestVenue;
           enterVenueWorld(selectedVenue);
         } else if (!mapOpenRef.current && !venueOpenRef.current) {
@@ -2452,17 +2612,32 @@ export default function LobbyPage() {
         worldFog.far = 250;
         camera.up.set(0, 1, 0);
         const portraitMobile = camera.aspect < 0.72;
-        const bowlCameraActive = !currentDistrictId && Math.hypot(character.position.x - bowlCenterX, character.position.z - bowlCenterZ) < bowlRadius + 0.35;
-        const cameraDistance = (bowlCameraActive ? (portraitMobile ? 8.4 : 7.2) : (portraitMobile ? 16.2 : 13.8)) * Math.cos(cameraPitch);
+        const insideVenue = venueOpenRef.current && Boolean(activeVenueInterior);
+        const bowlCameraActive = !insideVenue && !currentDistrictId && Math.hypot(character.position.x - bowlCenterX, character.position.z - bowlCenterZ) < bowlRadius + 0.35;
+        const cameraDistance = (insideVenue
+          ? (portraitMobile ? 9.6 : 8.2)
+          : bowlCameraActive
+            ? (portraitMobile ? 8.4 : 7.2)
+            : (portraitMobile ? 16.2 : 13.8)) * Math.cos(cameraPitch);
         const cameraOffset = new THREE.Vector3(
           Math.sin(cameraYaw) * cameraDistance,
-          (bowlCameraActive ? (portraitMobile ? 9.4 : 8.6) : (portraitMobile ? 10.4 : 9.2)) + Math.sin(cameraPitch) * 3.2,
+          (insideVenue
+            ? (portraitMobile ? 7.1 : 5.9)
+            : bowlCameraActive
+              ? (portraitMobile ? 9.4 : 8.6)
+              : (portraitMobile ? 10.4 : 9.2)) + Math.sin(cameraPitch) * 3.2,
           Math.cos(cameraYaw) * cameraDistance,
         );
         const cameraAnchor = character.position.clone().add(new THREE.Vector3(0, 1.15, 0));
         const viewForward = new THREE.Vector3(-Math.sin(cameraYaw), 0, -Math.cos(cameraYaw));
-        const lookTarget = cameraAnchor.clone().addScaledVector(viewForward, bowlCameraActive ? 2.4 : portraitMobile ? 5 : 5.6);
-        camera.position.lerp(cameraAnchor.clone().add(cameraOffset), 1 - Math.exp(-delta * 5.5));
+        const lookDistance = insideVenue ? (portraitMobile ? 3.5 : 4.2) : bowlCameraActive ? 2.4 : portraitMobile ? 5 : 5.6;
+        const lookTarget = cameraAnchor.clone().addScaledVector(viewForward, lookDistance);
+        const desiredCamera = cameraAnchor.clone().add(cameraOffset);
+        if (insideVenue) {
+          desiredCamera.x = THREE.MathUtils.clamp(desiredCamera.x, -8.35, 8.35);
+          desiredCamera.z = THREE.MathUtils.clamp(desiredCamera.z, -8.72, 12.5);
+        }
+        camera.position.lerp(desiredCamera, 1 - Math.exp(-delta * 5.5));
         camera.lookAt(lookTarget);
       }
       composer.render();
@@ -2511,6 +2686,7 @@ export default function LobbyPage() {
   const activeDistrictInfo = activeDistrict ? DISTRICTS.find((district) => district.id === activeDistrict) ?? null : null;
   const activeVenueProfile = activeVenue ? getVenueInteriorProfile(activeVenue) : null;
   const activeVenueHighlights = activeVenue ? getVenueHighlights(activeVenue) : [];
+  const activeVenueServiceOptions = activeVenue ? getVenueServiceOptions(activeVenue) : [];
   const worldCards = [
     {
       id: "park" as const,
@@ -2534,6 +2710,29 @@ export default function LobbyPage() {
   };
   const leaveVenue = () => {
     leaveVenueRef.current();
+  };
+  const openVenueService = () => {
+    if (!activeVenue || !nearVenueService) return;
+    venueServiceOpenRef.current = true;
+    setVenueServiceOpen(true);
+    keysRef.current.clear();
+    velocityRef.current.set(0, 0, 0);
+  };
+  const closeVenueService = () => {
+    venueServiceOpenRef.current = false;
+    setVenueServiceOpen(false);
+    keysRef.current.clear();
+  };
+  const confirmVenueOrder = (option: VenueServiceOption) => {
+    if (!activeVenue) return;
+    setLastVenueOrder(option);
+    try {
+      const key = "67verse-venue-orders";
+      const stored = JSON.parse(window.localStorage.getItem(key) ?? "[]") as unknown;
+      const previous = Array.isArray(stored) ? stored : [];
+      const next = [{ venue: activeVenue.name, item: option.name, price: option.price }, ...previous].slice(0, 12);
+      window.localStorage.setItem(key, JSON.stringify(next));
+    } catch { /* The order still works when storage is unavailable. */ }
   };
 
   return (
@@ -2626,8 +2825,15 @@ export default function LobbyPage() {
         </button>
       )}
 
+      {nearVenueService && activeVenue && !venueServiceOpen && (
+        <button className="lobby-interaction venue-service" type="button" onClick={openVenueService}>
+          <kbd>E</kbd>
+          <span><small>TALK &amp; ORDER</small><strong>Speak to {activeVenueProfile?.staffRole.toLowerCase()}</strong></span>
+        </button>
+      )}
+
       {activeVenue && (
-        <section className="lobby-venue-panel interior" role="dialog" aria-modal="true" aria-label={`${activeVenue.name} venue`}>
+        <section className={`lobby-venue-panel interior${venueServiceOpen ? " service-open" : ""}`} aria-label={`${activeVenue.name} venue`}>
           <div className="lobby-venue-heading">
             <span>{activeVenue.category}</span>
             <em>{activeVenueProfile?.staffRole} ON DUTY</em>
@@ -2650,7 +2856,47 @@ export default function LobbyPage() {
         </section>
       )}
 
+      {activeVenue && venueServiceOpen && (
+        <section className="lobby-service-panel" role="dialog" aria-modal="true" aria-label={`${activeVenue.name} service counter`}>
+          <header>
+            <div>
+              <small>{activeVenue.category} · {activeVenueProfile?.staffRole}</small>
+              <strong>{activeVenue.name}</strong>
+            </div>
+            <button type="button" onClick={closeVenueService} aria-label="Close service menu">CLOSE</button>
+          </header>
+          {lastVenueOrder ? (
+            <div className="lobby-order-confirmation" role="status">
+              <span>ORDER #67 CONFIRMED</span>
+              <h2>{lastVenueOrder.name}</h2>
+              <p>{lastVenueOrder.detail}</p>
+              <div><small>TOTAL</small><strong>{lastVenueOrder.price}</strong></div>
+              <em>{activeVenueProfile?.staffRole} is preparing your order now.</em>
+              <button type="button" onClick={() => setLastVenueOrder(null)}>ORDER SOMETHING ELSE</button>
+            </div>
+          ) : (
+            <>
+              <div className="lobby-service-intro">
+                <small>COUNTER SERVICE</small>
+                <h2>What would you like?</h2>
+                <p>Select an item to place your order with the {activeVenueProfile?.staffRole.toLowerCase()}.</p>
+              </div>
+              <div className="lobby-service-options">
+                {activeVenueServiceOptions.map((option) => (
+                  <button key={option.name} type="button" onClick={() => confirmVenueOrder(option)}>
+                    <span><strong>{option.name}</strong><small>{option.detail}</small></span>
+                    <em>{option.price}</em>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          <footer>ESC TO CLOSE · ORDERS ARE SAVED ON THIS DEVICE</footer>
+        </section>
+      )}
+
       {!mapOpen && !activeVenue && <div className="lobby-tip">{isSkating ? "WASD TO SKATE · E TO WALK · HOLD SHIFT TO BOOST · JUMP ON RAILS TO GRIND" : "WASD TO WALK · E TO RIDE · APPROACH A SHOP AND PRESS E TO ENTER"}</div>}
+      {activeVenue && !venueServiceOpen && <div className="lobby-tip interior-tip">WASD TO WALK · APPROACH THE COUNTER · E TO TALK · ESC TO EXIT</div>}
 
       {!mapOpen && !activeVenue && isSkating && (
         <div ref={speedMeterRef} className="lobby-speed-meter" aria-label="Skate speed">
@@ -2683,6 +2929,25 @@ export default function LobbyPage() {
             ><span className="boost-bolt" aria-hidden="true" /></button>
             <button className="jump" aria-label="Jump" onPointerDown={() => { jumpRequestRef.current = true; }}><ArrowUp size={26} weight="bold" aria-hidden="true" /></button>
           </div>
+        </div>
+      )}
+
+      {activeVenue && !venueServiceOpen && (
+        <div className="lobby-mobile-controls interior-mode" aria-label="Mobile interior controls">
+          <div className="lobby-stick" aria-label="Interior movement controls">
+            <button className="up" aria-label="Move forward" onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyW", true); }} onPointerUp={() => press("KeyW", false)} onPointerCancel={() => press("KeyW", false)}><CaretUp size={22} weight="bold" aria-hidden="true" /></button>
+            <button className="left" aria-label="Move left" onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyA", true); }} onPointerUp={() => press("KeyA", false)} onPointerCancel={() => press("KeyA", false)}><CaretLeft size={22} weight="bold" aria-hidden="true" /></button>
+            <span aria-hidden="true" />
+            <button className="right" aria-label="Move right" onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyD", true); }} onPointerUp={() => press("KeyD", false)} onPointerCancel={() => press("KeyD", false)}><CaretRight size={22} weight="bold" aria-hidden="true" /></button>
+            <button className="down" aria-label="Move backward" onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyS", true); }} onPointerUp={() => press("KeyS", false)} onPointerCancel={() => press("KeyS", false)}><CaretDown size={22} weight="bold" aria-hidden="true" /></button>
+          </div>
+          <button
+            className={`lobby-interior-action${nearVenueService ? " ready" : ""}`}
+            type="button"
+            disabled={!nearVenueService}
+            aria-label={nearVenueService ? `Talk to ${activeVenueProfile?.staffRole.toLowerCase()}` : "Walk to the counter to order"}
+            onPointerDown={openVenueService}
+          ><span>E</span><small>{nearVenueService ? "ORDER" : "COUNTER"}</small></button>
         </div>
       )}
     </main>
