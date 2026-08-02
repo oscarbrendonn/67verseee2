@@ -170,6 +170,7 @@ function addCityEdge(scene: THREE.Scene, mode: Mode) {
 
 function createAvatar(color: string, player = false) {
   const root = new THREE.Group();
+  const visual = new THREE.Group();
   const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.48, 0.82, 8, 14), material(color, 0.6));
   body.position.y = 1.02;
   body.castShadow = true;
@@ -177,13 +178,15 @@ function createAvatar(color: string, player = false) {
   visor.position.set(0, 1.34, -0.43);
   const shoes = roundedBox([0.72, 0.16, 0.78], player ? "#e7eee8" : "#e8e3da", 0.07);
   shoes.position.set(0, 0.14, -0.03);
-  root.add(body, visor, shoes);
+  visual.add(body, visor, shoes);
+  root.add(visual);
   const marker = new THREE.Mesh(new THREE.TorusGeometry(0.68, 0.08, 10, 28), material("#f0b84d", 0.36, 0.12));
   marker.rotation.x = Math.PI / 2;
   marker.position.y = 2.45;
   marker.visible = false;
   root.userData.marker = marker;
   root.userData.fallback = [body, visor, shoes];
+  root.userData.visual = visual;
   root.add(marker);
   return root;
 }
@@ -219,9 +222,21 @@ function formatTime(seconds: number) {
   return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, "0")}`;
 }
 
+function controlCodeFromEvent(event: KeyboardEvent) {
+  if (event.code && event.code !== "Unidentified") return event.code;
+  const key = event.key.toLowerCase();
+  const fallbackCodes: Record<string, string> = {
+    w: "KeyW", a: "KeyA", s: "KeyS", d: "KeyD", e: "KeyE",
+    arrowup: "ArrowUp", arrowdown: "ArrowDown", arrowleft: "ArrowLeft", arrowright: "ArrowRight",
+    shift: "ShiftLeft", " ": "Space", escape: "Escape",
+  };
+  return fallbackCodes[key] ?? event.code;
+}
+
 export default function PartyGamesPage() {
   const hostRef = useRef<HTMLDivElement>(null);
   const keysRef = useRef(new Set<string>());
+  const inputPulseRef = useRef(new THREE.Vector3());
   const actionRef = useRef(false);
   const phaseRef = useRef<Screen>("menu");
   const finishRef = useRef<(result: RoundResult) => void>(() => undefined);
@@ -261,6 +276,14 @@ export default function PartyGamesPage() {
     setActiveMode(isSeries ? SHOW_ORDER[0] : mode);
     setRunKey((value) => value + 1);
     setScreen("intro");
+  };
+
+  const startMatch = () => {
+    keysRef.current.clear();
+    actionRef.current = false;
+    phaseRef.current = "playing";
+    setScreen("playing");
+    window.requestAnimationFrame(() => hostRef.current?.focus({ preventScroll: true }));
   };
 
   const returnToMenu = useCallback(() => {
@@ -438,7 +461,7 @@ export default function PartyGamesPage() {
         }
       });
       (player.userData.fallback as THREE.Object3D[]).forEach((object) => { object.visible = false; });
-      player.add(model);
+      (player.userData.visual as THREE.Group).add(model);
     }, undefined, () => undefined);
 
     const bots: Bot[] = BOT_COLORS.map((color, index) => {
@@ -464,15 +487,30 @@ export default function PartyGamesPage() {
       };
     });
 
+    const input = new THREE.Vector3();
+    const inputPulse = inputPulseRef.current.set(0, 0, 0);
+    const desiredCamera = new THREE.Vector3();
+    const playerVisual = player.userData.visual as THREE.Group;
+
     const onKeyDown = (event: KeyboardEvent) => {
-      keysRef.current.add(event.code);
-      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.code)) event.preventDefault();
+      const controlCode = controlCodeFromEvent(event);
+      keysRef.current.add(controlCode);
+      if (["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(controlCode)) event.preventDefault();
+      if (!event.repeat) {
+        if (controlCode === "KeyW" || controlCode === "ArrowUp") inputPulse.z -= 1;
+        if (controlCode === "KeyS" || controlCode === "ArrowDown") inputPulse.z += 1;
+        if (controlCode === "KeyA" || controlCode === "ArrowLeft") inputPulse.x -= 1;
+        if (controlCode === "KeyD" || controlCode === "ArrowRight") inputPulse.x += 1;
+      }
       const actionKeys = mode === "skyway" ? ["Space"] : ["Space", "ShiftLeft", "ShiftRight", "KeyE"];
-      if (!event.repeat && actionKeys.includes(event.code)) actionRef.current = true;
-      if (!event.repeat && event.code === "Escape") returnToMenu();
+      if (!event.repeat && actionKeys.includes(controlCode)) actionRef.current = true;
+      if (!event.repeat && controlCode === "Escape") returnToMenu();
     };
-    const onKeyUp = (event: KeyboardEvent) => keysRef.current.delete(event.code);
-    const clearKeys = () => keysRef.current.clear();
+    const onKeyUp = (event: KeyboardEvent) => keysRef.current.delete(controlCodeFromEvent(event));
+    const clearKeys = () => {
+      keysRef.current.clear();
+      inputPulse.set(0, 0, 0);
+    };
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
     window.addEventListener("blur", clearKeys);
@@ -487,8 +525,6 @@ export default function PartyGamesPage() {
 
     const timer = new THREE.Timer();
     timer.connect(document);
-    const input = new THREE.Vector3();
-    const desiredCamera = new THREE.Vector3();
 
     const finishRound = (result: RoundResult) => {
       if (finished) return;
@@ -686,17 +722,27 @@ export default function PartyGamesPage() {
       timer.update();
       const delta = Math.min(timer.getDelta(), 0.04);
       const playing = phaseRef.current === "playing" && !finished;
+      let playerMoveAmount = 0;
       if (playing) {
         elapsed += delta;
         remaining -= delta;
         input.set(0, 0, 0);
-        if (keysRef.current.has("KeyW") || keysRef.current.has("ArrowUp")) input.z -= 1;
-        if (keysRef.current.has("KeyS") || keysRef.current.has("ArrowDown")) input.z += 1;
+        const forwardHeld = keysRef.current.has("KeyW") || keysRef.current.has("ArrowUp");
+        const backHeld = keysRef.current.has("KeyS") || keysRef.current.has("ArrowDown");
+        if (forwardHeld) input.z -= 1;
+        if (backHeld) input.z += 1;
         if (keysRef.current.has("KeyA") || keysRef.current.has("ArrowLeft")) input.x -= 1;
         if (keysRef.current.has("KeyD") || keysRef.current.has("ArrowRight")) input.x += 1;
+        input.add(inputPulse);
+        inputPulse.set(0, 0, 0);
+        // Skyway is a race, so the rider rolls forward automatically. W/Shift
+        // boosts the run, A/D steer, and S acts as a brake.
+        const skywayBraking = mode === "skyway" && backHeld && !forwardHeld;
+        if (mode === "skyway") input.z = skywayBraking ? 0 : -1;
         if (input.lengthSq() > 0) input.normalize();
+        playerMoveAmount = Math.min(1, input.length());
         const isDash = (mode === "tag" || mode === "balloon") && playerDash > 0;
-        const boost = mode === "skyway" && (keysRef.current.has("ShiftLeft") || keysRef.current.has("ShiftRight"));
+        const boost = mode === "skyway" && (forwardHeld || keysRef.current.has("ShiftLeft") || keysRef.current.has("ShiftRight"));
         const baseSpeed = mode === "tag" ? 8.1 : mode === "balloon" ? 7.3 : 9.2;
         const speed = baseSpeed * (isDash ? 1.9 : boost ? 1.28 : 1);
         player.position.addScaledVector(input, delta * speed);
@@ -718,6 +764,25 @@ export default function PartyGamesPage() {
         }
       }
 
+      const movingBob = playing && playerMoveAmount > 0.01 ? Math.sin(elapsed * 11) * 0.055 : 0;
+      playerVisual.position.y = THREE.MathUtils.damp(playerVisual.position.y, movingBob, 14, delta);
+      playerVisual.rotation.z = THREE.MathUtils.damp(playerVisual.rotation.z, -input.x * 0.11, 12, delta);
+      playerVisual.rotation.x = THREE.MathUtils.damp(playerVisual.rotation.x, input.z * 0.055, 12, delta);
+      const strideScale = playing && playerMoveAmount > 0.01 ? 1 + Math.sin(elapsed * 11) * 0.018 : 1;
+      playerVisual.scale.set(1, strideScale, 1);
+      bots.forEach((bot, index) => {
+        const botVisual = bot.root.userData.visual as THREE.Group;
+        const botMoving = playing && bot.root.visible;
+        botVisual.position.y = THREE.MathUtils.damp(botVisual.position.y, botMoving ? Math.sin(elapsed * 9 + index) * 0.035 : 0, 11, delta);
+        botVisual.rotation.z = THREE.MathUtils.damp(botVisual.rotation.z, botMoving ? THREE.MathUtils.clamp(-bot.velocity.x * 0.012, -0.1, 0.1) : 0, 10, delta);
+      });
+
+      host.dataset.mode = mode;
+      host.dataset.phase = phaseRef.current;
+      host.dataset.playerX = player.position.x.toFixed(3);
+      host.dataset.playerY = player.position.y.toFixed(3);
+      host.dataset.playerZ = player.position.z.toFixed(3);
+
       const cameraForward = mode === "skyway" ? 5.5 : 3.5;
       desiredCamera.set(player.position.x * 0.34, mode === "skyway" ? 7.2 : 8.4, player.position.z + (mode === "skyway" ? 12.5 : 13.8));
       camera.position.lerp(desiredCamera, 1 - Math.exp(-delta * 5.5));
@@ -736,6 +801,11 @@ export default function PartyGamesPage() {
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", clearKeys);
       timer.dispose();
+      delete host.dataset.mode;
+      delete host.dataset.phase;
+      delete host.dataset.playerX;
+      delete host.dataset.playerY;
+      delete host.dataset.playerZ;
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {
           object.geometry.dispose();
@@ -749,8 +819,21 @@ export default function PartyGamesPage() {
   }, [activeMode, runKey, returnToMenu]);
 
   const press = (code: string, active: boolean) => {
-    if (active) keysRef.current.add(code);
-    else keysRef.current.delete(code);
+    if (active) {
+      if (!keysRef.current.has(code)) {
+        if (code === "KeyW") inputPulseRef.current.z -= 1;
+        if (code === "KeyS") inputPulseRef.current.z += 1;
+        if (code === "KeyA") inputPulseRef.current.x -= 1;
+        if (code === "KeyD") inputPulseRef.current.x += 1;
+      }
+      keysRef.current.add(code);
+    } else {
+      keysRef.current.delete(code);
+    }
+  };
+  const tapMove = (code: "KeyW" | "KeyA" | "KeyS" | "KeyD") => {
+    press(code, true);
+    window.requestAnimationFrame(() => press(code, false));
   };
 
   const triggerAction = () => { actionRef.current = true; };
@@ -762,7 +845,13 @@ export default function PartyGamesPage() {
 
   return (
     <main className={`party-shell mode-${activeMode ?? "menu"}`}>
-      <div ref={hostRef} className="party-canvas" aria-label="Playable 67VERSE online party game arena" />
+      <div
+        ref={hostRef}
+        className="party-canvas"
+        tabIndex={0}
+        aria-label="Playable 67VERSE online party game arena"
+        onPointerDown={() => hostRef.current?.focus({ preventScroll: true })}
+      />
 
       <header className="party-topbar" data-figma-node="348:8732">
         <div className="party-top-left">
@@ -846,10 +935,10 @@ export default function PartyGamesPage() {
             <h1>{activeInfo.name}</h1>
             <p>{activeInfo.objective}</p>
             <div className="party-control-guide">
-              <span><kbd>WASD</kbd><small>MOVE</small></span>
+              <span><kbd>{activeMode === "skyway" ? "A / D" : "WASD"}</kbd><small>{activeMode === "skyway" ? "STEER" : "MOVE"}</small></span>
               <span><kbd>{activeMode === "skyway" ? "SPACE" : "SHIFT"}</kbd><small>{activeMode === "skyway" ? "JUMP" : "DASH"}</small></span>
             </div>
-            <button type="button" onClick={() => setScreen("playing")}>JOIN PUBLIC MATCH</button>
+            <button type="button" onClick={startMatch}>JOIN PUBLIC MATCH</button>
             <button type="button" className="party-text-action" onClick={returnToMenu}>BACK TO GAME SELECT</button>
           </div>
         </section>
@@ -865,14 +954,14 @@ export default function PartyGamesPage() {
           </section>
           <div className="party-progress"><span style={{ width: `${Math.min(100, Math.max(0, hud.progress))}%` }} /></div>
           <div className="party-objective">{hud.message}</div>
-          <div className="party-desktop-tip">WASD TO MOVE · {activeMode === "skyway" ? "SPACE TO JUMP · SHIFT TO SPRINT" : "SHIFT OR E TO DASH"}</div>
+          <div className="party-desktop-tip">{activeMode === "skyway" ? "AUTO-RUN · A/D TO STEER · S TO BRAKE · SPACE TO JUMP" : "WASD TO MOVE · SHIFT OR E TO DASH"}</div>
           <div className="party-mobile-controls" aria-label="Mobile game controls">
             <div className="party-stick">
-              <button className="up" aria-label="Move forward" onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyW", true); }} onPointerUp={() => press("KeyW", false)} onPointerCancel={() => press("KeyW", false)}><CaretUp size={22} weight="bold" /></button>
-              <button className="left" aria-label="Move left" onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyA", true); }} onPointerUp={() => press("KeyA", false)} onPointerCancel={() => press("KeyA", false)}><CaretLeft size={22} weight="bold" /></button>
+              <button className="up" aria-label="Move forward" onClick={() => tapMove("KeyW")} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyW", true); }} onPointerUp={() => press("KeyW", false)} onPointerCancel={() => press("KeyW", false)} onLostPointerCapture={() => press("KeyW", false)}><CaretUp size={22} weight="bold" /></button>
+              <button className="left" aria-label="Move left" onClick={() => tapMove("KeyA")} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyA", true); }} onPointerUp={() => press("KeyA", false)} onPointerCancel={() => press("KeyA", false)} onLostPointerCapture={() => press("KeyA", false)}><CaretLeft size={22} weight="bold" /></button>
               <span />
-              <button className="right" aria-label="Move right" onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyD", true); }} onPointerUp={() => press("KeyD", false)} onPointerCancel={() => press("KeyD", false)}><CaretRight size={22} weight="bold" /></button>
-              <button className="down" aria-label="Move backward" onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyS", true); }} onPointerUp={() => press("KeyS", false)} onPointerCancel={() => press("KeyS", false)}><CaretDown size={22} weight="bold" /></button>
+              <button className="right" aria-label="Move right" onClick={() => tapMove("KeyD")} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyD", true); }} onPointerUp={() => press("KeyD", false)} onPointerCancel={() => press("KeyD", false)} onLostPointerCapture={() => press("KeyD", false)}><CaretRight size={22} weight="bold" /></button>
+              <button className="down" aria-label="Move backward" onClick={() => tapMove("KeyS")} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyS", true); }} onPointerUp={() => press("KeyS", false)} onPointerCancel={() => press("KeyS", false)} onLostPointerCapture={() => press("KeyS", false)}><CaretDown size={22} weight="bold" /></button>
             </div>
             <button type="button" className="party-action" aria-label={activeMode === "skyway" ? "Jump" : "Dash"} onPointerDown={triggerAction}>
               {activeMode === "skyway" ? <ArrowUp size={27} weight="bold" /> : <Lightning size={27} weight="fill" />}
