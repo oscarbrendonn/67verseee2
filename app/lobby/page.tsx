@@ -104,7 +104,52 @@ const CENTRAL_SKATE_SHOP: VenueInfo = {
   description: "A walk-in board shop beside the central park, with complete decks, wheels and workshop service.",
 };
 
-const TOTAL_VENUES = Object.values(DISTRICT_VENUES).reduce((total, venues) => total + venues.length, 2);
+const CENTRAL_STARBUCKS: VenueInfo = {
+  id: "park-starbucks",
+  districtId: "park",
+  name: "Starbucks",
+  category: "CAFE",
+  activity: "Order at the coffee bar",
+  description: "A warm city-park cafe with a working bar, indoor seating and a barista ready at the counter.",
+};
+
+const CENTRAL_CITY_MARKET: VenueInfo = {
+  id: "park-city-market",
+  districtId: "park",
+  name: "City Market",
+  category: "MARKET",
+  activity: "Browse the neighborhood aisles",
+  description: "A practical neighborhood market with stocked aisles, fresh goods and a staffed checkout.",
+};
+
+type VenueInteriorKind = "cafe" | "market" | "food" | "nightlife" | "culture" | "fitness" | "service" | "retail";
+
+const getVenueInteriorProfile = (venue: Pick<VenueInfo, "name" | "category">) => {
+  const category = venue.category.toUpperCase();
+  if (category.includes("CAFE")) return { kind: "cafe" as VenueInteriorKind, accent: venue.name === "Starbucks" ? "#006241" : "#4f766c", wall: "#e9e3d7", floor: "#8b725d", staffRole: "BARISTA" };
+  if (category.includes("MARKET") || category.includes("HEALTH") || category.includes("SHOPPING")) return { kind: "market" as VenueInteriorKind, accent: category.includes("HEALTH") ? "#66806d" : "#42535a", wall: "#e8e6df", floor: "#aaa69d", staffRole: category.includes("HEALTH") ? "PHARMACIST" : "CASHIER" };
+  if (category.includes("FOOD") || category.includes("SOCIAL")) return { kind: "food" as VenueInteriorKind, accent: "#8c5d45", wall: "#eadfd3", floor: "#8b7565", staffRole: category.includes("SOCIAL") ? "BARTENDER" : "SERVER" };
+  if (category.includes("NIGHTLIFE")) return { kind: "nightlife" as VenueInteriorKind, accent: "#6f568c", wall: "#292a32", floor: "#393843", staffRole: "BARTENDER" };
+  if (category.includes("ENTERTAINMENT") || category.includes("MUSIC") || category.includes("GALLERY")) return { kind: "culture" as VenueInteriorKind, accent: "#5b6f82", wall: "#dedbd5", floor: "#77736c", staffRole: category.includes("GALLERY") ? "CURATOR" : "HOST" };
+  if (category.includes("FITNESS")) return { kind: "fitness" as VenueInteriorKind, accent: "#526f78", wall: "#d7dddc", floor: "#555d5e", staffRole: "COACH" };
+  if (category.includes("WORKSHOP") || category.includes("RENTAL") || category.includes("STYLE")) return { kind: "service" as VenueInteriorKind, accent: "#765f50", wall: "#ded8ce", floor: "#77736d", staffRole: category.includes("STYLE") ? "BARBER" : "SPECIALIST" };
+  return { kind: "retail" as VenueInteriorKind, accent: "#667b71", wall: "#e3e0d8", floor: "#8f8c84", staffRole: "SHOP ASSISTANT" };
+};
+
+const getVenueHighlights = (venue: VenueInfo): Array<[string, string]> => {
+  if (venue.id === CENTRAL_SKATE_SHOP.id || venue.category.includes("BOARD")) return [["DECKS", "Street & park shapes"], ["WHEELS", "Soft city setup"], ["SERVICE", "Board workshop"]];
+  const { kind } = getVenueInteriorProfile(venue);
+  if (kind === "cafe") return [["ESPRESSO", "Coffee bar"], ["COLD", "Iced drinks"], ["BAKERY", "Fresh counter"]];
+  if (kind === "market") return [["FRESH", "Daily produce"], ["PANTRY", "Neighborhood goods"], ["CHECKOUT", "Cashier open"]];
+  if (kind === "food") return [["COUNTER", "Order here"], ["KITCHEN", "Made fresh"], ["SEATING", "Dine inside"]];
+  if (kind === "nightlife") return [["BAR", "Open counter"], ["MUSIC", "Tonight's set"], ["LOUNGE", "Indoor seating"]];
+  if (kind === "culture") return [["NEW", "Current selection"], ["LOCAL", "City creators"], ["DESK", "Host available"]];
+  if (kind === "fitness") return [["FLOOR", "Training zone"], ["WEIGHTS", "Open rack"], ["COACH", "Session ready"]];
+  if (kind === "service") return [["DESK", "Staffed service"], ["WORKSHOP", "Equipment ready"], ["PICKUP", "Collection point"]];
+  return [["NEW", "Latest arrivals"], ["CITY", "Local selection"], ["HELP", "Staff available"]];
+};
+
+const TOTAL_VENUES = Object.values(DISTRICT_VENUES).reduce((total, venues) => total + venues.length, 4);
 
 function surface(color: string, roughness = 0.78, metalness = 0.02) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -181,14 +226,17 @@ export default function LobbyPage() {
   const jumpRequestRef = useRef(false);
   const rollRequestRef = useRef(false);
   const interactRequestRef = useRef(false);
+  const skatingRef = useRef(false);
   const mapOpenRef = useRef(false);
   const venueOpenRef = useRef(false);
   const teleportRef = useRef<(destination: DistrictId | "park") => void>(() => undefined);
   const enterVenueRef = useRef<(venue: VenueInfo) => void>(() => undefined);
   const leaveVenueRef = useRef<() => void>(() => undefined);
+  const toggleSkateRef = useRef<() => void>(() => undefined);
   const [mapOpen, setMapOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [worldLoaded, setWorldLoaded] = useState(false);
+  const [isSkating, setIsSkating] = useState(false);
   const [activeDistrict, setActiveDistrict] = useState<DistrictId | null>(null);
   const [travelNotice, setTravelNotice] = useState<string | null>(null);
   const [nearbyVenue, setNearbyVenue] = useState<VenueInfo | null>(null);
@@ -1268,6 +1316,7 @@ export default function LobbyPage() {
     // A dedicated 3D room is shown when the player enters the central Skate Shop.
     // It lives outside the park group so the street can be hidden without flattening
     // the venue into a UI-only popup.
+    const venueInteriors = new Map<string, THREE.Group>();
     const skateShopInterior = new THREE.Group();
     skateShopInterior.name = "67-skate-shop-interior";
     const shopFloor = box([16, 0.24, 19], "#b9b7b1", 0.9);
@@ -1343,6 +1392,206 @@ export default function LobbyPage() {
     skateShopInterior.add(shopFloor, shopRearWall, shopLeftWall, shopRightWall, shopLogo, shopCounter, shopCounterTop, shopAttendant, shopExit);
     skateShopInterior.visible = false;
     scene.add(skateShopInterior);
+    venueInteriors.set(CENTRAL_SKATE_SHOP.id, skateShopInterior);
+
+    const createVenueWorker = (accent: string) => {
+      const worker = new THREE.Group();
+      const skin = surface("#a97d66", 0.9);
+      const uniform = surface(accent, 0.82);
+      const dark = surface("#242a2d", 0.88);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 12), skin);
+      head.position.y = 1.94;
+      const hair = new THREE.Mesh(new THREE.SphereGeometry(0.305, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), dark);
+      hair.position.y = 2.04;
+      const body = new THREE.Mesh(new RoundedBoxGeometry(0.72, 0.96, 0.44, 4, 0.11), uniform);
+      body.position.y = 1.28;
+      const apron = new THREE.Mesh(new RoundedBoxGeometry(0.52, 0.68, 0.06, 3, 0.04), surface("#ece6d8", 0.86));
+      apron.position.set(0, 1.18, 0.24);
+      [-0.21, 0.21].forEach((x) => {
+        const leg = new THREE.Mesh(new RoundedBoxGeometry(0.17, 0.72, 0.2, 3, 0.05), dark);
+        leg.position.set(x, 0.43, 0);
+        worker.add(leg);
+      });
+      worker.add(head, hair, body, apron);
+      worker.traverse((object) => { if (object instanceof THREE.Mesh) object.castShadow = true; });
+      return worker;
+    };
+
+    const createProductShelf = (accent: string, productColors: string[], width = 4.8) => {
+      const shelf = new THREE.Group();
+      const frame = surface("#5f625f", 0.72, 0.18);
+      [0.12, 0.78, 1.44, 2.1].forEach((y) => {
+        const board = new THREE.Mesh(new RoundedBoxGeometry(width, 0.11, 0.82, 3, 0.04), frame);
+        board.position.y = y;
+        board.castShadow = true;
+        shelf.add(board);
+      });
+      [-width / 2 + 0.12, width / 2 - 0.12].forEach((x) => {
+        const post = new THREE.Mesh(new RoundedBoxGeometry(0.12, 2.2, 0.72, 2, 0.035), frame);
+        post.position.set(x, 1.08, 0);
+        shelf.add(post);
+      });
+      [0.45, 1.11, 1.77].forEach((y, row) => {
+        for (let index = 0; index < 6; index += 1) {
+          const color = productColors[(index + row) % productColors.length] ?? accent;
+          const product = new THREE.Mesh(new RoundedBoxGeometry(0.42, 0.42 + (index % 2) * 0.08, 0.44, 2, 0.05), surface(color, 0.82));
+          product.position.set(-width / 2 + 0.55 + index * ((width - 1.1) / 5), y, 0);
+          product.castShadow = true;
+          shelf.add(product);
+        }
+      });
+      return shelf;
+    };
+
+    const createVenueInterior = (venue: VenueInfo) => {
+      const profile = getVenueInteriorProfile(venue);
+      const interior = new THREE.Group();
+      interior.name = `${venue.id}-interior`;
+      const floor = box([18, 0.24, 20], profile.floor, 0.88);
+      floor.position.y = -0.12;
+      const rearWall = box([18, 7, 0.34], profile.wall, 0.91);
+      rearWall.position.set(0, 3.5, -9.35);
+      const leftWall = box([0.34, 7, 20], profile.wall, 0.91);
+      leftWall.position.set(-9, 3.5, 0);
+      const rightWall = leftWall.clone();
+      rightWall.position.x = 9;
+      const backBand = box([17.45, 1.18, 0.18], profile.accent, 0.72);
+      backBand.position.set(0, 5.58, -9.12);
+      const sign = new THREE.Mesh(
+        new RoundedBoxGeometry(11.8, 0.9, 0.14, 4, 0.05),
+        makeSignMaterial(venue.name.toUpperCase().slice(0, 24), profile.accent),
+      );
+      sign.position.set(0, 5.58, -9.01);
+      const counter = box([7.3, 1.12, 1.55], "#71665c", 0.78);
+      counter.position.set(3.4, 0.56, -6.62);
+      const counterTop = box([7.6, 0.12, 1.82], "#292f32", 0.5);
+      counterTop.position.set(3.4, 1.18, -6.62);
+      const worker = createVenueWorker(profile.accent);
+      worker.position.set(3.4, 0, -7.35);
+      const staffSign = new THREE.Mesh(
+        new RoundedBoxGeometry(3.4, 0.48, 0.11, 3, 0.03),
+        makeSignMaterial(`${profile.staffRole} ON DUTY`, "#303638"),
+      );
+      staffSign.position.set(3.4, 3.62, -9.05);
+      const exit = new THREE.Mesh(
+        new RoundedBoxGeometry(4.4, 0.58, 0.12, 3, 0.04),
+        makeSignMaterial("EXIT TO STREET", "#4b565c"),
+      );
+      exit.position.set(0, 3, 9.44);
+      exit.rotation.y = Math.PI;
+      [-5.6, 0, 5.6].forEach((x) => {
+        const light = new THREE.Mesh(
+          new RoundedBoxGeometry(3.8, 0.1, 0.72, 3, 0.03),
+          new THREE.MeshStandardMaterial({ color: "#fffaf0", emissive: "#fff1d1", emissiveIntensity: 0.85 }),
+        );
+        light.position.set(x, 6.35, -0.8);
+        interior.add(light);
+      });
+      interior.add(floor, rearWall, leftWall, rightWall, backBand, sign, counter, counterTop, worker, staffSign, exit);
+
+      const addCafeTable = (x: number, z: number) => {
+        const table = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, 0.12, 20), surface("#806b58", 0.76));
+        table.position.set(x, 0.92, z);
+        table.castShadow = true;
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.86, 12), surface("#333a3d", 0.42, 0.48));
+        stem.position.set(x, 0.46, z);
+        interior.add(table, stem);
+        [-1.42, 1.42].forEach((offset) => {
+          const stool = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.12, 16), surface(profile.accent, 0.76));
+          stool.position.set(x + offset, 0.55, z);
+          const stoolStem = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 0.5, 10), surface("#3c4244", 0.44, 0.42));
+          stoolStem.position.set(x + offset, 0.28, z);
+          interior.add(stool, stoolStem);
+        });
+      };
+
+      if (profile.kind === "cafe" || profile.kind === "food") {
+        [-5.4, -1.9].forEach((x, index) => addCafeTable(x, 0.3 + index * 3.25));
+        [-5.4, -2.2, 1].forEach((x, index) => {
+          const menu = new THREE.Mesh(new RoundedBoxGeometry(2.7, 1.5, 0.12, 3, 0.05), makeSignMaterial(index === 0 ? "COFFEE" : index === 1 ? "FRESH" : "ORDER", "#263b34"));
+          menu.position.set(x, 3.58, -9.05);
+          interior.add(menu);
+        });
+        const machine = box([1.8, 0.72, 0.74], "#c8c4bb", 0.42);
+        machine.position.set(1.1, 1.62, -6.62);
+        const pastry = new THREE.Mesh(new RoundedBoxGeometry(1.6, 0.68, 0.7, 3, 0.06), new THREE.MeshStandardMaterial({ color: "#b9c7c5", roughness: 0.15, transparent: true, opacity: 0.72 }));
+        pastry.position.set(5.8, 1.57, -6.62);
+        interior.add(machine, pastry);
+      } else if (profile.kind === "market" || profile.kind === "retail") {
+        [-4.8, 0, 4.8].forEach((x, index) => {
+          const shelf = createProductShelf(profile.accent, index % 2 ? ["#d7ad5f", "#668768", "#b96652"] : ["#7690a0", "#d8c48b", "#7f6d91"]);
+          shelf.position.set(x, 0, index === 1 ? 1.4 : 0.3);
+          shelf.rotation.y = Math.PI / 2;
+          interior.add(shelf);
+        });
+        const checkout = box([3.6, 0.92, 1.15], profile.accent, 0.76);
+        checkout.position.set(-5.4, 0.47, -6.5);
+        const register = box([0.72, 0.48, 0.52], "#292f32", 0.46);
+        register.position.set(-5.4, 1.18, -6.5);
+        interior.add(checkout, register);
+      } else if (profile.kind === "nightlife") {
+        const bar = box([6.4, 1.06, 1.45], "#342f3b", 0.64);
+        bar.position.set(-3.8, 0.54, 0.4);
+        const stage = box([7.2, 0.48, 4.1], "#24252d", 0.62);
+        stage.position.set(3.9, 0.24, 3.8);
+        [-1.8, 1.8].forEach((x) => {
+          const speaker = box([1.1, 2.5, 0.9], "#17191e", 0.52);
+          speaker.position.set(3.9 + x, 1.5, 2.5);
+          interior.add(speaker);
+        });
+        ["#b25fd0", "#5794c7", "#d46d76"].forEach((color, index) => {
+          const glow = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 8), new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 2 }));
+          glow.position.set(-4 + index * 4, 5.9, 1.2);
+          interior.add(glow);
+        });
+        interior.add(bar, stage);
+      } else if (profile.kind === "culture") {
+        [-5.8, -1.9, 2, 5.9].forEach((x, index) => {
+          const panel = new THREE.Mesh(new RoundedBoxGeometry(2.55, 2.45, 0.12, 3, 0.04), makeSignMaterial(index % 2 ? "CITY EDITION" : "LOCAL WORK", index % 2 ? "#65788a" : "#9b7058"));
+          panel.position.set(x, 3.05, -9.05);
+          interior.add(panel);
+        });
+        [-4.5, 0, 4.5].forEach((x) => {
+          const display = box([3.2, 0.76, 3], "#bcb9b1", 0.86);
+          display.position.set(x, 0.38, 1.7);
+          interior.add(display);
+        });
+      } else if (profile.kind === "fitness") {
+        [-4.8, 0, 4.8].forEach((x, index) => {
+          const mat = box([3.5, 0.08, 6.2], index === 1 ? "#6e8588" : "#59696c", 0.88);
+          mat.position.set(x, 0.06, 1.3);
+          interior.add(mat);
+        });
+        [-5.2, -2.6, 0, 2.6].forEach((x, index) => {
+          const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 1.65, 12), surface("#343a3d", 0.35, 0.72));
+          bar.rotation.z = Math.PI / 2;
+          bar.position.set(x, 1.18, -5.2);
+          [-0.78, 0.78].forEach((offset) => {
+            const weight = new THREE.Mesh(new THREE.CylinderGeometry(0.24 + index * 0.02, 0.24 + index * 0.02, 0.12, 14), surface(profile.accent, 0.66));
+            weight.rotation.z = Math.PI / 2;
+            weight.position.set(x + offset, 1.18, -5.2);
+            interior.add(weight);
+          });
+          interior.add(bar);
+        });
+      } else {
+        [-4.4, 0.4, 5.2].forEach((x, index) => {
+          const bench = box([3.8, 0.9, 1.35], index === 1 ? profile.accent : "#77726a", 0.74);
+          bench.position.set(x, 0.45, 1.6 + (index % 2) * 2.6);
+          interior.add(bench);
+        });
+        if (venue.name.includes("Garage") || venue.name.includes("Bike") || venue.name.includes("Surf")) {
+          [-5, -1.65, 1.7, 5.05].forEach((x) => {
+            const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.1, 10, 22), surface("#303638", 0.48, 0.35));
+            wheel.position.set(x, 3.18, -9.02);
+            interior.add(wheel);
+          });
+        }
+      }
+
+      interior.visible = false;
+      return interior;
+    };
 
     const districtPalettes: Record<DistrictTheme, { base: string; lot: string; facades: string[] }> = {
       coast: { base: "#b8b4a7", lot: "#d1c7ad", facades: ["#d5c4ad", "#b9d0cb", "#d9b7a9", "#aebfcb"] },
@@ -1352,6 +1601,8 @@ export default function LobbyPage() {
     };
 
     const venuePoints: Array<VenueInfo & { x: number; z: number }> = [
+      { ...CENTRAL_STARBUCKS, x: -16, z: -38.7 },
+      { ...CENTRAL_CITY_MARKET, x: 0, z: -38.7 },
       { ...CENTRAL_SKATE_SHOP, x: 16, z: -38.7 },
     ];
     const streetActors: Array<{ group: THREE.Group; x: number; z: number; axis: "x" | "z"; range: number; speed: number; phase: number }> = [];
@@ -1578,6 +1829,12 @@ export default function LobbyPage() {
       scene.add(districtWorld);
       districtWorlds.set(district.id, districtWorld);
     });
+    venuePoints.forEach((venue) => {
+      if (venueInteriors.has(venue.id)) return;
+      const interior = createVenueInterior(venue);
+      venueInteriors.set(venue.id, interior);
+      scene.add(interior);
+    });
     new GLTFLoader().load(
       "/models/meshy/coconut-palm-tree.glb",
       (gltf) => {
@@ -1660,6 +1917,7 @@ export default function LobbyPage() {
       });
     });
     character.add(skateboard);
+    skateboard.visible = skatingRef.current;
     character.position.set(0, 1.03, 22);
     scene.add(character);
 
@@ -1746,7 +2004,7 @@ export default function LobbyPage() {
     let travelNoticeTimer: number | undefined;
     let currentDistrictId: DistrictId | null = null;
     let nearbyVenueId: string | null = null;
-    let skateShopInteriorActive = false;
+    let activeVenueInterior: THREE.Group | null = null;
     const venueReturnPosition = new THREE.Vector3();
     let venueReturnYaw = 0;
     const activeWorldCenter = new THREE.Vector3(0, 0, 0);
@@ -1836,14 +2094,16 @@ export default function LobbyPage() {
     const enterVenueWorld = (venue: VenueInfo) => {
       venueOpenRef.current = true;
       velocityRef.current.set(0, 0, 0);
-      if (venue.id === CENTRAL_SKATE_SHOP.id && !skateShopInteriorActive) {
+      const interior = venueInteriors.get(venue.id);
+      if (interior && !activeVenueInterior) {
         venueReturnPosition.copy(character.position);
         venueReturnYaw = cameraYaw;
-        skateShopInteriorActive = true;
+        activeVenueInterior = interior;
         centralWorld.visible = false;
         districtWorlds.forEach((world) => { world.visible = false; });
-        skateShopInterior.visible = true;
-        character.position.set(0, 1.03, 5.8);
+        interior.visible = true;
+        skateboard.visible = false;
+        character.position.set(0, 0.68, 5.8);
         character.rotation.y = 0;
         cameraYaw = 0;
         supported = true;
@@ -1855,13 +2115,14 @@ export default function LobbyPage() {
     const leaveVenueWorld = () => {
       venueOpenRef.current = false;
       setActiveVenue(null);
-      if (skateShopInteriorActive) {
-        skateShopInteriorActive = false;
-        skateShopInterior.visible = false;
+      if (activeVenueInterior) {
+        activeVenueInterior.visible = false;
+        activeVenueInterior = null;
         centralWorld.visible = !currentDistrictId;
         districtWorlds.forEach((world, districtId) => { world.visible = currentDistrictId === districtId; });
         character.position.copy(venueReturnPosition);
         cameraYaw = venueReturnYaw;
+        skateboard.visible = skatingRef.current;
         velocityRef.current.set(0, 0, 0);
         supported = true;
       }
@@ -1928,12 +2189,28 @@ export default function LobbyPage() {
     let rollCooldownUntil = 0;
     let wheelSpin = 0;
     let activeGrind: { axis: "x" | "z"; fixed: number; min: number; max: number; topY: number } | null = null;
+    const setSkatingMode = (next: boolean) => {
+      if (mapOpenRef.current || venueOpenRef.current || !supported) return;
+      skatingRef.current = next;
+      setIsSkating(next);
+      skateboard.visible = next;
+      activeGrind = null;
+      velocityRef.current.x *= 0.35;
+      velocityRef.current.z *= 0.35;
+      character.position.y += next ? 0.18 : -0.18;
+      if (!next) {
+        skateboard.quaternion.identity();
+        rollPivot.quaternion.identity();
+      }
+    };
+    const toggleSkatingMode = () => setSkatingMode(!skatingRef.current);
+    toggleSkateRef.current = toggleSkatingMode;
     const animate = () => {
       animation = requestAnimationFrame(animate);
       const now = performance.now();
       const delta = Math.min((now - last) / 1000, 0.04);
       last = now;
-      mixer?.update(0);
+      mixer?.update(delta);
       sun.position.set(character.position.x - 28, character.position.y + 42, character.position.z + 24);
       sun.target.position.set(character.position.x, 0, character.position.z);
       sun.target.updateMatrixWorld();
@@ -1972,7 +2249,8 @@ export default function LobbyPage() {
         jumpRequestRef.current = false;
         rollRequestRef.current = false;
 
-        if (rollPressed && (supported || activeGrind) && now >= rollCooldownUntil) {
+        const skating = skatingRef.current;
+        if (skating && rollPressed && (supported || activeGrind) && now >= rollCooldownUntil) {
           const boostDirection = input.lengthSq() > 0.01
             ? input.clone()
             : new THREE.Vector3(-Math.sin(character.rotation.y), 0, -Math.cos(character.rotation.y));
@@ -1981,12 +2259,14 @@ export default function LobbyPage() {
           rollCooldownUntil = now + 650;
         }
         const boosting = keys.has("ShiftLeft") || keys.has("ShiftRight");
-        const speed = boosting ? 16.4 : 8.8;
-        const glideResponse = input.lengthSq() > 0.01 ? (boosting ? 8.2 : 6.2) : 1.42;
+        const speed = skating ? (boosting ? 16.4 : 8.8) : (boosting ? 7.2 : 4.6);
+        const glideResponse = skating
+          ? (input.lengthSq() > 0.01 ? (boosting ? 8.2 : 6.2) : 1.42)
+          : (input.lengthSq() > 0.01 ? 12 : 15);
         velocityRef.current.x = THREE.MathUtils.damp(velocityRef.current.x, input.x * speed, glideResponse, delta);
         velocityRef.current.z = THREE.MathUtils.damp(velocityRef.current.z, input.z * speed, glideResponse, delta);
         if (speedMeterRef.current) {
-          const speedRatio = THREE.MathUtils.clamp(Math.hypot(velocityRef.current.x, velocityRef.current.z) / 16.4, 0, 1);
+          const speedRatio = THREE.MathUtils.clamp(Math.hypot(velocityRef.current.x, velocityRef.current.z) / (skating ? 16.4 : 7.2), 0, 1);
           speedMeterRef.current.style.setProperty("--speed-ratio", speedRatio.toFixed(3));
           speedMeterRef.current.classList.toggle("boosting", boosting && input.lengthSq() > 0.01);
         }
@@ -2045,7 +2325,7 @@ export default function LobbyPage() {
             activeGrind = null;
             velocityRef.current.y = 1.35;
           }
-        } else if (!currentDistrictId && !supported && velocityRef.current.y <= 3.2) {
+        } else if (skating && !currentDistrictId && !supported && velocityRef.current.y <= 3.2) {
           const boardY = character.position.y - 0.64;
           const rail = grindRailSpecs.find((spec) => {
             const along = spec.axis === "x" ? character.position.x : character.position.z;
@@ -2066,7 +2346,7 @@ export default function LobbyPage() {
         }
 
         const parkSurface = parkSurfaceAt(character.position.x, character.position.z, !currentDistrictId);
-        const groundHeight = parkSurface.height + 0.86;
+        const groundHeight = parkSurface.height + (skating ? 0.86 : 0.68);
         const shouldFollowSurface = wasSupported && !jumpPressed && character.position.y - groundHeight < 0.46;
         if (activeGrind) {
           supported = false;
@@ -2076,7 +2356,7 @@ export default function LobbyPage() {
           const slopeX = -parkSurface.normal.x / Math.max(parkSurface.normal.y, 0.001);
           const slopeZ = -parkSurface.normal.z / Math.max(parkSurface.normal.y, 0.001);
           velocityRef.current.y = velocityRef.current.x * slopeX + velocityRef.current.z * slopeZ;
-          if (parkSurface.normal.y < 0.999) {
+          if (skating && parkSurface.normal.y < 0.999) {
             const downhill = new THREE.Vector3(0, -10.5, 0).projectOnPlane(parkSurface.normal);
             velocityRef.current.x += downhill.x * delta;
             velocityRef.current.z += downhill.z * delta;
@@ -2097,24 +2377,32 @@ export default function LobbyPage() {
           );
           character.rotation.y += headingDelta * (1 - Math.exp(-10 * delta));
         }
-        const deckNormal = supported ? parkSurface.normal : new THREE.Vector3(0, 1, 0);
+        const deckNormal = skating && supported ? parkSurface.normal : new THREE.Vector3(0, 1, 0);
         const localDeckNormal = deckNormal.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), -character.rotation.y);
         const deckTarget = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), localDeckNormal);
         skateboard.quaternion.slerp(deckTarget, 1 - Math.exp(-9 * delta));
         // Keep the rider's feet above steep bowl walls. The board follows the
         // exact normal while the body takes a restrained share of that tilt,
         // avoiding both wall clipping and the old folded-character look.
-        const riderNormal = new THREE.Vector3(0, 1, 0).lerp(deckNormal, 0.32).normalize();
+        const riderNormal = new THREE.Vector3(0, 1, 0).lerp(deckNormal, skating ? 0.32 : 0).normalize();
         const localRiderNormal = riderNormal.applyAxisAngle(new THREE.Vector3(0, 1, 0), -character.rotation.y);
         const riderTarget = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), localRiderNormal);
         rollPivot.quaternion.slerp(riderTarget, 1 - Math.exp(-8 * delta));
-        const slopeLift = supported ? (1 - deckNormal.y) * 0.34 : 0;
+        const slopeLift = skating && supported ? (1 - deckNormal.y) * 0.34 : 0;
         rollPivot.position.y = THREE.MathUtils.damp(rollPivot.position.y, 0.46 + slopeLift, 10, delta);
         const riderForward = new THREE.Vector3(-Math.sin(character.rotation.y), 0, -Math.cos(character.rotation.y));
         const signedWheelSpeed = velocityRef.current.dot(riderForward);
-        wheelSpin -= signedWheelSpeed * delta / 0.1;
-        skateWheels.forEach((wheel) => { wheel.rotation.x = wheelSpin; });
-        playAction("idle", 0.16);
+        if (skating) {
+          wheelSpin -= signedWheelSpeed * delta / 0.1;
+          skateWheels.forEach((wheel) => { wheel.rotation.x = wheelSpin; });
+          playAction("idle", 0.16);
+        } else if (!supported) {
+          playAction(velocityRef.current.y > 0 ? "jump" : "fall", 0.12);
+        } else if (moving) {
+          playAction(boosting ? "run" : "walk", 0.14);
+        } else {
+          playAction("idle", 0.16);
+        }
         motionPivot.scale.set(1, 1, 1);
       } else {
         keysRef.current.clear();
@@ -2147,6 +2435,8 @@ export default function LobbyPage() {
         if (closestVenue) {
           const selectedVenue: VenueInfo = closestVenue;
           enterVenueWorld(selectedVenue);
+        } else if (!mapOpenRef.current && !venueOpenRef.current) {
+          toggleSkatingMode();
         }
       }
 
@@ -2195,6 +2485,7 @@ export default function LobbyPage() {
       teleportRef.current = () => undefined;
       enterVenueRef.current = () => undefined;
       leaveVenueRef.current = () => undefined;
+      toggleSkateRef.current = () => undefined;
       if (travelNoticeTimer) window.clearTimeout(travelNoticeTimer);
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {
@@ -2218,6 +2509,8 @@ export default function LobbyPage() {
     else keysRef.current.delete(code);
   };
   const activeDistrictInfo = activeDistrict ? DISTRICTS.find((district) => district.id === activeDistrict) ?? null : null;
+  const activeVenueProfile = activeVenue ? getVenueInteriorProfile(activeVenue) : null;
+  const activeVenueHighlights = activeVenue ? getVenueHighlights(activeVenue) : [];
   const worldCards = [
     {
       id: "park" as const,
@@ -2326,21 +2619,26 @@ export default function LobbyPage() {
         </button>
       )}
 
+      {!nearbyVenue && !activeVenue && !mapOpen && (
+        <button className="lobby-interaction ride-mode" type="button" onClick={() => toggleSkateRef.current()}>
+          <kbd>E</kbd>
+          <span><small>{isSkating ? "WALK MODE" : "SKATE MODE"}</small><strong>{isSkating ? "Step off skateboard" : "Ride skateboard"}</strong></span>
+        </button>
+      )}
+
       {activeVenue && (
-        <section className={`lobby-venue-panel${activeVenue.id === CENTRAL_SKATE_SHOP.id ? " skate-shop" : ""}`} role="dialog" aria-modal="true" aria-label={`${activeVenue.name} venue`}>
+        <section className="lobby-venue-panel interior" role="dialog" aria-modal="true" aria-label={`${activeVenue.name} venue`}>
           <div className="lobby-venue-heading">
             <span>{activeVenue.category}</span>
-            <em>OPEN NOW</em>
+            <em>{activeVenueProfile?.staffRole} ON DUTY</em>
           </div>
           <h2>{activeVenue.name}</h2>
           <p>{activeVenue.description}</p>
-          {activeVenue.id === CENTRAL_SKATE_SHOP.id && (
-            <div className="lobby-skate-inventory" aria-label="Skate shop inventory">
-              <span><small>COMPLETE</small><strong>67 Street 8.0</strong></span>
-              <span><small>DECK</small><strong>Park Shape 8.25</strong></span>
-              <span><small>WHEELS</small><strong>Soft City 54 mm</strong></span>
-            </div>
-          )}
+          <div className="lobby-venue-inventory" aria-label={`${activeVenue.name} highlights`}>
+            {activeVenueHighlights.map(([label, value]) => (
+              <span key={`${label}-${value}`}><small>{label}</small><strong>{value}</strong></span>
+            ))}
+          </div>
           <div className="lobby-venue-activity">
             <small>AVAILABLE ACTIVITY</small>
             <strong>{activeVenue.activity}</strong>
@@ -2352,9 +2650,9 @@ export default function LobbyPage() {
         </section>
       )}
 
-      {!mapOpen && !activeVenue && <div className="lobby-tip">{activeDistrictInfo ? "SKATE INTO OPEN SHOPS · HOLD SHIFT TO BOOST · E TO INTERACT" : "WASD TO SKATE · HOLD SHIFT TO BOOST · JUMP ON RAILS TO GRIND · M FOR MAP"}</div>}
+      {!mapOpen && !activeVenue && <div className="lobby-tip">{isSkating ? "WASD TO SKATE · E TO WALK · HOLD SHIFT TO BOOST · JUMP ON RAILS TO GRIND" : "WASD TO WALK · E TO RIDE · APPROACH A SHOP AND PRESS E TO ENTER"}</div>}
 
-      {!mapOpen && !activeVenue && (
+      {!mapOpen && !activeVenue && isSkating && (
         <div ref={speedMeterRef} className="lobby-speed-meter" aria-label="Skate speed">
           <div><small>SPEED</small><span>BOOST</span></div>
           <i><b /></i>
@@ -2371,7 +2669,11 @@ export default function LobbyPage() {
             <button className="down" aria-label="Move backward" onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); press("KeyS", true); }} onPointerUp={() => press("KeyS", false)} onPointerCancel={() => press("KeyS", false)}><CaretDown size={22} weight="bold" aria-hidden="true" /></button>
           </div>
           <div className="lobby-action-buttons">
-            {nearbyVenue && <button className="interact" aria-label={`Enter ${nearbyVenue.name}`} onPointerDown={() => { interactRequestRef.current = true; }}>E</button>}
+            <button
+              className={`interact${nearbyVenue ? " venue" : " ride"}`}
+              aria-label={nearbyVenue ? `Enter ${nearbyVenue.name}` : isSkating ? "Step off skateboard" : "Ride skateboard"}
+              onPointerDown={() => { interactRequestRef.current = true; }}
+            >{nearbyVenue ? "E" : <span className="board-glyph" aria-hidden="true" />}</button>
             <button
               className="boost"
               aria-label="Hold to accelerate skateboard"
