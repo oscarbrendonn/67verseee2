@@ -79,7 +79,14 @@ const DISTRICT_VENUES: Record<DistrictTheme, Array<Omit<VenueInfo, "id" | "distr
   ],
 };
 
-const TOTAL_VENUES = Object.values(DISTRICT_VENUES).reduce((total, venues) => total + venues.length, 0);
+const MARKET_MALL_VENUE: Omit<VenueInfo, "id" | "districtId"> = {
+  name: "Market Mile Galleria",
+  category: "SHOPPING CENTER",
+  activity: "Explore the indoor stores",
+  description: "A walk-in neighborhood mall with fashion, technology, food and arcade storefronts around a central hall.",
+};
+
+const TOTAL_VENUES = Object.values(DISTRICT_VENUES).reduce((total, venues) => total + venues.length, 1);
 
 function surface(color: string, roughness = 0.78, metalness = 0.02) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -679,9 +686,16 @@ export default function LobbyPage() {
       awning.castShadow = true;
       const counter = new THREE.Mesh(new THREE.BoxGeometry(5.4, 1.05, 1), surface("#756555", 0.72));
       counter.position.set(0, 0.72, -2.9);
+      const staff = new THREE.Group();
+      const staffHead = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 10), surface("#a77d67", 0.9));
+      staffHead.position.y = 1.66;
+      const staffBody = new THREE.Mesh(new RoundedBoxGeometry(0.6, 0.86, 0.42, 3, 0.09), surface(signIndex === 0 ? "#2d7059" : "#596264", 0.84));
+      staffBody.position.y = 1.08;
+      staff.add(staffHead, staffBody);
+      staff.position.set(0, 0.08, -3.15);
       const ceilingLight = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.08, 1.1), new THREE.MeshStandardMaterial({ color: "#fff7dd", emissive: "#fff0c7", emissiveIntensity: 0.7 }));
       ceilingLight.position.set(0, 3.02, -0.5);
-      building.add(upper, roof, floor, backWall, leftWall, rightWall, leftGlass, rightGlass, sign, awning, counter, ceilingLight);
+      building.add(upper, roof, floor, backWall, leftWall, rightWall, leftGlass, rightGlass, sign, awning, counter, staff, ceilingLight);
       addWindowRows(building, width, depth, height);
       return building;
     };
@@ -728,6 +742,14 @@ export default function LobbyPage() {
       counter.castShadow = true;
       const counterFace = new THREE.Mesh(new RoundedBoxGeometry(width * 0.38, 0.2, 0.08, 2, 0.025), surface(accent, 0.62));
       counterFace.position.set(0, 0.76, -depth / 2 + 0.75);
+      const attendant = new THREE.Group();
+      const attendantHead = new THREE.Mesh(new THREE.SphereGeometry(0.25, 12, 10), surface("#aa7e67", 0.9));
+      attendantHead.position.y = 1.68;
+      const attendantBody = new THREE.Mesh(new RoundedBoxGeometry(0.58, 0.82, 0.4, 3, 0.09), surface(accent, 0.82));
+      attendantBody.position.y = 1.12;
+      attendant.add(attendantHead, attendantBody);
+      attendant.position.set(0, 0.08, -depth / 2 + 1.65);
+      attendant.traverse((object) => { if (object instanceof THREE.Mesh) object.castShadow = true; });
       const shelfMaterial = surface("#81796f", 0.88);
       [-width * 0.32, width * 0.32].forEach((x) => {
         const shelf = new THREE.Mesh(new RoundedBoxGeometry(1.5, 1.75, 0.48, 3, 0.05), shelfMaterial);
@@ -745,9 +767,88 @@ export default function LobbyPage() {
       feature.castShadow = true;
       const ceilingLight = new THREE.Mesh(new RoundedBoxGeometry(3.8, 0.08, 0.72, 2, 0.025), new THREE.MeshStandardMaterial({ color: "#fff8df", emissive: "#fff0c8", emissiveIntensity: 0.72 }));
       ceilingLight.position.set(0, 2.92, -0.55);
-      shop.add(upper, roof, rear, sideLeft, sideRight, leftGlass, rightGlass, floor, entryLeft, entryRight, entryTop, sign, awning, counter, counterFace, feature, ceilingLight);
+      shop.add(upper, roof, rear, sideLeft, sideRight, leftGlass, rightGlass, floor, entryLeft, entryRight, entryTop, sign, awning, counter, counterFace, attendant, feature, ceilingLight);
       addWindowRows(shop, width, depth, height);
       return shop;
+    };
+
+    const createShoppingMall = () => {
+      const mall = new THREE.Group();
+      const width = 30;
+      const depth = 16;
+      const height = 8.4;
+      const shellMaterial = surface("#918997", 0.8);
+      const interiorWall = surface("#d3d0c8", 0.9);
+      const warmLight = new THREE.MeshStandardMaterial({ color: "#fff4d6", emissive: "#ffe8b7", emissiveIntensity: 0.78 });
+      const floor = new THREE.Mesh(new RoundedBoxGeometry(width - 0.5, 0.18, depth - 0.5, 4, 0.07), surface("#b8b5ae", 0.84));
+      floor.position.y = 0.12;
+      floor.receiveShadow = true;
+      const rear = new THREE.Mesh(new RoundedBoxGeometry(width, height, 0.38, 3, 0.08), shellMaterial);
+      rear.position.set(0, height / 2, depth / 2 - 0.19);
+      const left = new THREE.Mesh(new RoundedBoxGeometry(0.42, height, depth, 3, 0.08), shellMaterial);
+      left.position.set(-width / 2 + 0.21, height / 2, 0);
+      const right = left.clone();
+      right.position.x *= -1;
+      const entranceWidth = 4.2;
+      const frontSegmentWidth = (width - entranceWidth) / 2;
+      [-1, 1].forEach((side) => {
+        const front = new THREE.Mesh(new RoundedBoxGeometry(frontSegmentWidth, 4.2, 0.34, 3, 0.07), interiorWall);
+        front.position.set(side * (entranceWidth / 2 + frontSegmentWidth / 2), 2.2, -depth / 2 + 0.17);
+        const glass = new THREE.Mesh(new RoundedBoxGeometry(frontSegmentWidth - 0.8, 2.55, 0.12, 3, 0.04), glassMaterial);
+        glass.position.set(front.position.x, 1.65, -depth / 2 - 0.03);
+        mall.add(front, glass);
+      });
+      const entranceHeader = new THREE.Mesh(new RoundedBoxGeometry(entranceWidth + 0.35, 0.22, 0.42, 2, 0.04), surface("#3e4549", 0.5, 0.18));
+      entranceHeader.position.set(0, 3.35, -depth / 2 - 0.02);
+      const fascia = new THREE.Mesh(new RoundedBoxGeometry(width - 1, 1.18, 0.34, 3, 0.07), makeSignMaterial("MARKET MILE GALLERIA", "#4b405e"));
+      fascia.position.set(0, 5.35, -depth / 2 - 0.03);
+      fascia.castShadow = true;
+      const upperBand = new THREE.Mesh(new RoundedBoxGeometry(width, 2.4, depth, 4, 0.14), shellMaterial);
+      upperBand.position.y = 7.2;
+      upperBand.castShadow = true;
+      upperBand.receiveShadow = true;
+
+      const shopSpecs: Array<[string, string, number, number, number]> = [
+        ["MODE", "#8f5f77", -10.2, 4.8, 0],
+        ["TECH", "#506d7c", -3.4, 4.8, 0],
+        ["FOOD HALL", "#927047", 3.4, 4.8, 0],
+        ["ARCADE", "#65588d", 10.2, 4.8, 0],
+      ];
+      shopSpecs.forEach(([label, accent, x, z]) => {
+        const unit = new THREE.Mesh(new RoundedBoxGeometry(5.8, 3.7, 4.2, 3, 0.09), interiorWall);
+        unit.position.set(x, 2.05, z);
+        unit.castShadow = true;
+        const display = new THREE.Mesh(new RoundedBoxGeometry(4.8, 2.05, 0.12, 3, 0.04), glassMaterial);
+        display.position.set(x, 1.6, z - 2.12);
+        const sign = new THREE.Mesh(new RoundedBoxGeometry(4.9, 0.58, 0.15, 3, 0.04), makeSignMaterial(label, accent));
+        sign.position.set(x, 3.05, z - 2.18);
+        const counter = new THREE.Mesh(new RoundedBoxGeometry(3.2, 0.78, 0.72, 3, 0.07), surface(accent, 0.76));
+        counter.position.set(x, 0.52, z - 0.65);
+        mall.add(unit, display, sign, counter);
+      });
+
+      const kiosk = new THREE.Mesh(new RoundedBoxGeometry(4.2, 1.08, 2.2, 4, 0.14), surface("#71665b", 0.8));
+      kiosk.position.set(0, 0.68, -1.2);
+      const kioskTop = new THREE.Mesh(new RoundedBoxGeometry(4.5, 0.14, 2.5, 3, 0.05), surface("#c1a36d", 0.72));
+      kioskTop.position.set(0, 1.26, -1.2);
+      [-8.6, 0, 8.6].forEach((x) => {
+        const ceilingLight = new THREE.Mesh(new RoundedBoxGeometry(5.1, 0.09, 0.78, 2, 0.025), warmLight);
+        ceilingLight.position.set(x, 6.05, -0.3);
+        mall.add(ceilingLight);
+      });
+      [-11.5, 11.5].forEach((x) => {
+        const bench = new THREE.Mesh(new RoundedBoxGeometry(3.1, 0.45, 0.72, 3, 0.08), surface("#75695e", 0.85));
+        bench.position.set(x, 0.43, -2.3);
+        mall.add(bench);
+      });
+      mall.add(floor, rear, left, right, entranceHeader, fascia, upperBand, kiosk, kioskTop);
+      mall.traverse((object) => {
+        if (object instanceof THREE.Mesh) {
+          object.castShadow = true;
+          object.receiveShadow = true;
+        }
+      });
+      return mall;
     };
 
     const createCityTower = (width: number, depth: number, height: number, color: string, glass = "#42616b") => {
@@ -804,6 +905,70 @@ export default function LobbyPage() {
       return vehicle;
     };
 
+    const addBusShelter = (x: number, z: number, rotation: number, accent: string) => {
+      const shelter = new THREE.Group();
+      const frameMaterial = surface("#343b3e", 0.42, 0.58);
+      const shelterGlass = new THREE.MeshStandardMaterial({ color: "#8fa8ae", roughness: 0.12, metalness: 0.08, transparent: true, opacity: 0.52 });
+      const back = new THREE.Mesh(new RoundedBoxGeometry(4.6, 2.5, 0.1, 3, 0.035), shelterGlass);
+      back.position.set(0, 1.35, -0.55);
+      [-2.18, 2.18].forEach((postX) => {
+        const post = new THREE.Mesh(new RoundedBoxGeometry(0.1, 2.7, 0.1, 2, 0.025), frameMaterial);
+        post.position.set(postX, 1.35, -0.52);
+        shelter.add(post);
+      });
+      const roof = new THREE.Mesh(new RoundedBoxGeometry(5.05, 0.14, 1.65, 3, 0.05), surface(accent, 0.72));
+      roof.position.set(0, 2.72, 0);
+      const seat = new THREE.Mesh(new RoundedBoxGeometry(3.2, 0.18, 0.58, 3, 0.05), surface("#76695c", 0.86));
+      seat.position.set(0, 0.63, -0.05);
+      const routeSign = new THREE.Mesh(new RoundedBoxGeometry(0.65, 1.45, 0.12, 2, 0.03), makeSignMaterial("67", accent));
+      routeSign.position.set(2.45, 1.62, -0.48);
+      shelter.add(back, roof, seat, routeSign);
+      shelter.position.set(x, 0.08, z);
+      shelter.rotation.y = rotation;
+      shelter.traverse((object) => { if (object instanceof THREE.Mesh) object.castShadow = true; });
+      scene.add(shelter);
+    };
+
+    const addStreetBin = (x: number, z: number, accent: string) => {
+      const bin = new THREE.Group();
+      const body = new THREE.Mesh(new RoundedBoxGeometry(0.72, 1.02, 0.72, 3, 0.08), surface("#4b5254", 0.82));
+      body.position.y = 0.58;
+      const lid = new THREE.Mesh(new RoundedBoxGeometry(0.82, 0.14, 0.82, 3, 0.05), surface(accent, 0.68));
+      lid.position.y = 1.12;
+      bin.add(body, lid);
+      bin.position.set(x, 0.06, z);
+      scene.add(bin);
+    };
+
+    const addCafeTable = (x: number, z: number, color: string) => {
+      const table = new THREE.Group();
+      const metal = surface("#444b4e", 0.5, 0.46);
+      const top = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.78, 0.12, 20), surface(color, 0.78));
+      top.position.y = 0.86;
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.78, 12), metal);
+      stem.position.y = 0.45;
+      table.add(top, stem);
+      [-1.15, 1.15].forEach((chairX) => {
+        const chair = new THREE.Mesh(new RoundedBoxGeometry(0.58, 0.52, 0.58, 3, 0.07), surface("#7a7066", 0.86));
+        chair.position.set(chairX, 0.34, 0);
+        table.add(chair);
+      });
+      table.position.set(x, 0.08, z);
+      scene.add(table);
+    };
+
+    const addCargoStack = (x: number, z: number, color: string) => {
+      const stack = new THREE.Group();
+      [[-0.85, 0.45, 0], [0.85, 0.45, 0], [0, 1.35, 0]].forEach(([crateX, crateY, crateZ], index) => {
+        const crate = new THREE.Mesh(new RoundedBoxGeometry(1.5, 0.82, 1.35, 2, 0.04), surface(index === 2 ? color : "#89705b", 0.9));
+        crate.position.set(crateX, crateY, crateZ);
+        crate.castShadow = true;
+        stack.add(crate);
+      });
+      stack.position.set(x, 0.05, z);
+      scene.add(stack);
+    };
+
     const createSuburbanHouse = (color: string, roofColor: string) => {
       const house = new THREE.Group();
       const body = new THREE.Mesh(new RoundedBoxGeometry(7.4, 4.5, 7, 3, 0.14), surface(color, 0.9));
@@ -817,12 +982,14 @@ export default function LobbyPage() {
       roof.castShadow = true;
       const door = new THREE.Mesh(new RoundedBoxGeometry(1.18, 2.25, 0.1, 2, 0.03), surface("#35434a", 0.58));
       door.position.set(0, 1.3, 3.55);
+      const porchLight = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 8), new THREE.MeshStandardMaterial({ color: "#fff0c6", emissive: "#ffd98c", emissiveIntensity: 0.85 }));
+      porchLight.position.set(1.05, 2.42, 3.62);
       [-2.15, 2.15].forEach((x) => {
         const window = new THREE.Mesh(new RoundedBoxGeometry(1.25, 1.18, 0.09, 2, 0.035), windowMaterial);
         window.position.set(x, 2.5, 3.57);
         house.add(window);
       });
-      house.add(body, roof, door);
+      house.add(body, roof, door, porchLight);
       return house;
     };
 
@@ -1065,6 +1232,15 @@ export default function LobbyPage() {
         verticalDash.position.set(centerX, 0.085, centerZ + dash * 9);
         scene.add(horizontalDash, verticalDash);
       }
+      [-10, 10].forEach((offset) => {
+        for (let stripe = -2; stripe <= 2; stripe += 1) {
+          const acrossVerticalRoad = new THREE.Mesh(new THREE.BoxGeometry(8.1, 0.026, 0.62), roadMarkingMaterial);
+          acrossVerticalRoad.position.set(centerX, 0.086, centerZ + offset + stripe * 0.92);
+          const acrossHorizontalRoad = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.027, 8.1), roadMarkingMaterial);
+          acrossHorizontalRoad.position.set(centerX + offset + stripe * 0.92, 0.087, centerZ);
+          scene.add(acrossVerticalRoad, acrossHorizontalRoad);
+        }
+      });
 
       [[-23, -23], [23, -23], [-23, 23], [23, 23]].forEach(([x, z]) => {
         const lot = box([30, 0.12, 30], palette.lot, 0.97);
@@ -1096,6 +1272,10 @@ export default function LobbyPage() {
       });
       addCityVehicle(centerX - 2.7, centerZ - 27, 0, palette.facades[0]);
       addCityVehicle(centerX + 2.7, centerZ + 27, Math.PI, palette.facades[2]);
+      addBusShelter(centerX - 27, centerZ - 7.9, 0, district.accent);
+      addBusShelter(centerX + 27, centerZ + 7.9, Math.PI, district.accent);
+      addStreetBin(centerX - 23.5, centerZ - 8, district.accent);
+      addStreetBin(centerX + 23.5, centerZ + 8, district.accent);
 
       if (district.theme === "coast") {
         const water = new THREE.Mesh(new THREE.BoxGeometry(90, 0.08, 13), new THREE.MeshStandardMaterial({ color: "#5c9eaa", roughness: 0.3, metalness: 0.06 }));
@@ -1107,6 +1287,7 @@ export default function LobbyPage() {
         scene.add(water, sand, boardwalk);
         addDistrictObstacle(district.id, centerX, centerZ - 38.5, 90, 13);
         [-36, -24, -12, 12, 24, 36].forEach((x) => addPalm(centerX + x, centerZ - 22, 0.12));
+        [-18, 0, 18].forEach((x, index) => addCafeTable(centerX + x, centerZ - 23.5, index % 2 ? "#5f9fa7" : "#d0a36f"));
         [[-31, 26, 13], [31, 26, 16], [-32, -4, 12], [32, -4, 14]].forEach(([x, z, height], index) => {
           const pad = box([13, 0.2, 13], "#b2afa6", 0.95);
           pad.position.set(centerX + x, 0.02, centerZ + z);
@@ -1129,10 +1310,21 @@ export default function LobbyPage() {
           addDistrictObstacle(district.id, centerX + x, centerZ + z, 7.4, 7);
         });
         [[-39, -12], [-39, 11], [39, -12], [39, 11], [-11, -39], [11, -39], [-11, 39], [11, 39]].forEach(([x, z]) => addTree(scene, centerX + x, centerZ + z, 0.78, 0.06));
+        [[-27, 18], [27, -18]].forEach(([x, z]) => {
+          const garden = box([8.4, 0.16, 4.8], "#6f865f", 0.98);
+          garden.position.set(centerX + x, 0.02, centerZ + z);
+          scene.add(garden);
+          [-2.5, 0, 2.5].forEach((rowX) => {
+            const hedge = new THREE.Mesh(new RoundedBoxGeometry(1.55, 0.62, 0.72, 3, 0.1), surface("#526e4c", 0.98));
+            hedge.position.set(centerX + x + rowX, 0.4, centerZ + z);
+            hedge.castShadow = true;
+            scene.add(hedge);
+          });
+        });
       }
 
       if (district.theme === "downtown") {
-        [[-33, -29, 18], [33, -29, 25], [-33, 28, 28], [33, 28, 21], [-31, 2, 23], [31, 2, 30]].forEach(([x, z, height], index) => {
+        [[-33, -29, 18], [33, -29, 25], [33, 28, 21], [-31, 2, 23], [31, 2, 30]].forEach(([x, z, height], index) => {
           const foundation = box([13, 0.2, 13], "#9d9b96", 0.96);
           foundation.position.set(centerX + x, 0.02, centerZ + z);
           const tower = createCityTower(10.5, 10.5, height, palette.facades[index % palette.facades.length], index % 2 ? "#384d60" : "#4a5368");
@@ -1140,7 +1332,7 @@ export default function LobbyPage() {
           scene.add(foundation, tower);
           addDistrictObstacle(district.id, centerX + x, centerZ + z, 10.5, 10.5);
         });
-        [[-14, 34, 27], [14, 34, 32]].forEach(([x, z, height], index) => {
+        [[16, 34, 27]].forEach(([x, z, height], index) => {
           const foundation = box([12.5, 0.2, 12.5], "#9d9b96", 0.96);
           foundation.position.set(centerX + x, 0.02, centerZ + z);
           const tower = createCityTower(10, 10, height, index ? "#6f7584" : "#807185", index ? "#394d63" : "#4a5368");
@@ -1148,6 +1340,21 @@ export default function LobbyPage() {
           scene.add(foundation, tower);
           addDistrictObstacle(district.id, centerX + x, centerZ + z, 10, 10);
         });
+        const mallX = centerX - 27;
+        const mallZ = centerZ + 31;
+        const mallFoundation = box([32, 0.2, 18], "#a7a39d", 0.95);
+        mallFoundation.position.set(mallX, 0.02, mallZ);
+        const mall = createShoppingMall();
+        mall.position.set(mallX, 0, mallZ);
+        scene.add(mallFoundation, mall);
+        venuePoints.push({ ...MARKET_MALL_VENUE, id: "market-mile-galleria", districtId: district.id, x: mallX, z: mallZ - 9.1 });
+        addDistrictObstacle(district.id, mallX, mallZ + 7.8, 30, 0.38);
+        addDistrictObstacle(district.id, mallX - 14.8, mallZ, 0.42, 16);
+        addDistrictObstacle(district.id, mallX + 14.8, mallZ, 0.42, 16);
+        addDistrictObstacle(district.id, mallX - 8.55, mallZ - 7.8, 12.9, 0.34);
+        addDistrictObstacle(district.id, mallX + 8.55, mallZ - 7.8, 12.9, 0.34);
+        addStreetActor(mallX - 6.5, mallZ - 2, district.accent, "x", 5.4);
+        addStreetActor(mallX + 6.5, mallZ + 0.5, district.accent, "x", 6.7);
         [[-38, -8], [-38, 8], [38, -8], [38, 8]].forEach(([x, z]) => addLamp(scene, centerX + x, centerZ + z));
       }
 
@@ -1161,6 +1368,7 @@ export default function LobbyPage() {
           scene.add(foundation, warehouse);
           addDistrictObstacle(district.id, centerX + x, centerZ + z, width, depth);
         });
+        [[-22, -38], [22, 38], [-38, 18], [38, -18]].forEach(([x, z], index) => addCargoStack(centerX + x, centerZ + z, index % 2 ? "#8f5f4d" : "#66787a"));
       }
 
       [-37, -18, 18, 37].forEach((position) => {
