@@ -47,11 +47,19 @@ type District = {
 };
 
 const DISTRICTS: District[] = [
-  { id: "gullcrest", index: "01", name: "Gullcrest Coast", zone: "Pacific waterfront", worldCenter: [0, -150], spawn: [0, 0.91, -150], cameraYaw: 0.15, theme: "coast", gateway: "COAST", accent: "#5f9fa7", locked: true },
-  { id: "hedgemont", index: "02", name: "Hedgemont Heights", zone: "Garden suburb", worldCenter: [150, 0], spawn: [150, 0.91, 0], cameraYaw: Math.PI / 2, theme: "suburb", gateway: "HEIGHTS", accent: "#70866a", locked: true },
-  { id: "market-mile", index: "03", name: "Market Mile", zone: "Downtown nightlife", worldCenter: [0, 150], spawn: [0, 0.91, 150], cameraYaw: Math.PI, theme: "downtown", gateway: "DOWNTOWN", accent: "#75618f", locked: true },
-  { id: "brickswich", index: "04", name: "Brickswich Works", zone: "Warehouse arts quarter", worldCenter: [-150, 0], spawn: [-150, 0.91, 0], cameraYaw: -Math.PI / 2, theme: "industrial", gateway: "WORKS", accent: "#9a6652", locked: true },
+  { id: "gullcrest", index: "02", name: "Gullcrest Coast", zone: "Pacific waterfront", worldCenter: [0, -150], spawn: [0, 0.91, -150], cameraYaw: 0.15, theme: "coast", gateway: "COAST", accent: "#5f9fa7", locked: true },
+  { id: "hedgemont", index: "03", name: "Hedgemont Heights", zone: "Garden suburb", worldCenter: [150, 0], spawn: [150, 0.91, 0], cameraYaw: Math.PI / 2, theme: "suburb", gateway: "HEIGHTS", accent: "#70866a", locked: true },
+  { id: "market-mile", index: "04", name: "Market Mile", zone: "Downtown nightlife", worldCenter: [0, 150], spawn: [0, 0.91, 150], cameraYaw: Math.PI, theme: "downtown", gateway: "DOWNTOWN", accent: "#75618f", locked: true },
+  { id: "brickswich", index: "05", name: "Brickswich Works", zone: "Warehouse arts quarter", worldCenter: [-150, 0], spawn: [-150, 0.91, 0], cameraYaw: -Math.PI / 2, theme: "industrial", gateway: "WORKS", accent: "#9a6652", locked: true },
 ];
+
+const WORLD_CARD_IMAGES: Record<DistrictId | "park", string> = {
+  park: "/map-cards/central-park.jpg",
+  gullcrest: "/map-cards/gullcrest.jpg",
+  hedgemont: "/map-cards/hedgemont.jpg",
+  "market-mile": "/map-cards/market-mile.jpg",
+  brickswich: "/map-cards/brickswich.jpg",
+};
 
 const DISTRICT_VENUES: Record<DistrictTheme, Array<Omit<VenueInfo, "id" | "districtId">>> = {
   coast: [
@@ -1139,7 +1147,7 @@ export default function LobbyPage() {
     });
 
     const trees: Array<[number, number, number, number]> = [
-      [-39, -14, 0.92, 0.36], [-39, -3, 1.02, 0.36],
+      [-38.3, -14, 0.82, 0.36], [-38.2, -3, 0.88, 0.36],
       [39, -14, 0.96, 0.36], [39, -3, 1.02, 0.36],
       [-32, 21, 1, 0.36], [-23, 24, 0.92, 0.36], [-13, 21, 0.88, 0.36],
       [13, 21, 0.9, 0.36], [24, 24, 1, 0.36], [34, 21, 0.9, 0.36],
@@ -2209,6 +2217,24 @@ export default function LobbyPage() {
     else keysRef.current.delete(code);
   };
   const activeDistrictInfo = activeDistrict ? DISTRICTS.find((district) => district.id === activeDistrict) ?? null : null;
+  const worldCards = [
+    {
+      id: "park" as const,
+      index: "01",
+      name: "67VERSE City Park",
+      zone: "Central skate hub",
+      locked: false,
+      image: WORLD_CARD_IMAGES.park,
+    },
+    ...DISTRICTS.map((district) => ({
+      id: district.id,
+      index: district.index,
+      name: district.name,
+      zone: district.zone,
+      locked: district.locked,
+      image: WORLD_CARD_IMAGES[district.id],
+    })),
+  ];
   const enterVenue = (venue: VenueInfo) => {
     enterVenueRef.current(venue);
   };
@@ -2244,22 +2270,49 @@ export default function LobbyPage() {
       </section>
 
       {mapOpen && (
-        <section className="lobby-map-legend" aria-label="City park map locations">
-          <small>WORLD GATES</small>
-          <h2>Select a world</h2>
-          {DISTRICTS.map((district) => (
-            <button key={district.id} className={district.locked ? "locked" : undefined} type="button" aria-disabled={district.locked} onClick={() => teleportRef.current(district.id)}>
-              <span>{district.index}</span>
-              <strong>{district.name}</strong>
-              <em>{district.locked ? <><LockSimple size={11} weight="bold" aria-hidden="true" />LOCKED</> : "ENTER"}</em>
-            </button>
-          ))}
-          <Link className="lobby-map-games" href="/games">
-            <span>LIVE</span>
-            <strong>City Party Games</strong>
-            <em>3 EVENTS</em>
-          </Link>
-          <p>Districts are private creator previews. Public travel opens after the city release.</p>
+        <section className="lobby-world-map" aria-label="67VERSE world map">
+          <div className="lobby-world-map-panel">
+            <header className="lobby-world-map-heading">
+              <div>
+                <small>67VERSE WORLD MAP</small>
+                <h2>Choose a destination</h2>
+                <p>One connected city. Five distinct neighborhoods.</p>
+              </div>
+              <button type="button" onClick={() => setMapOpen(false)}>CLOSE</button>
+            </header>
+
+            <div className="lobby-world-grid">
+              {worldCards.map((world) => {
+                const isCurrent = world.id === (activeDistrict ?? "park");
+                return (
+                  <button
+                    key={world.id}
+                    className={`lobby-world-card${world.id === "park" ? " featured" : ""}${world.locked ? " locked" : ""}${isCurrent ? " current" : ""}`}
+                    type="button"
+                    aria-disabled={world.locked}
+                    onClick={() => teleportRef.current(world.id)}
+                  >
+                    {/* Native image loading keeps these local map previews reliable in the Vinext runtime. */}
+                    <img src={world.image} alt="" loading={world.id === "park" ? "eager" : "lazy"} decoding="async" />
+                    <span className="lobby-world-shade" aria-hidden="true" />
+                    <span className="lobby-world-number">{world.index}</span>
+                    <span className="lobby-world-state">
+                      {world.locked ? <><LockSimple size={12} weight="bold" aria-hidden="true" />LOCKED</> : isCurrent ? "YOU ARE HERE" : "ENTER"}
+                    </span>
+                    <span className="lobby-world-copy">
+                      <small>{world.zone}</small>
+                      <strong>{world.name}</strong>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <footer className="lobby-world-map-footer">
+              <p>District previews stay private until the city release.</p>
+              <Link href="/games"><span>LIVE</span> CITY PARTY GAMES <em>3 EVENTS</em></Link>
+            </footer>
+          </div>
         </section>
       )}
 

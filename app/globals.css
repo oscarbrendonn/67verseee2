@@ -360,7 +360,8 @@ button { color: inherit; }
 .lobby-actions button:focus-visible,
 .lobby-actions a:focus-visible,
 .lobby-return:focus-visible,
-.lobby-map-legend button:focus-visible,
+.lobby-world-map button:focus-visible,
+.lobby-world-map a:focus-visible,
 .lobby-interaction:focus-visible,
 .lobby-venue-panel button:focus-visible,
 .lobby-stick button:focus-visible,
@@ -661,79 +662,101 @@ button { color: inherit; }
   white-space: nowrap;
 }
 
-.lobby-map-legend {
+.lobby-world-map {
   position: absolute;
-  z-index: 9;
-  top: 92px;
-  right: 18px;
-  width: 240px;
+  z-index: 15;
+  inset: 0;
   display: grid;
-  gap: 7px;
-  padding: 13px;
-  border: 1px solid rgba(21, 25, 28, .14);
-  border-radius: 9px;
-  background: rgba(244, 243, 239, .96);
-  box-shadow: 0 12px 32px rgba(24, 31, 35, .15);
+  place-items: center;
+  padding: 18px;
+  overflow: auto;
+  background: rgba(18, 23, 26, .64);
+  backdrop-filter: blur(18px) saturate(.78);
 }
 
-.lobby-map-legend > small {
-  margin: 1px 8px 0;
-  color: #7c8285;
-  font: 650 8px/12px var(--font-geist-mono);
-  letter-spacing: .08em;
-}
-
-.lobby-map-legend h2 {
-  margin: -2px 8px 5px;
-  font-size: 17px;
-  line-height: 22px;
-}
-
-.lobby-map-legend button {
-  min-height: 42px;
+.lobby-world-map-panel {
+  width: min(1120px, calc(100vw - 36px));
+  max-height: calc(100dvh - 36px);
   display: grid;
-  grid-template-columns: 24px 1fr auto;
+  gap: 14px;
+  padding: 18px;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, .62);
+  border-radius: 22px;
+  color: #171b1e;
+  background: rgba(246, 245, 241, .97);
+  box-shadow: 0 30px 90px rgba(7, 12, 15, .34);
+}
+
+.lobby-world-map-heading,
+.lobby-world-map-footer {
+  display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border: 1px solid #deded9;
-  border-radius: 7px;
-  color: var(--lobby-ink);
-  background: #f8f7f3;
-  text-align: left;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.lobby-world-map-heading > div { display: grid; gap: 2px; }
+.lobby-world-map-heading small { color: #71777a; font: 720 8px/12px var(--font-geist-mono); letter-spacing: .1em; }
+.lobby-world-map-heading h2 { margin: 0; font-size: clamp(24px, 3vw, 38px); line-height: 1.08; letter-spacing: -.035em; }
+.lobby-world-map-heading p,
+.lobby-world-map-footer p { margin: 0; color: #73797c; font-size: 11px; }
+.lobby-world-map-heading > button {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(23, 27, 30, .14);
+  border-radius: 10px;
+  color: #252a2d;
+  background: #e9e8e3;
+  font: 760 9px var(--font-geist-mono);
   cursor: pointer;
 }
+.lobby-world-map-heading > button:hover { background: #deddd8; }
 
-.lobby-map-legend button:hover { border-color: #b8b8b1; background: #ebeae5; }
-.lobby-map-games {
-  min-height: 42px;
+.lobby-world-grid {
+  min-height: min(560px, calc(100dvh - 210px));
   display: grid;
-  grid-template-columns: 28px 1fr auto;
-  align-items: center;
+  grid-template-columns: 1.16fr 1fr 1fr;
+  grid-template-rows: repeat(2, minmax(180px, 1fr));
   gap: 10px;
-  padding: 8px 10px;
-  border: 1px solid #171b1e;
-  border-radius: 7px;
+}
+
+.lobby-world-card {
+  position: relative;
+  min-width: 0;
+  min-height: 180px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 15px;
   color: #fff;
-  background: #171b1e;
+  background: #303638;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .14);
   text-align: left;
-  text-decoration: none;
+  cursor: pointer;
+  isolation: isolate;
 }
-.lobby-map-games:hover { background: #30363a; }
-.lobby-map-legend .lobby-map-games span { color: #a8d6b4; }
-.lobby-map-legend .lobby-map-games strong { color: #fff; }
-.lobby-map-legend .lobby-map-games em { color: #c9cecf; }
-.lobby-map-legend button.locked {
-  border-color: #d4d3cc;
-  color: #62686a;
-  background: #efeee9;
-}
-.lobby-map-legend button.locked:hover { border-color: #a9aaa5; background: #e5e4df; }
-.lobby-map-legend button.locked em { color: #303538; }
-.lobby-map-legend span { color: #7c8285; font: 650 9px var(--font-geist-mono); }
-.lobby-map-legend strong { font-size: 11px; }
-.lobby-map-legend em { display: inline-flex; align-items: center; gap: 4px; color: #6e7477; font: 700 8px var(--font-geist-mono); font-style: normal; }
-.lobby-map-legend p { margin: 3px 8px 2px; color: #7c8285; font-size: 9px; }
+.lobby-world-card.featured { grid-row: 1 / span 2; min-height: 370px; }
+.lobby-world-card > img { position: absolute; z-index: -2; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .42s cubic-bezier(.2,.7,.2,1), filter .24s ease; }
+.lobby-world-card:hover > img { transform: scale(1.035); }
+.lobby-world-card.locked > img { filter: saturate(.72) brightness(.79); }
+.lobby-world-card.locked:hover > img { filter: saturate(.85) brightness(.86); }
+.lobby-world-shade { position: absolute; z-index: -1; inset: 0; background: linear-gradient(180deg, rgba(8, 13, 16, .08) 32%, rgba(8, 13, 16, .86) 100%); }
+.lobby-world-number,
+.lobby-world-state { position: absolute; top: 13px; }
+.lobby-world-number { left: 13px; min-width: 31px; padding: 6px 8px; border-radius: 8px; color: #161c1f; background: rgba(249, 248, 244, .94); font: 800 10px var(--font-geist-mono); text-align: center; }
+.lobby-world-state { right: 13px; display: inline-flex; align-items: center; gap: 5px; padding: 6px 8px; border: 1px solid rgba(255, 255, 255, .22); border-radius: 8px; background: rgba(17, 23, 26, .72); font: 760 8px var(--font-geist-mono); backdrop-filter: blur(10px); }
+.lobby-world-card.current .lobby-world-state { color: #d8f0de; background: rgba(31, 74, 44, .8); }
+.lobby-world-copy { position: absolute; right: 15px; bottom: 15px; left: 15px; display: grid; gap: 3px; }
+.lobby-world-copy small { color: rgba(255, 255, 255, .72); font: 680 8px/12px var(--font-geist-mono); letter-spacing: .07em; text-transform: uppercase; }
+.lobby-world-copy strong { max-width: 95%; color: #fff; font-size: clamp(15px, 1.55vw, 23px); line-height: 1.08; letter-spacing: -.025em; text-wrap: balance; }
+.lobby-world-card.featured .lobby-world-copy strong { font-size: clamp(23px, 3vw, 40px); }
+
+.lobby-world-map-footer { min-height: 38px; }
+.lobby-world-map-footer a { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 12px; border-radius: 9px; color: #fff; background: #171b1e; font-size: 9px; font-weight: 760; text-decoration: none; }
+.lobby-world-map-footer a:hover { background: #30363a; }
+.lobby-world-map-footer a span { color: #9fd5ad; font: 760 8px var(--font-geist-mono); }
+.lobby-world-map-footer a em { color: #bfc4c6; font: 680 8px var(--font-geist-mono); font-style: normal; }
 
 .lobby-travel-notice {
   position: absolute;
@@ -879,9 +902,23 @@ button { color: inherit; }
   .lobby-location span { font-size: 9px; }
   .lobby-return { min-height: 29px; margin-top: 8px; font-size: 8px; }
   .lobby-tip { display: none; }
-  .lobby-map-legend { top: 66px; right: 8px; width: 204px; }
-  .lobby-map-legend h2 { font-size: 15px; }
-  .lobby-map-legend button { min-height: 38px; padding: 7px 8px; grid-template-columns: 20px 1fr auto; }
+  .lobby-world-map { place-items: start center; padding: 8px; }
+  .lobby-world-map-panel { width: 100%; max-height: calc(100dvh - 16px); gap: 10px; padding: 12px; border-radius: 17px; }
+  .lobby-world-map-heading { align-items: flex-start; gap: 10px; }
+  .lobby-world-map-heading h2 { font-size: 25px; }
+  .lobby-world-map-heading p { font-size: 9px; }
+  .lobby-world-map-heading > button { min-height: 34px; padding: 0 10px; }
+  .lobby-world-grid { min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: 168px repeat(2, 140px); gap: 7px; }
+  .lobby-world-card { min-height: 0; border-radius: 12px; }
+  .lobby-world-card.featured { grid-column: 1 / -1; grid-row: auto; min-height: 0; }
+  .lobby-world-number, .lobby-world-state { top: 9px; }
+  .lobby-world-number { left: 9px; min-width: 28px; padding: 5px 6px; }
+  .lobby-world-state { right: 9px; padding: 5px 6px; font-size: 7px; }
+  .lobby-world-copy { right: 10px; bottom: 10px; left: 10px; }
+  .lobby-world-copy strong, .lobby-world-card.featured .lobby-world-copy strong { font-size: 15px; }
+  .lobby-world-map-footer p { display: none; }
+  .lobby-world-map-footer { justify-content: stretch; }
+  .lobby-world-map-footer a { width: 100%; justify-content: center; }
   .lobby-travel-notice { top: 66px; font-size: 9px; }
   .lobby-interaction { top: 66px; bottom: auto; min-width: 188px; padding: 7px 11px 7px 7px; }
   .lobby-interaction kbd { display: none; }
