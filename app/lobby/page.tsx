@@ -275,13 +275,13 @@ export default function LobbyPage() {
     addGroundSlab(12, 42.8, bowlCenterX, 21.6);
 
     const roadMaterial = surface("#353a3d", 0.94);
-    const road = new THREE.Mesh(new THREE.BoxGeometry(96, 0.09, 9.5), roadMaterial);
+    const road = new THREE.Mesh(new THREE.BoxGeometry(112, 0.09, 9.5), roadMaterial);
     road.position.set(0, 0.015, -33.4);
     road.receiveShadow = true;
     scene.add(road);
 
     const sidewalkMaterial = surface("#b6b5ae", 0.94);
-    const northSidewalk = new THREE.Mesh(new THREE.BoxGeometry(96, 0.13, 4.2), sidewalkMaterial);
+    const northSidewalk = new THREE.Mesh(new THREE.BoxGeometry(88.8, 0.13, 4.2), sidewalkMaterial);
     northSidewalk.position.set(0, 0.08, -27.2);
     northSidewalk.receiveShadow = true;
     scene.add(northSidewalk);
@@ -301,21 +301,26 @@ export default function LobbyPage() {
     // Complete the city block with two real side streets. Buildings sit beyond
     // the outer sidewalk instead of floating inside the park or on the asphalt.
     [-1, 1].forEach((side) => {
-      const sideRoad = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.09, 83.5), roadMaterial);
+      const sideRoad = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.09, 68.9), roadMaterial);
       sideRoad.position.set(side * 49.2, 0.015, 5.8);
       sideRoad.receiveShadow = true;
       const innerSidewalk = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.13, 64), sidewalkMaterial);
       innerSidewalk.position.set(side * 42.85, 0.08, 6);
       innerSidewalk.receiveShadow = true;
-      const outerSidewalk = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.13, 83.5), sidewalkMaterial);
+      const outerSidewalk = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.13, 68.9), sidewalkMaterial);
       outerSidewalk.position.set(side * 55.55, 0.08, 5.8);
       outerSidewalk.receiveShadow = true;
       scene.add(sideRoad, innerSidewalk, outerSidewalk);
-      for (let index = -4; index <= 5; index += 1) {
+      [-20, -10, 0, 10, 20, 30].forEach((z) => {
         const dash = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.025, 4.4), roadMarkingMaterial);
-        dash.position.set(side * 49.2, 0.075, index * 8.2 + 4.2);
+        dash.position.set(side * 49.2, 0.075, z);
         scene.add(dash);
-      }
+      });
+      [-27.8, 39.4].forEach((z) => {
+        const stopLine = new THREE.Mesh(new THREE.BoxGeometry(7.7, 0.028, 0.24), roadMarkingMaterial);
+        stopLine.position.set(side * 49.2, 0.08, z);
+        scene.add(stopLine);
+      });
     });
 
     const plazaShape = new THREE.Shape();
@@ -876,26 +881,90 @@ export default function LobbyPage() {
 
     const addCityVehicle = (x: number, z: number, rotation: number, color: string) => {
       const vehicle = new THREE.Group();
-      const body = new THREE.Mesh(new RoundedBoxGeometry(1.78, 0.62, 3.65, 4, 0.2), surface(color, 0.58, 0.08));
-      body.position.y = 0.58;
-      const cabin = new THREE.Mesh(new RoundedBoxGeometry(1.5, 0.65, 1.75, 4, 0.16), new THREE.MeshStandardMaterial({ color: "#577079", roughness: 0.25, metalness: 0.16 }));
-      cabin.position.set(0, 1.08, -0.12);
-      const bumperMaterial = surface("#343a3d", 0.48, 0.38);
-      [-1.84, 1.84].forEach((zEdge) => {
-        const bumper = new THREE.Mesh(new RoundedBoxGeometry(1.45, 0.12, 0.1, 2, 0.025), bumperMaterial);
-        bumper.position.set(0, 0.45, zEdge);
-        vehicle.add(bumper);
+      const width = 1.86;
+      const profile = new THREE.Shape();
+      profile.moveTo(-1.86, 0.28);
+      profile.lineTo(-1.82, 0.53);
+      profile.quadraticCurveTo(-1.65, 0.75, -1.25, 0.82);
+      profile.lineTo(-0.72, 0.9);
+      profile.lineTo(-0.28, 1.42);
+      profile.quadraticCurveTo(0, 1.55, 0.42, 1.55);
+      profile.lineTo(0.72, 1.55);
+      profile.quadraticCurveTo(1.02, 1.47, 1.28, 1.03);
+      profile.lineTo(1.72, 0.8);
+      profile.quadraticCurveTo(1.88, 0.7, 1.9, 0.43);
+      profile.lineTo(1.76, 0.28);
+      profile.closePath();
+      const bodyGeometry = new THREE.ExtrudeGeometry(profile, {
+        depth: width,
+        bevelEnabled: true,
+        bevelSegments: 3,
+        bevelSize: 0.07,
+        bevelThickness: 0.07,
+        curveSegments: 10,
       });
-      const wheelMaterial = surface("#272b2d", 0.84);
-      [-0.9, 0.9].forEach((zWheel) => {
-        [-0.88, 0.88].forEach((xWheel) => {
-          const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.18, 16), wheelMaterial);
-          wheel.rotation.z = Math.PI / 2;
-          wheel.position.set(xWheel, 0.34, zWheel);
-          vehicle.add(wheel);
+      bodyGeometry.translate(0, 0, -width / 2);
+      bodyGeometry.rotateY(-Math.PI / 2);
+      const paint = new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.22 });
+      const body = new THREE.Mesh(bodyGeometry, paint);
+      body.castShadow = true;
+      body.receiveShadow = true;
+
+      const glass = new THREE.MeshStandardMaterial({ color: "#405963", roughness: 0.12, metalness: 0.2, emissive: "#263b43", emissiveIntensity: 0.08 });
+      [-1, 1].forEach((side) => {
+        const frontSideWindow = new THREE.Mesh(new RoundedBoxGeometry(0.055, 0.48, 0.7, 3, 0.05), glass);
+        frontSideWindow.position.set(side * 0.965, 1.18, -0.28);
+        const rearSideWindow = new THREE.Mesh(new RoundedBoxGeometry(0.055, 0.46, 0.58, 3, 0.05), glass);
+        rearSideWindow.position.set(side * 0.965, 1.18, 0.47);
+        const mirror = new THREE.Mesh(new RoundedBoxGeometry(0.2, 0.12, 0.3, 3, 0.05), paint);
+        mirror.position.set(side * 1.08, 1.02, -0.61);
+        vehicle.add(frontSideWindow, rearSideWindow, mirror);
+      });
+      const windshield = new THREE.Mesh(new RoundedBoxGeometry(1.54, 0.5, 0.075, 3, 0.045), glass);
+      windshield.position.set(0, 1.16, -0.78);
+      windshield.rotation.x = -0.48;
+      const rearWindow = new THREE.Mesh(new RoundedBoxGeometry(1.48, 0.48, 0.075, 3, 0.045), glass);
+      rearWindow.position.set(0, 1.17, 1.01);
+      rearWindow.rotation.x = 0.5;
+      const roofPanel = new THREE.Mesh(new RoundedBoxGeometry(1.36, 0.08, 0.72, 3, 0.035), surface("#323c42", 0.34, 0.28));
+      roofPanel.position.set(0, 1.58, 0.14);
+
+      const darkTrim = surface("#2f3538", 0.46, 0.42);
+      const frontBumper = new THREE.Mesh(new RoundedBoxGeometry(1.52, 0.14, 0.13, 3, 0.035), darkTrim);
+      frontBumper.position.set(0, 0.42, -1.9);
+      const rearBumper = frontBumper.clone();
+      rearBumper.position.z = 1.93;
+      const grille = new THREE.Mesh(new RoundedBoxGeometry(0.88, 0.24, 0.08, 3, 0.035), surface("#202629", 0.5, 0.48));
+      grille.position.set(0, 0.58, -1.94);
+      [-0.58, 0.58].forEach((lightX) => {
+        const headlight = new THREE.Mesh(new RoundedBoxGeometry(0.42, 0.2, 0.08, 3, 0.04), new THREE.MeshStandardMaterial({ color: "#fff2cd", emissive: "#ffe4a0", emissiveIntensity: 0.7 }));
+        headlight.position.set(lightX, 0.73, -1.92);
+        const tailLight = new THREE.Mesh(new RoundedBoxGeometry(0.4, 0.2, 0.08, 3, 0.04), new THREE.MeshStandardMaterial({ color: "#a73f3d", emissive: "#7c1f20", emissiveIntensity: 0.42 }));
+        tailLight.position.set(lightX, 0.72, 1.95);
+        vehicle.add(headlight, tailLight);
+      });
+      const plateMaterial = new THREE.MeshStandardMaterial({ color: "#ebe9df", roughness: 0.68 });
+      const frontPlate = new THREE.Mesh(new RoundedBoxGeometry(0.56, 0.16, 0.045, 2, 0.02), plateMaterial);
+      frontPlate.position.set(0, 0.43, -1.98);
+      const rearPlate = frontPlate.clone();
+      rearPlate.position.z = 1.99;
+
+      const tireMaterial = surface("#202426", 0.9);
+      const rimMaterial = surface("#aeb4b4", 0.3, 0.72);
+      [-1.16, 1.08].forEach((wheelZ) => {
+        [-0.96, 0.96].forEach((wheelX) => {
+          const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.31, 0.18, 20), tireMaterial);
+          tire.rotation.z = Math.PI / 2;
+          tire.position.set(wheelX, 0.36, wheelZ);
+          const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.19, 16), rimMaterial);
+          rim.rotation.z = Math.PI / 2;
+          rim.position.copy(tire.position);
+          vehicle.add(tire, rim);
         });
       });
-      vehicle.add(body, cabin);
+      const chassis = new THREE.Mesh(new RoundedBoxGeometry(1.68, 0.16, 3.22, 3, 0.04), darkTrim);
+      chassis.position.set(0, 0.27, 0);
+      vehicle.add(body, windshield, rearWindow, roofPanel, frontBumper, rearBumper, grille, frontPlate, rearPlate, chassis);
       vehicle.position.set(x, 0.05, z);
       vehicle.rotation.y = rotation;
       vehicle.traverse((object) => {
@@ -1130,7 +1199,7 @@ export default function LobbyPage() {
     southSidewalk.position.set(0, 0.08, 50.9);
     southSidewalk.receiveShadow = true;
     scene.add(southCityFoundation, southRoad, southSidewalk);
-    for (let index = -6; index <= 6; index += 1) {
+    for (let index = -5; index <= 5; index += 1) {
       const dash = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.025, 0.16), roadMarkingMaterial);
       dash.position.set(index * 8.2, 0.075, 45);
       scene.add(dash);
@@ -1214,18 +1283,23 @@ export default function LobbyPage() {
       const roadX = new THREE.Mesh(new THREE.BoxGeometry(90, 0.1, 10), roadMaterial);
       roadX.position.set(centerX, 0.015, centerZ);
       roadX.receiveShadow = true;
-      const roadZ = new THREE.Mesh(new THREE.BoxGeometry(10, 0.105, 90), roadMaterial);
-      roadZ.position.set(centerX, 0.02, centerZ);
-      roadZ.receiveShadow = true;
-      scene.add(roadX, roadZ);
+      const roadZNorth = new THREE.Mesh(new THREE.BoxGeometry(10, 0.1, 40), roadMaterial);
+      roadZNorth.position.set(centerX, 0.015, centerZ - 25);
+      roadZNorth.receiveShadow = true;
+      const roadZSouth = roadZNorth.clone();
+      roadZSouth.position.z = centerZ + 25;
+      scene.add(roadX, roadZNorth, roadZSouth);
       [-7, 7].forEach((offset) => {
-        const horizontalWalk = new THREE.Mesh(new THREE.BoxGeometry(90, 0.12, 3.2), sidewalkMaterial);
-        horizontalWalk.position.set(centerX, 0.075, centerZ + offset);
-        const verticalWalk = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.125, 90), sidewalkMaterial);
-        verticalWalk.position.set(centerX + offset, 0.08, centerZ);
-        scene.add(horizontalWalk, verticalWalk);
+        [-25, 25].forEach((segmentCenter) => {
+          const horizontalWalk = new THREE.Mesh(new THREE.BoxGeometry(40, 0.12, 3.2), sidewalkMaterial);
+          horizontalWalk.position.set(centerX + segmentCenter, 0.075, centerZ + offset);
+          const verticalWalk = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.125, 40), sidewalkMaterial);
+          verticalWalk.position.set(centerX + offset, 0.08, centerZ + segmentCenter);
+          scene.add(horizontalWalk, verticalWalk);
+        });
       });
       for (let dash = -4; dash <= 4; dash += 1) {
+        if (Math.abs(dash) <= 1) continue;
         const horizontalDash = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.025, 0.16), roadMarkingMaterial);
         horizontalDash.position.set(centerX + dash * 9, 0.08, centerZ);
         const verticalDash = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.026, 4.2), roadMarkingMaterial);
@@ -1240,6 +1314,13 @@ export default function LobbyPage() {
           acrossHorizontalRoad.position.set(centerX + offset + stripe * 0.92, 0.087, centerZ);
           scene.add(acrossVerticalRoad, acrossHorizontalRoad);
         }
+      });
+      [-6.4, 6.4].forEach((offset) => {
+        const horizontalStop = new THREE.Mesh(new THREE.BoxGeometry(8.1, 0.029, 0.22), roadMarkingMaterial);
+        horizontalStop.position.set(centerX, 0.089, centerZ + offset);
+        const verticalStop = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.029, 8.1), roadMarkingMaterial);
+        verticalStop.position.set(centerX + offset, 0.089, centerZ);
+        scene.add(horizontalStop, verticalStop);
       });
 
       [[-23, -23], [23, -23], [-23, 23], [23, 23]].forEach(([x, z]) => {
@@ -2008,7 +2089,7 @@ export default function LobbyPage() {
           <span>{activeDistrictInfo ? `${activeDistrictInfo.zone.toUpperCase()} · DISTRICT` : "CITY PARK · LOBBY 01"}</span>
         </div>
         <div className="lobby-actions">
-          <span className="lobby-status"><UsersThree size={17} weight="fill" aria-hidden="true" />1 ONLINE</span>
+          <span className="lobby-status" aria-label="Online public lobby"><UsersThree size={17} weight="fill" aria-hidden="true" />ONLINE · PUBLIC</span>
           <button type="button" disabled={Boolean(activeVenue)} onClick={() => setMapOpen((value) => !value)} aria-pressed={mapOpen}>
             <MapTrifold size={18} weight="bold" aria-hidden="true" />{mapOpen ? "CLOSE MAP" : "MAP"}
           </button>
