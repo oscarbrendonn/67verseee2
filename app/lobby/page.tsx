@@ -10,7 +10,6 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { SSAOPass } from "three/addons/postprocessing/SSAOPass.js";
-import { ArrowCounterClockwise } from "@phosphor-icons/react/ArrowCounterClockwise";
 import { ArrowUp } from "@phosphor-icons/react/ArrowUp";
 import { CaretDown } from "@phosphor-icons/react/CaretDown";
 import { CaretLeft } from "@phosphor-icons/react/CaretLeft";
@@ -151,6 +150,7 @@ function addLamp(scene: THREE.Scene, x: number, z: number) {
 
 export default function LobbyPage() {
   const hostRef = useRef<HTMLDivElement>(null);
+  const speedMeterRef = useRef<HTMLDivElement>(null);
   const keysRef = useRef(new Set<string>());
   const velocityRef = useRef(new THREE.Vector3());
   const jumpRequestRef = useRef(false);
@@ -249,6 +249,13 @@ export default function LobbyPage() {
     const rampSpecs = [
       { x: -15.5, z: -7.2, rotation: 0, width: 7.4, depth: 5.5, height: 1.9 },
       { x: 17.5, z: -5.3, rotation: 0, width: 7.8, depth: 5.5, height: 1.95 },
+      { x: 11.4, z: 9.65, rotation: Math.PI, width: 4, depth: 5.7, height: 1.25 },
+    ];
+    const stairFeature = { x: 5.4, startZ: 8.4, width: 4.2, treadDepth: 0.82, steps: 5, stepHeight: 0.25 };
+    const elevatedDeckSpec = { x: 9, z: 14.15, width: 10.8, depth: 3.4, height: 1.55 };
+    const grindRailSpecs: Array<{ axis: "x" | "z"; fixed: number; min: number; max: number; topY: number }> = [
+      { axis: "x", fixed: 10, min: -15, max: -6, topY: 0.98 },
+      { axis: "z", fixed: -8.5, min: -2.5, max: 6.5, topY: 0.88 },
     ];
     const addGroundSlab = (width: number, depth: number, x: number, z: number) => {
       const slab = box([width, 0.3, depth], "#898e86", 0.98);
@@ -283,6 +290,26 @@ export default function LobbyPage() {
       crossing.position.set(-31 + stripe * 1.18, 0.08, -33.4);
       scene.add(crossing);
     }
+
+    // Complete the city block with two real side streets. Buildings sit beyond
+    // the outer sidewalk instead of floating inside the park or on the asphalt.
+    [-1, 1].forEach((side) => {
+      const sideRoad = new THREE.Mesh(new THREE.BoxGeometry(9.5, 0.09, 83.5), roadMaterial);
+      sideRoad.position.set(side * 49.2, 0.015, 5.8);
+      sideRoad.receiveShadow = true;
+      const innerSidewalk = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.13, 64), sidewalkMaterial);
+      innerSidewalk.position.set(side * 42.85, 0.08, 6);
+      innerSidewalk.receiveShadow = true;
+      const outerSidewalk = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.13, 83.5), sidewalkMaterial);
+      outerSidewalk.position.set(side * 55.55, 0.08, 5.8);
+      outerSidewalk.receiveShadow = true;
+      scene.add(sideRoad, innerSidewalk, outerSidewalk);
+      for (let index = -4; index <= 5; index += 1) {
+        const dash = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.025, 4.4), roadMarkingMaterial);
+        dash.position.set(side * 49.2, 0.075, index * 8.2 + 4.2);
+        scene.add(dash);
+      }
+    });
 
     const plazaShape = new THREE.Shape();
     plazaShape.moveTo(-41, -28);
@@ -419,6 +446,41 @@ export default function LobbyPage() {
     };
     rampSpecs.forEach((ramp) => addWedgeRamp(ramp.x, ramp.z, ramp.rotation, ramp.width, ramp.depth, ramp.height));
 
+    const elevatedDeck = box(
+      [elevatedDeckSpec.width, elevatedDeckSpec.height - 0.3, elevatedDeckSpec.depth],
+      "#858b89",
+      0.9,
+    );
+    elevatedDeck.position.set(elevatedDeckSpec.x, (elevatedDeckSpec.height + 0.3) / 2, elevatedDeckSpec.z);
+    scene.add(elevatedDeck);
+    for (let step = 0; step < stairFeature.steps; step += 1) {
+      const stepHeight = (step + 1) * stairFeature.stepHeight;
+      const stair = box([stairFeature.width, stepHeight, stairFeature.treadDepth + 0.04], "#969a98", 0.92);
+      stair.position.set(
+        stairFeature.x,
+        0.3 + stepHeight / 2,
+        stairFeature.startZ + step * stairFeature.treadDepth + stairFeature.treadDepth / 2,
+      );
+      scene.add(stair);
+    }
+
+    const stairRailStart = new THREE.Vector3(stairFeature.x + stairFeature.width / 2 + 0.18, 0.92, stairFeature.startZ + 0.1);
+    const stairRailEnd = new THREE.Vector3(stairRailStart.x, elevatedDeckSpec.height + 0.58, stairFeature.startZ + stairFeature.steps * stairFeature.treadDepth);
+    const addRailBeam = (start: THREE.Vector3, end: THREE.Vector3, radius = 0.065) => {
+      const midpoint = start.clone().add(end).multiplyScalar(0.5);
+      const direction = end.clone().sub(start);
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, direction.length(), 12), surface("#30373b", 0.35, 0.72));
+      beam.position.copy(midpoint);
+      beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
+      beam.castShadow = true;
+      scene.add(beam);
+    };
+    addRailBeam(stairRailStart, stairRailEnd, 0.07);
+    [0, 1].forEach((endIndex) => {
+      const anchor = endIndex ? stairRailEnd : stairRailStart;
+      addRailBeam(new THREE.Vector3(anchor.x, 0.32, anchor.z), anchor, 0.055);
+    });
+
     const parkSurfaceAt = (x: number, z: number, inCentralPark: boolean) => {
       const up = new THREE.Vector3(0, 1, 0);
       if (!inCentralPark) return { height: 0.05, normal: up };
@@ -432,6 +494,21 @@ export default function LobbyPage() {
       );
       const insidePark = Math.abs(x) <= 42.5 && z >= -26 && z <= 38;
       let result = { height: onRaisedLawn ? 0.38 : onSkatePad ? 0.3 : insidePark ? 0.17 : 0.05, normal: up };
+
+      if (
+        Math.abs(x - elevatedDeckSpec.x) <= elevatedDeckSpec.width / 2
+        && Math.abs(z - elevatedDeckSpec.z) <= elevatedDeckSpec.depth / 2
+      ) return { height: elevatedDeckSpec.height, normal: up };
+
+      const stairEndZ = stairFeature.startZ + stairFeature.steps * stairFeature.treadDepth;
+      if (
+        Math.abs(x - stairFeature.x) <= stairFeature.width / 2
+        && z >= stairFeature.startZ
+        && z < stairEndZ
+      ) {
+        const step = Math.min(stairFeature.steps - 1, Math.floor((z - stairFeature.startZ) / stairFeature.treadDepth));
+        return { height: 0.3 + (step + 1) * stairFeature.stepHeight, normal: up };
+      }
 
       const bowlX = x - bowlCenterX;
       const bowlZ = z - bowlCenterZ;
@@ -472,23 +549,32 @@ export default function LobbyPage() {
       return result;
     };
 
-    const railMaterial = surface("#353b3e", 0.4, 0.62);
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.12, 0.12), railMaterial);
-    rail.position.set(-9.5, 0.9, 10);
-    rail.castShadow = true;
-    [-13.2, -9.5, -5.8].forEach((x) => {
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.75, 0.12), railMaterial);
-      post.position.set(x, 0.55, 10);
-      post.castShadow = true;
-      scene.add(post);
+    const railMaterial = surface("#353b3e", 0.34, 0.72);
+    grindRailSpecs.forEach((spec) => {
+      const length = spec.max - spec.min;
+      const rail = new THREE.Mesh(
+        new THREE.BoxGeometry(spec.axis === "x" ? length : 0.13, 0.13, spec.axis === "z" ? length : 0.13),
+        railMaterial,
+      );
+      rail.position.set(
+        spec.axis === "x" ? (spec.min + spec.max) / 2 : spec.fixed,
+        spec.topY - 0.065,
+        spec.axis === "z" ? (spec.min + spec.max) / 2 : spec.fixed,
+      );
+      rail.castShadow = true;
+      [spec.min + 0.5, (spec.min + spec.max) / 2, spec.max - 0.5].forEach((along) => {
+        const postHeight = spec.topY - 0.3;
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.11, postHeight, 0.11), railMaterial);
+        post.position.set(
+          spec.axis === "x" ? along : spec.fixed,
+          0.3 + postHeight / 2,
+          spec.axis === "z" ? along : spec.fixed,
+        );
+        post.castShadow = true;
+        scene.add(post);
+      });
+      scene.add(rail);
     });
-    scene.add(rail);
-
-    for (let step = 0; step < 4; step += 1) {
-      const stair = box([5.5, 0.18 * (step + 1), 0.9], "#9fa19e", 0.92);
-      stair.position.set(4, 0.26 + step * 0.09, 14 - step * 0.82);
-      scene.add(stair);
-    }
 
     const makeSignMaterial = (label: string, background: string, foreground = "#ffffff") => {
       const canvas = document.createElement("canvas");
@@ -687,6 +773,37 @@ export default function LobbyPage() {
       return tower;
     };
 
+    const addCityVehicle = (x: number, z: number, rotation: number, color: string) => {
+      const vehicle = new THREE.Group();
+      const body = new THREE.Mesh(new RoundedBoxGeometry(1.78, 0.62, 3.65, 4, 0.2), surface(color, 0.58, 0.08));
+      body.position.y = 0.58;
+      const cabin = new THREE.Mesh(new RoundedBoxGeometry(1.5, 0.65, 1.75, 4, 0.16), new THREE.MeshStandardMaterial({ color: "#577079", roughness: 0.25, metalness: 0.16 }));
+      cabin.position.set(0, 1.08, -0.12);
+      const bumperMaterial = surface("#343a3d", 0.48, 0.38);
+      [-1.84, 1.84].forEach((zEdge) => {
+        const bumper = new THREE.Mesh(new RoundedBoxGeometry(1.45, 0.12, 0.1, 2, 0.025), bumperMaterial);
+        bumper.position.set(0, 0.45, zEdge);
+        vehicle.add(bumper);
+      });
+      const wheelMaterial = surface("#272b2d", 0.84);
+      [-0.9, 0.9].forEach((zWheel) => {
+        [-0.88, 0.88].forEach((xWheel) => {
+          const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.18, 16), wheelMaterial);
+          wheel.rotation.z = Math.PI / 2;
+          wheel.position.set(xWheel, 0.34, zWheel);
+          vehicle.add(wheel);
+        });
+      });
+      vehicle.add(body, cabin);
+      vehicle.position.set(x, 0.05, z);
+      vehicle.rotation.y = rotation;
+      vehicle.traverse((object) => {
+        if (object instanceof THREE.Mesh) object.castShadow = true;
+      });
+      scene.add(vehicle);
+      return vehicle;
+    };
+
     const createSuburbanHouse = (color: string, roofColor: string) => {
       const house = new THREE.Group();
       const body = new THREE.Mesh(new RoundedBoxGeometry(7.4, 4.5, 7, 3, 0.14), surface(color, 0.9));
@@ -774,18 +891,6 @@ export default function LobbyPage() {
       scene.add(storefront);
     });
 
-    const westResidence = createResidentialBuilding(9.5, 9.5, 11.5, "#7f908e");
-    westResidence.position.set(-53, 0, -4);
-    westResidence.rotation.y = Math.PI / 2;
-    const eastResidence = createResidentialBuilding(9.5, 9.5, 10.2, "#a18978");
-    eastResidence.position.set(53, 0, -4);
-    eastResidence.rotation.y = -Math.PI / 2;
-    const westResidenceLot = box([12.5, 0.22, 13], "#aaa9a2", 0.95);
-    westResidenceLot.position.set(-53, 0.04, -4);
-    const eastResidenceLot = westResidenceLot.clone();
-    eastResidenceLot.position.x = 53;
-    scene.add(westResidenceLot, eastResidenceLot, westResidence, eastResidence);
-
     const trees: Array<[number, number, number, number]> = [
       [-39, -14, 0.92, 0.36], [-39, -3, 1.02, 0.36],
       [39, -14, 0.96, 0.36], [39, -3, 1.02, 0.36],
@@ -839,13 +944,13 @@ export default function LobbyPage() {
     northCityFoundation.position.set(0, -0.01, -57);
     scene.add(northCityFoundation);
     const skylineSpecs: Array<[number, number, number, number, string]> = [
-      [-52, 10, 12, 18, "#7e8c91"], [-39, 10, 11, 25, "#9b877a"], [-26, 10, 12, 20, "#788b89"],
-      [-14, 10, 11, 28, "#8f8179"], [14, 10, 12, 23, "#7d8c95"], [26, 10, 11, 30, "#9b897c"],
-      [39, 10, 12, 21, "#798c87"], [52, 10, 11, 26, "#93837d"],
+      [-50, 10, 11, 16, "#879194"], [-37.5, 10, 11, 19, "#97887e"], [-25, 10, 11, 17, "#7e8e8b"],
+      [-12.5, 10, 11, 21, "#91847d"], [0, 10, 11, 20, "#7c8d92"], [12.5, 10, 11, 21, "#92857d"],
+      [25, 10, 11, 17, "#7f8f8b"], [37.5, 10, 11, 19, "#97887e"], [50, 10, 11, 16, "#879194"],
     ];
     skylineSpecs.forEach(([x, width, depth, height, color], index) => {
       const tower = createCityTower(width, depth, height, color, index % 2 ? "#405c65" : "#4d6870");
-      tower.position.set(x, 0, -58 - (index % 2) * 1.5);
+      tower.position.set(x, 0, -58);
       scene.add(tower);
     });
 
@@ -864,27 +969,33 @@ export default function LobbyPage() {
       scene.add(dash);
     }
     const southSkylineSpecs: Array<[number, number, number, number, string]> = [
-      [-50, 10, 11, 22, "#8b7c73"], [-37.5, 10, 12, 17, "#748889"], [-25, 11, 11, 27, "#968277"],
-      [-12.5, 10, 12, 20, "#73848e"], [0, 11, 11, 24, "#8e857b"], [12.5, 10, 12, 18, "#7b8f88"],
-      [25, 11, 11, 29, "#8e7972"], [37.5, 10, 12, 21, "#77898f"], [50, 10, 11, 25, "#97867a"],
+      [-50, 10, 11, 18, "#91837b"], [-37.5, 10, 11, 16, "#788b8c"], [-25, 10, 11, 20, "#94847c"],
+      [-12.5, 10, 11, 17, "#788990"], [0, 10, 11, 19, "#8d887f"], [12.5, 10, 11, 17, "#7f908a"],
+      [25, 10, 11, 20, "#92817a"], [37.5, 10, 11, 16, "#7b8b8f"], [50, 10, 11, 18, "#94867e"],
     ];
     southSkylineSpecs.forEach(([x, width, depth, height, color], index) => {
       const tower = createCityTower(width, depth, height, color, index % 2 ? "#425e66" : "#4b6269");
-      tower.position.set(x, 0, 58 + (index % 2) * 1.2);
+      tower.position.set(x, 0, 59);
       tower.rotation.y = Math.PI;
       scene.add(tower);
     });
-    const sideSkylineZ = [-40, -25, -10, 5, 20, 33];
+    const sideSkylineZ = [-20, -7, 6, 19, 32];
     [-1, 1].forEach((side) => {
+      const foundation = box([14, 0.25, 68], side > 0 ? "#989993" : "#959791", 0.96);
+      foundation.position.set(side * 63.2, -0.01, 6);
+      scene.add(foundation);
       sideSkylineZ.forEach((z, index) => {
-        const pad = box([13, 0.22, 13], "#9fa09a", 0.95);
-        pad.position.set(side * 55, 0.02, z);
-        const tower = createCityTower(10.5, 10.5, 13 + (index % 4) * 2.8, index % 2 ? "#8d8177" : "#748687");
-        tower.position.set(side * 55, 0, z);
+        const tower = createCityTower(10.5, 10.5, [14, 17, 15, 18, 16][index], index % 2 ? "#90847c" : "#7c8c8d");
+        tower.position.set(side * 63.2, 0, z);
         tower.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
-        scene.add(pad, tower);
+        scene.add(tower);
       });
     });
+
+    addCityVehicle(-8, -36.1, Math.PI / 2, "#73868d");
+    addCityVehicle(28, 47.15, Math.PI / 2, "#997b6f");
+    addCityVehicle(-52, 12, 0, "#697e82");
+    const centralTraffic = [{ vehicle: addCityVehicle(-64, -31.25, Math.PI / 2, "#8b8f78"), speed: 5.4 }];
 
     const centralWorld = new THREE.Group();
     centralWorld.name = "central-park-world";
@@ -924,30 +1035,6 @@ export default function LobbyPage() {
       });
       scene.add(actor);
       streetActors.push({ group: actor, x, z, axis, range: 7 + (phase % 2) * 2, speed: 0.32 + (phase % 3) * 0.055, phase });
-    };
-
-    const addParkedVehicle = (x: number, z: number, rotation: number, color: string) => {
-      const vehicle = new THREE.Group();
-      const body = new THREE.Mesh(new RoundedBoxGeometry(1.78, 0.62, 3.65, 4, 0.2), surface(color, 0.58, 0.08));
-      body.position.y = 0.58;
-      const cabin = new THREE.Mesh(new RoundedBoxGeometry(1.5, 0.65, 1.75, 4, 0.16), new THREE.MeshStandardMaterial({ color: "#577079", roughness: 0.25, metalness: 0.16 }));
-      cabin.position.set(0, 1.08, -0.12);
-      const wheelMaterial = surface("#272b2d", 0.84);
-      [-0.9, 0.9].forEach((zWheel) => {
-        [-0.88, 0.88].forEach((xWheel) => {
-          const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.18, 16), wheelMaterial);
-          wheel.rotation.z = Math.PI / 2;
-          wheel.position.set(xWheel, 0.34, zWheel);
-          vehicle.add(wheel);
-        });
-      });
-      vehicle.add(body, cabin);
-      vehicle.position.set(x, 0.05, z);
-      vehicle.rotation.y = rotation;
-      vehicle.traverse((object) => {
-        if (object instanceof THREE.Mesh) object.castShadow = true;
-      });
-      scene.add(vehicle);
     };
 
     const buildDistrict = (district: District) => {
@@ -1007,8 +1094,8 @@ export default function LobbyPage() {
       [[-27, -7, "x", 0.2], [27, 7, "x", 1.7], [-7, -27, "z", 3.1], [7, 27, "z", 4.4]].forEach(([x, z, axis, phase]) => {
         addStreetActor(centerX + Number(x), centerZ + Number(z), district.accent, axis as "x" | "z", Number(phase));
       });
-      addParkedVehicle(centerX - 2.7, centerZ - 27, 0, palette.facades[0]);
-      addParkedVehicle(centerX + 2.7, centerZ + 27, Math.PI, palette.facades[2]);
+      addCityVehicle(centerX - 2.7, centerZ - 27, 0, palette.facades[0]);
+      addCityVehicle(centerX + 2.7, centerZ + 27, Math.PI, palette.facades[2]);
 
       if (district.theme === "coast") {
         const water = new THREE.Mesh(new THREE.BoxGeometry(90, 0.08, 13), new THREE.MeshStandardMaterial({ color: "#5c9eaa", roughness: 0.3, metalness: 0.06 }));
@@ -1398,6 +1485,7 @@ export default function LobbyPage() {
     let supported = true;
     let rollCooldownUntil = 0;
     let wheelSpin = 0;
+    let activeGrind: { axis: "x" | "z"; fixed: number; min: number; max: number; topY: number } | null = null;
     const animate = () => {
       animation = requestAnimationFrame(animate);
       const now = performance.now();
@@ -1421,9 +1509,13 @@ export default function LobbyPage() {
         }
         actor.group.position.y = 0.11 + Math.abs(Math.sin(phase * 8)) * 0.025;
       });
+      centralTraffic.forEach((traffic) => {
+        traffic.vehicle.position.x = -64 + ((now * 0.001 * traffic.speed) % 128);
+      });
 
       if (!mapOpenRef.current && !venueOpenRef.current) {
         const keys = keysRef.current;
+        if (currentDistrictId) activeGrind = null;
         const inputRight = Number(keys.has("KeyD") || keys.has("ArrowRight")) - Number(keys.has("KeyA") || keys.has("ArrowLeft"));
         const inputForward = Number(keys.has("KeyW") || keys.has("ArrowUp")) - Number(keys.has("KeyS") || keys.has("ArrowDown"));
         // Use the orbit yaw directly. Reading the lagging camera transform here made
@@ -1438,26 +1530,49 @@ export default function LobbyPage() {
         jumpRequestRef.current = false;
         rollRequestRef.current = false;
 
-        if (rollPressed && supported && now >= rollCooldownUntil) {
+        if (rollPressed && (supported || activeGrind) && now >= rollCooldownUntil) {
           const boostDirection = input.lengthSq() > 0.01
             ? input.clone()
             : new THREE.Vector3(-Math.sin(character.rotation.y), 0, -Math.cos(character.rotation.y));
-          velocityRef.current.x += boostDirection.x * 2.6;
-          velocityRef.current.z += boostDirection.z * 2.6;
-          rollCooldownUntil = now + 850;
+          velocityRef.current.x += boostDirection.x * 3.4;
+          velocityRef.current.z += boostDirection.z * 3.4;
+          rollCooldownUntil = now + 650;
         }
         rollPivot.rotation.x = 0;
 
-        const speed = keys.has("ShiftLeft") ? 11.2 : 8.4;
-        const glideResponse = input.lengthSq() > 0.01 ? 6.2 : 1.55;
+        const boosting = keys.has("ShiftLeft") || keys.has("ShiftRight");
+        const speed = boosting ? 16.4 : 8.8;
+        const glideResponse = input.lengthSq() > 0.01 ? (boosting ? 8.2 : 6.2) : 1.42;
         velocityRef.current.x = THREE.MathUtils.damp(velocityRef.current.x, input.x * speed, glideResponse, delta);
         velocityRef.current.z = THREE.MathUtils.damp(velocityRef.current.z, input.z * speed, glideResponse, delta);
+        if (speedMeterRef.current) {
+          const speedRatio = THREE.MathUtils.clamp(Math.hypot(velocityRef.current.x, velocityRef.current.z) / 16.4, 0, 1);
+          speedMeterRef.current.style.setProperty("--speed-ratio", speedRatio.toFixed(3));
+          speedMeterRef.current.classList.toggle("boosting", boosting && input.lengthSq() > 0.01);
+        }
 
-        if (jumpPressed && supported) {
+        if (jumpPressed && (supported || activeGrind)) {
+          activeGrind = null;
           velocityRef.current.y = 8.7;
           supported = false;
         }
-        velocityRef.current.y -= 20 * delta;
+        if (activeGrind) {
+          const alongVelocity = activeGrind.axis === "x" ? velocityRef.current.x : velocityRef.current.z;
+          const inputAlong = activeGrind.axis === "x" ? input.x : input.z;
+          const direction = Math.sign(Math.abs(alongVelocity) > 0.25 ? alongVelocity : inputAlong || 1);
+          const grindSpeed = THREE.MathUtils.clamp(Math.abs(alongVelocity), 6.6, boosting ? 16.4 : 12.5);
+          velocityRef.current.set(
+            activeGrind.axis === "x" ? direction * grindSpeed : 0,
+            0,
+            activeGrind.axis === "z" ? direction * grindSpeed : 0,
+          );
+          if (activeGrind.axis === "x") character.position.z = activeGrind.fixed;
+          else character.position.x = activeGrind.fixed;
+          character.position.y = activeGrind.topY + 0.64;
+          supported = false;
+        } else {
+          velocityRef.current.y -= 20 * delta;
+        }
         const previousX = character.position.x;
         const previousZ = character.position.z;
         character.position.addScaledVector(velocityRef.current, delta);
@@ -1481,10 +1596,41 @@ export default function LobbyPage() {
           }
         }
 
+        if (activeGrind) {
+          const along = activeGrind.axis === "x" ? character.position.x : character.position.z;
+          if (activeGrind.axis === "x") character.position.z = activeGrind.fixed;
+          else character.position.x = activeGrind.fixed;
+          character.position.y = activeGrind.topY + 0.64;
+          if (along <= activeGrind.min || along >= activeGrind.max) {
+            activeGrind = null;
+            velocityRef.current.y = 1.35;
+          }
+        } else if (!currentDistrictId && !supported && velocityRef.current.y <= 3.2) {
+          const boardY = character.position.y - 0.64;
+          const rail = grindRailSpecs.find((spec) => {
+            const along = spec.axis === "x" ? character.position.x : character.position.z;
+            const lateral = spec.axis === "x" ? character.position.z : character.position.x;
+            return along >= spec.min - 0.25
+              && along <= spec.max + 0.25
+              && Math.abs(lateral - spec.fixed) <= 0.58
+              && boardY >= spec.topY - 0.32
+              && boardY <= spec.topY + 0.48;
+          });
+          if (rail) {
+            activeGrind = rail;
+            if (rail.axis === "x") character.position.z = rail.fixed;
+            else character.position.x = rail.fixed;
+            character.position.y = rail.topY + 0.64;
+            velocityRef.current.y = 0;
+          }
+        }
+
         const parkSurface = parkSurfaceAt(character.position.x, character.position.z, !currentDistrictId);
         const groundHeight = parkSurface.height + 0.86;
         const shouldFollowSurface = wasSupported && !jumpPressed && character.position.y - groundHeight < 0.46;
-        if (character.position.y <= groundHeight || shouldFollowSurface) {
+        if (activeGrind) {
+          supported = false;
+        } else if (character.position.y <= groundHeight || shouldFollowSurface) {
           character.position.y = groundHeight;
           supported = true;
           const slopeX = -parkSurface.normal.x / Math.max(parkSurface.normal.y, 0.001);
@@ -1499,9 +1645,12 @@ export default function LobbyPage() {
           supported = false;
         }
 
-        const moving = input.lengthSq() > 0.01;
+        const steeringDirection = activeGrind
+          ? new THREE.Vector3(velocityRef.current.x, 0, velocityRef.current.z).normalize()
+          : input;
+        const moving = steeringDirection.lengthSq() > 0.01;
         if (moving) {
-          const targetHeading = Math.atan2(-input.x, -input.z);
+          const targetHeading = Math.atan2(-steeringDirection.x, -steeringDirection.z);
           const headingDelta = Math.atan2(
             Math.sin(targetHeading - character.rotation.y),
             Math.cos(targetHeading - character.rotation.y),
@@ -1522,6 +1671,8 @@ export default function LobbyPage() {
         keysRef.current.clear();
         jumpRequestRef.current = false;
         rollRequestRef.current = false;
+        speedMeterRef.current?.style.setProperty("--speed-ratio", "0");
+        speedMeterRef.current?.classList.remove("boosting");
         playAction("idle", 0.2);
       }
 
@@ -1709,7 +1860,14 @@ export default function LobbyPage() {
         </section>
       )}
 
-      {!mapOpen && !activeVenue && <div className="lobby-tip">{activeDistrictInfo ? "SKATE INTO OPEN SHOPS · E TO INTERACT · M FOR CITY MAP" : "WASD TO SKATE · DRAG TO LOOK · FOUR DISTRICTS ARE OPEN · M FOR CITY MAP"}</div>}
+      {!mapOpen && !activeVenue && <div className="lobby-tip">{activeDistrictInfo ? "SKATE INTO OPEN SHOPS · HOLD SHIFT TO BOOST · E TO INTERACT" : "WASD TO SKATE · HOLD SHIFT TO BOOST · JUMP ON RAILS TO GRIND · M FOR MAP"}</div>}
+
+      {!mapOpen && !activeVenue && (
+        <div ref={speedMeterRef} className="lobby-speed-meter" aria-label="Skate speed">
+          <div><small>SPEED</small><span>BOOST</span></div>
+          <i><b /></i>
+        </div>
+      )}
 
       {!mapOpen && !activeVenue && (
         <div className="lobby-mobile-controls" aria-label="Mobile lobby controls">
@@ -1722,7 +1880,13 @@ export default function LobbyPage() {
           </div>
           <div className="lobby-action-buttons">
             {nearbyVenue && <button className="interact" aria-label={`Enter ${nearbyVenue.name}`} onPointerDown={() => { interactRequestRef.current = true; }}>E</button>}
-            <button className="roll" aria-label="Push skateboard" onPointerDown={() => { rollRequestRef.current = true; }}><ArrowCounterClockwise size={24} weight="bold" aria-hidden="true" /></button>
+            <button
+              className="boost"
+              aria-label="Hold to accelerate skateboard"
+              onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); rollRequestRef.current = true; press("ShiftLeft", true); }}
+              onPointerUp={() => press("ShiftLeft", false)}
+              onPointerCancel={() => press("ShiftLeft", false)}
+            ><span className="boost-bolt" aria-hidden="true" /></button>
             <button className="jump" aria-label="Jump" onPointerDown={() => { jumpRequestRef.current = true; }}><ArrowUp size={26} weight="bold" aria-hidden="true" /></button>
           </div>
         </div>

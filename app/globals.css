@@ -576,6 +576,31 @@ button { color: inherit; }
 
 .lobby-mobile-controls { display: none; }
 
+.lobby-speed-meter {
+  --speed-ratio: 0;
+  position: absolute;
+  z-index: 8;
+  right: 20px;
+  bottom: 20px;
+  width: 142px;
+  padding: 11px 12px;
+  border: 1px solid rgba(21, 25, 28, .12);
+  border-radius: 11px;
+  color: #202529;
+  background: rgba(247, 246, 242, .88);
+  box-shadow: 0 12px 30px rgba(24, 31, 35, .11);
+  backdrop-filter: blur(18px) saturate(1.2);
+  pointer-events: none;
+}
+.lobby-speed-meter > div { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
+.lobby-speed-meter small,
+.lobby-speed-meter span { font: 720 7px/10px var(--font-geist-mono); letter-spacing: .08em; }
+.lobby-speed-meter span { color: #9a7b21; opacity: 0; transition: opacity .16s ease; }
+.lobby-speed-meter.boosting span { opacity: 1; }
+.lobby-speed-meter > i { display: block; height: 4px; border-radius: 99px; background: rgba(32, 37, 41, .13); overflow: hidden; }
+.lobby-speed-meter > i > b { display: block; width: 100%; height: 100%; border-radius: inherit; background: #252b2e; transform: scaleX(var(--speed-ratio)); transform-origin: left center; transition: transform .08s linear, background .16s ease; }
+.lobby-speed-meter.boosting > i > b { background: #d7a925; }
+
 @media (max-width: 720px), (pointer: coarse) {
   .lobby-topbar { top: max(8px, env(safe-area-inset-top)); left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right)); min-height: 48px; padding: 7px 7px 7px 12px; }
   .lobby-identity strong { font-size: 12px; }
@@ -595,6 +620,7 @@ button { color: inherit; }
   .lobby-travel-notice { top: 66px; font-size: 9px; }
   .lobby-interaction { top: 66px; bottom: auto; min-width: 188px; padding: 7px 11px 7px 7px; }
   .lobby-interaction kbd { display: none; }
+  .lobby-speed-meter { top: 66px; right: 8px; bottom: auto; width: 104px; padding: 8px 9px; border-radius: 9px; }
   .lobby-venue-panel { width: min(350px, calc(100vw - 20px)); padding: 17px; }
   .lobby-venue-panel h2 { margin-top: 12px; font-size: 23px; line-height: 27px; }
   .lobby-mobile-controls {
@@ -641,7 +667,8 @@ button { color: inherit; }
   .lobby-action-buttons { display: flex; align-items: flex-end; gap: 9px; pointer-events: auto; }
   .lobby-action-buttons button { display: grid; place-items: center; padding: 0; border: 1px solid rgba(21, 25, 28, .14); border-radius: 18px; box-shadow: 0 12px 28px rgba(24, 31, 35, .14); touch-action: none; }
   .lobby-action-buttons button:active { transform: scale(.91); }
-  .lobby-action-buttons .roll { width: 56px; height: 56px; color: #171b1e; background: rgba(244, 243, 239, .94); }
+  .lobby-action-buttons .boost { width: 56px; height: 56px; color: #252b2e; background: #f2c95d; }
+  .lobby-action-buttons .boost-bolt { width: 17px; height: 25px; background: currentColor; clip-path: polygon(54% 0, 9% 57%, 44% 57%, 33% 100%, 91% 39%, 56% 39%); }
   .lobby-action-buttons .jump { width: 66px; height: 66px; color: #fff; background: #171b1e; }
   .lobby-action-buttons .interact { width: 48px; height: 48px; border-radius: 15px; color: #fff; background: #65775f; font: 760 12px var(--font-geist-mono); }
 }
@@ -662,7 +689,7 @@ button { color: inherit; }
   .lobby-stick .left { top: 37px; }
   .lobby-stick .right { top: 37px; }
   .lobby-stick > span { width: 26px; height: 26px; }
-  .lobby-action-buttons .roll { width: 52px; height: 52px; }
+  .lobby-action-buttons .boost { width: 52px; height: 52px; }
   .lobby-action-buttons .jump { width: 60px; height: 60px; }
 }
 .game-topbar { min-height: 96px; grid-template-columns: 220px minmax(280px, 540px) 88px; gap: 24px; padding: 14px 20px 0; }
