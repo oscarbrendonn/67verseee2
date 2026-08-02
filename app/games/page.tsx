@@ -6,11 +6,18 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { ArrowUp } from "@phosphor-icons/react/ArrowUp";
+import { ArrowLeft } from "@phosphor-icons/react/ArrowLeft";
 import { CaretDown } from "@phosphor-icons/react/CaretDown";
 import { CaretLeft } from "@phosphor-icons/react/CaretLeft";
 import { CaretRight } from "@phosphor-icons/react/CaretRight";
 import { CaretUp } from "@phosphor-icons/react/CaretUp";
 import { Lightning } from "@phosphor-icons/react/Lightning";
+import { ChatCircle } from "@phosphor-icons/react/ChatCircle";
+import { DotsThree } from "@phosphor-icons/react/DotsThree";
+import { GameController } from "@phosphor-icons/react/GameController";
+import { House } from "@phosphor-icons/react/House";
+import { PlayCircle } from "@phosphor-icons/react/PlayCircle";
+import { SquaresFour } from "@phosphor-icons/react/SquaresFour";
 import { UsersThree } from "@phosphor-icons/react/UsersThree";
 
 type Mode = "tag" | "balloon" | "skyway";
@@ -478,7 +485,8 @@ export default function PartyGamesPage() {
     const resizeObserver = new ResizeObserver(resize);
     resizeObserver.observe(host);
 
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
+    timer.connect(document);
     const input = new THREE.Vector3();
     const desiredCamera = new THREE.Vector3();
 
@@ -675,7 +683,8 @@ export default function PartyGamesPage() {
     const animate = () => {
       if (disposed) return;
       animation = requestAnimationFrame(animate);
-      const delta = Math.min(clock.getDelta(), 0.04);
+      timer.update();
+      const delta = Math.min(timer.getDelta(), 0.04);
       const playing = phaseRef.current === "playing" && !finished;
       if (playing) {
         elapsed += delta;
@@ -726,6 +735,7 @@ export default function PartyGamesPage() {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       window.removeEventListener("blur", clearKeys);
+      timer.dispose();
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {
           object.geometry.dispose();
@@ -754,26 +764,43 @@ export default function PartyGamesPage() {
     <main className={`party-shell mode-${activeMode ?? "menu"}`}>
       <div ref={hostRef} className="party-canvas" aria-label="Playable 67VERSE online party game arena" />
 
-      <header className="party-topbar">
-        <Link href="/lobby" className="party-brand" aria-label="Return to 67VERSE City Park">
-          <strong>67VERSE</strong>
-          <span>PARTY NETWORK</span>
-        </Link>
-        <div className="party-network" aria-label="Online public match status">
-          <UsersThree size={17} weight="fill" aria-hidden="true" />
-          <span><b>ONLINE</b> · PUBLIC MATCH</span>
+      <header className="party-topbar" data-figma-node="348:8732">
+        <div className="party-top-left">
+          <Link href="/lobby" aria-label="Return to 67VERSE City Park"><ArrowLeft size={17} weight="regular" /></Link>
+          <span aria-hidden="true"><GameController size={17} weight="regular" /></span>
         </div>
-        {activeInfo && screen !== "menu" && (
-          <button type="button" className="party-exit" onClick={returnToMenu}>GAME SELECT</button>
-        )}
+        <Link href="/lobby" className="party-brand" aria-label="Return to 67VERSE City Park">
+          <b>67</b>
+          <strong>67VERSE</strong>
+          <span>@party</span>
+        </Link>
+        <div className="party-top-right">
+          <div className="party-network" aria-label="Online public match status">
+            <UsersThree size={16} weight="regular" aria-hidden="true" />
+            <span><b>ONLINE</b> · PUBLIC</span>
+          </div>
+          {activeInfo && screen !== "menu" && (
+            <button type="button" className="party-exit" onClick={returnToMenu}>GAMES</button>
+          )}
+          <ChatCircle size={18} weight="regular" aria-hidden="true" />
+          <DotsThree size={19} weight="bold" aria-hidden="true" />
+        </div>
       </header>
 
+      <nav className="party-rail" aria-label="67VERSE navigation" data-figma-node="348:8732">
+        <Link href="/lobby" aria-label="City Park"><House size={17} weight="regular" /></Link>
+        <button type="button" className="active" aria-label="Party Games" onClick={returnToMenu}><GameController size={18} weight="fill" /></button>
+        <button type="button" aria-label="67 Show" onClick={() => chooseMode("show67")}><SquaresFour size={18} weight="regular" /></button>
+        <Link href="/play" aria-label="Skybound Course"><PlayCircle size={19} weight="regular" /></Link>
+        <span className="party-rail-presence"><b>6</b></span>
+      </nav>
+
       {screen === "menu" && (
-        <section className="party-menu">
+        <section className="party-menu" data-figma-node="348:9553">
           <div className="party-menu-heading">
-            <small>67VERSE · PUBLIC PLAYLIST</small>
-            <h1>Three city games.<br />One connected world.</h1>
-            <p>Choose a district event or enter the complete 67 Show series.</p>
+            <small>PUBLIC PLAYLIST</small>
+            <h1>Party Games</h1>
+            <p>Three live city events in one connected world.</p>
           </div>
           <div className="party-game-grid">
             {SHOW_ORDER.map((mode) => {
@@ -798,9 +825,19 @@ export default function PartyGamesPage() {
         </section>
       )}
 
+      {screen === "menu" && (
+        <nav className="party-bottom-nav" aria-label="Game network shortcuts" data-figma-node="348:9046">
+          <Link href="/lobby" aria-label="City Park"><House size={17} weight="regular" /></Link>
+          <button type="button" className="active" aria-label="Party Games"><SquaresFour size={18} weight="fill" /></button>
+          <button type="button" aria-label="Start 67 Show" onClick={() => chooseMode("show67")}><GameController size={18} weight="regular" /></button>
+          <Link href="/play" aria-label="Skybound Course"><PlayCircle size={18} weight="regular" /></Link>
+          <span aria-label="67VERSE public network">67</span>
+        </nav>
+      )}
+
       {activeInfo && screen === "intro" && (
         <section className="party-overlay">
-          <div className="party-dialog party-intro-dialog" style={{ "--mode-accent": activeInfo.accent } as React.CSSProperties}>
+          <div className="party-dialog party-intro-dialog" data-figma-node="348:8817" style={{ "--mode-accent": activeInfo.accent } as React.CSSProperties}>
             <div className="party-dialog-meta">
               <span>{series ? `67 SHOW · ROUND ${roundIndex + 1}/3` : `CITY GAME ${activeInfo.number}`}</span>
               <span>{activeInfo.duration} SEC</span>

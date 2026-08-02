@@ -66,3 +66,49 @@
 - `npm run build`: passed.
 - Scoped `npx eslint app`: passed with one unrelated existing warning in `/play`.
 - Final result: passed.
+
+---
+
+# Public Network Games UI, Bowl Visibility, and Creator Preview — Visual QA
+
+## Evidence
+
+- Source shell and market visual truth: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/work/public-network-local/tests/visual/figma-baselines/348-9553.png` (`1080 × 1080`).
+- Source compact-card visual truth: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/work/public-network-local/tests/visual/figma-baselines/348-8817.png` (`1080 × 1080`).
+- Games menu implementation: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/work/public-network-games-menu-final.png` (`1280 × 720`, `/games`, public playlist state).
+- Match-intro implementation: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/work/public-network-games-intro-1080.png` (`1080 × 784`, `/games`, Tag intro state).
+- Combined shell comparison: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/work/public-network-games-comparison.png`.
+- Combined compact-card comparison: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/work/public-network-intro-comparison.png`.
+- Locked-world state: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/work/lobby-world-locks.png` (`1280 × 784`, `/lobby`, overhead map state).
+- Skate Shop interior: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/work/skate-shop-interior-final.png` (`1280 × 784`, `/lobby`, entered venue state).
+- Bowl rider/camera check: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/work/bowl-character-fix.png` (`1280 × 784`, `/lobby`, rider on bowl wall).
+
+## Comparison history
+
+1. The first `/games` pass still carried the earlier glossy party-game language: large gradients, heavy shadows, oversized cards and a separate visual system.
+2. The implementation was rebuilt against the checked-out Public Network source tokens and Figma baselines: white canvas, 74 px rail, sparse top bar, centered identity, hairline separators, Figtree typography, flat content columns, compact cards and restrained shadows.
+3. The menu and intro screenshots were paired side by side with their source references. The remaining differences are content-specific—game choices and a playable 3D arena replace the market imagery and identity data—while the shared shell, spacing, density, radii and control treatment now match.
+4. Desktop and `390 × 844` responsive states were rendered. No cropped controls, horizontal overflow, console error or warning remained in the final clean browser sessions.
+
+## Findings and resolved issues
+
+- **Resolved P1 — `/games` did not read as Public Network.** The route now uses the real Public Network shell grammar: thin left navigation rail, quiet white surface, centered 67 identity, compact online state, floating bottom navigation and low-contrast separators.
+- **Resolved P1 — Match overlays looked like unrelated game UI.** The intro card now follows the source ID-card proportions and density; the in-match HUD remains legible without gradients or heavy glass effects.
+- **Resolved P1 — The bowl hid part of the rider.** Bowl proximity now switches to a closer, higher follow-camera composition. The board follows the full surface normal, while the rider receives a restrained slope tilt and lift so neither the wall nor the pose clips half the character.
+- **Resolved P1 — The moving car travelled backward.** Its heading now matches the positive-X lane animation and the modeled vehicle's local `-Z` nose direction.
+- **Resolved P1 — The central Skate Shop was only scenery.** Its reachable storefront now exposes an `E`/touch proximity action and loads a separate real-time 3D room with wall-mounted boards, complete setups, display plinths, lights, counter and attendant.
+- **Resolved P1 — Unreleased districts were publicly enterable.** All four world gates now show visible lock states in both the physical portals and map selector, and travel is rejected with a locked-world notice.
+- **Resolved P2 — Venue details obscured the 3D shop on desktop.** The Skate Shop information panel moves to the right edge on wide screens so the room and merchandise remain visible; it returns to a centered compact sheet on mobile.
+- No actionable P0/P1/P2 findings remain in the requested scope.
+
+## Interaction and technical verification
+
+- Public playlist → Tag intro → `JOIN PUBLIC MATCH`: passed.
+- Online public match HUD and Three.js arena start: passed.
+- Mobile public playlist at `390 × 844`: passed.
+- Map open/close and four locked destination rows: passed.
+- Skate Shop proximity prompt → enter → inventory panel → back-to-street flow: passed.
+- Fresh browser console errors/warnings after the Timer migration: `0`.
+- `npx eslint app/games/page.tsx app/lobby/page.tsx`: passed with one pre-existing unused helper warning in the lobby.
+- `npm run build`: passed.
+- Final result: passed.

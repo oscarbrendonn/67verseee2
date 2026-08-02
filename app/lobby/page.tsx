@@ -15,6 +15,7 @@ import { CaretDown } from "@phosphor-icons/react/CaretDown";
 import { CaretLeft } from "@phosphor-icons/react/CaretLeft";
 import { CaretRight } from "@phosphor-icons/react/CaretRight";
 import { CaretUp } from "@phosphor-icons/react/CaretUp";
+import { LockSimple } from "@phosphor-icons/react/LockSimple";
 import { MapTrifold } from "@phosphor-icons/react/MapTrifold";
 import { UsersThree } from "@phosphor-icons/react/UsersThree";
 
@@ -24,7 +25,7 @@ type DistrictTheme = "coast" | "suburb" | "downtown" | "industrial";
 
 type VenueInfo = {
   id: string;
-  districtId: DistrictId;
+  districtId: DistrictId | "park";
   name: string;
   category: string;
   activity: string;
@@ -46,10 +47,10 @@ type District = {
 };
 
 const DISTRICTS: District[] = [
-  { id: "gullcrest", index: "01", name: "Gullcrest Coast", zone: "Pacific waterfront", worldCenter: [0, -150], spawn: [0, 0.91, -150], cameraYaw: 0.15, theme: "coast", gateway: "COAST", accent: "#5f9fa7", locked: false },
-  { id: "hedgemont", index: "02", name: "Hedgemont Heights", zone: "Garden suburb", worldCenter: [150, 0], spawn: [150, 0.91, 0], cameraYaw: Math.PI / 2, theme: "suburb", gateway: "HEIGHTS", accent: "#70866a", locked: false },
-  { id: "market-mile", index: "03", name: "Market Mile", zone: "Downtown nightlife", worldCenter: [0, 150], spawn: [0, 0.91, 150], cameraYaw: Math.PI, theme: "downtown", gateway: "DOWNTOWN", accent: "#75618f", locked: false },
-  { id: "brickswich", index: "04", name: "Brickswich Works", zone: "Warehouse arts quarter", worldCenter: [-150, 0], spawn: [-150, 0.91, 0], cameraYaw: -Math.PI / 2, theme: "industrial", gateway: "WORKS", accent: "#9a6652", locked: false },
+  { id: "gullcrest", index: "01", name: "Gullcrest Coast", zone: "Pacific waterfront", worldCenter: [0, -150], spawn: [0, 0.91, -150], cameraYaw: 0.15, theme: "coast", gateway: "COAST", accent: "#5f9fa7", locked: true },
+  { id: "hedgemont", index: "02", name: "Hedgemont Heights", zone: "Garden suburb", worldCenter: [150, 0], spawn: [150, 0.91, 0], cameraYaw: Math.PI / 2, theme: "suburb", gateway: "HEIGHTS", accent: "#70866a", locked: true },
+  { id: "market-mile", index: "03", name: "Market Mile", zone: "Downtown nightlife", worldCenter: [0, 150], spawn: [0, 0.91, 150], cameraYaw: Math.PI, theme: "downtown", gateway: "DOWNTOWN", accent: "#75618f", locked: true },
+  { id: "brickswich", index: "04", name: "Brickswich Works", zone: "Warehouse arts quarter", worldCenter: [-150, 0], spawn: [-150, 0.91, 0], cameraYaw: -Math.PI / 2, theme: "industrial", gateway: "WORKS", accent: "#9a6652", locked: true },
 ];
 
 const DISTRICT_VENUES: Record<DistrictTheme, Array<Omit<VenueInfo, "id" | "districtId">>> = {
@@ -86,7 +87,16 @@ const MARKET_MALL_VENUE: Omit<VenueInfo, "id" | "districtId"> = {
   description: "A walk-in neighborhood mall with fashion, technology, food and arcade storefronts around a central hall.",
 };
 
-const TOTAL_VENUES = Object.values(DISTRICT_VENUES).reduce((total, venues) => total + venues.length, 1);
+const CENTRAL_SKATE_SHOP: VenueInfo = {
+  id: "park-skate-shop",
+  districtId: "park",
+  name: "67 Skate Shop",
+  category: "SKATE SHOP",
+  activity: "Build your first 67 setup",
+  description: "A walk-in board shop beside the central park, with complete decks, wheels and workshop service.",
+};
+
+const TOTAL_VENUES = Object.values(DISTRICT_VENUES).reduce((total, venues) => total + venues.length, 2);
 
 function surface(color: string, roughness = 0.78, metalness = 0.02) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -166,6 +176,8 @@ export default function LobbyPage() {
   const mapOpenRef = useRef(false);
   const venueOpenRef = useRef(false);
   const teleportRef = useRef<(destination: DistrictId | "park") => void>(() => undefined);
+  const enterVenueRef = useRef<(venue: VenueInfo) => void>(() => undefined);
+  const leaveVenueRef = useRef<() => void>(() => undefined);
   const [mapOpen, setMapOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [worldLoaded, setWorldLoaded] = useState(false);
@@ -173,19 +185,18 @@ export default function LobbyPage() {
   const [travelNotice, setTravelNotice] = useState<string | null>(null);
   const [nearbyVenue, setNearbyVenue] = useState<VenueInfo | null>(null);
   const [activeVenue, setActiveVenue] = useState<VenueInfo | null>(null);
-  const [discoveredVenues, setDiscoveredVenues] = useState<string[]>([]);
+  const [discoveredVenues, setDiscoveredVenues] = useState<string[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const saved = window.localStorage.getItem("67verse-discovered-venues");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
 
   useEffect(() => { mapOpenRef.current = mapOpen; }, [mapOpen]);
   useEffect(() => { venueOpenRef.current = Boolean(activeVenue); }, [activeVenue]);
-  useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem("67verse-discovered-venues");
-      if (saved) setDiscoveredVenues(JSON.parse(saved));
-    } catch {
-      // Progress remains available for the current session when storage is disabled.
-    }
-  }, []);
-
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
@@ -1163,7 +1174,10 @@ export default function LobbyPage() {
       const post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.2, 0.16), surface("#343a3f", 0.48));
       post.position.set(0, 1.25, 0.35);
       post.castShadow = true;
-      const marker = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.72, 0.16), makeSignMaterial(district.gateway, district.accent));
+      const marker = new THREE.Mesh(
+        new THREE.BoxGeometry(2.35, 0.72, 0.16),
+        makeSignMaterial(district.locked ? "LOCKED" : district.gateway, district.locked ? "#242a2e" : district.accent),
+      );
       marker.position.set(0, 2.03, 0.35);
       marker.castShadow = true;
       const ring = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.07, 10, 36), portalMaterial);
@@ -1231,7 +1245,9 @@ export default function LobbyPage() {
     addCityVehicle(-8, -36.1, Math.PI / 2, "#73868d");
     addCityVehicle(28, 47.15, Math.PI / 2, "#997b6f");
     addCityVehicle(-52, 12, 0, "#697e82");
-    const centralTraffic = [{ vehicle: addCityVehicle(-64, -31.25, Math.PI / 2, "#8b8f78"), speed: 5.4 }];
+    // The vehicle model's nose points down local -Z, so -PI/2 faces it toward
+    // positive world X—the same direction as the traffic animation.
+    const centralTraffic = [{ vehicle: addCityVehicle(-64, -31.25, -Math.PI / 2, "#8b8f78"), speed: 5.4 }];
 
     const centralWorld = new THREE.Group();
     centralWorld.name = "central-park-world";
@@ -1240,6 +1256,85 @@ export default function LobbyPage() {
       .forEach((object) => centralWorld.add(object));
     scene.add(centralWorld);
 
+    // A dedicated 3D room is shown when the player enters the central Skate Shop.
+    // It lives outside the park group so the street can be hidden without flattening
+    // the venue into a UI-only popup.
+    const skateShopInterior = new THREE.Group();
+    skateShopInterior.name = "67-skate-shop-interior";
+    const shopFloor = box([16, 0.24, 19], "#b9b7b1", 0.9);
+    shopFloor.position.y = -0.12;
+    const shopRearWall = box([16, 6.8, 0.34], "#e7e5df", 0.91);
+    shopRearWall.position.set(0, 3.4, -9.35);
+    const shopLeftWall = box([0.34, 6.8, 19], "#dedcd6", 0.91);
+    shopLeftWall.position.set(-8, 3.4, 0);
+    const shopRightWall = shopLeftWall.clone();
+    shopRightWall.position.x = 8;
+    const shopLogo = new THREE.Mesh(
+      new RoundedBoxGeometry(7.8, 1.05, 0.14, 4, 0.06),
+      makeSignMaterial("67 SKATE SHOP", "#10151d"),
+    );
+    shopLogo.position.set(0, 5.45, -9.11);
+    const shopCounter = box([5.5, 1.15, 1.45], "#6f655d", 0.78);
+    shopCounter.position.set(3.9, 0.58, -6.75);
+    const shopCounterTop = box([5.8, 0.12, 1.68], "#242c31", 0.52);
+    shopCounterTop.position.set(3.9, 1.2, -6.75);
+    const shopAttendant = new THREE.Group();
+    const shopAttendantHead = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 12), surface("#a77b65", 0.9));
+    shopAttendantHead.position.y = 1.82;
+    const shopAttendantBody = new THREE.Mesh(new RoundedBoxGeometry(0.65, 0.92, 0.42, 4, 0.1), surface("#171e25", 0.78));
+    shopAttendantBody.position.y = 1.18;
+    shopAttendant.add(shopAttendantHead, shopAttendantBody);
+    shopAttendant.position.set(3.9, 0, -7.4);
+    shopAttendant.traverse((object) => { if (object instanceof THREE.Mesh) object.castShadow = true; });
+
+    const createDisplaySkateboard = (deckColor: string) => {
+      const displayBoard = new THREE.Group();
+      const displayDeck = new THREE.Mesh(new RoundedBoxGeometry(0.52, 0.09, 1.72, 5, 0.09), surface(deckColor, 0.62));
+      const displayUnderside = new THREE.Mesh(new RoundedBoxGeometry(0.47, 0.04, 1.55, 4, 0.06), surface("#b88b5f", 0.75));
+      displayUnderside.position.y = -0.065;
+      [-0.5, 0.5].forEach((wheelZ) => {
+        [-0.31, 0.31].forEach((wheelX) => {
+          const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.07, 14), surface("#e8e1d2", 0.54));
+          wheel.rotation.z = Math.PI / 2;
+          wheel.position.set(wheelX, -0.12, wheelZ);
+          displayBoard.add(wheel);
+        });
+      });
+      displayBoard.add(displayDeck, displayUnderside);
+      displayBoard.traverse((object) => { if (object instanceof THREE.Mesh) object.castShadow = true; });
+      return displayBoard;
+    };
+
+    ["#3f8067", "#b05e50", "#526c91", "#d19b4d", "#6d5c86", "#303940"].forEach((deckColor, index) => {
+      const wallBoard = createDisplaySkateboard(deckColor);
+      wallBoard.position.set(-5.75 + index * 2.3, 3.15, -9.1);
+      wallBoard.rotation.x = Math.PI / 2;
+      skateShopInterior.add(wallBoard);
+    });
+    [-4.7, -1.55, 1.6].forEach((x, index) => {
+      const displayPlinth = box([2.35, 0.68, 3.3], index === 1 ? "#2b3338" : "#d2cfc8", 0.82);
+      displayPlinth.position.set(x, 0.34, -2.25);
+      const floorBoard = createDisplaySkateboard(["#d09d49", "#487d72", "#a45f58"][index]);
+      floorBoard.position.set(x, 0.82, -2.25);
+      floorBoard.rotation.z = index === 1 ? -0.08 : 0.08;
+      skateShopInterior.add(displayPlinth, floorBoard);
+    });
+    [-5.4, 0, 5.4].forEach((x) => {
+      const shopLight = new THREE.Mesh(
+        new RoundedBoxGeometry(3.8, 0.1, 0.72, 3, 0.03),
+        new THREE.MeshStandardMaterial({ color: "#fffaf0", emissive: "#fff2d7", emissiveIntensity: 0.86 }),
+      );
+      shopLight.position.set(x, 6.25, -1.1);
+      skateShopInterior.add(shopLight);
+    });
+    const shopExitMat = makeSignMaterial("EXIT TO CITY PARK", "#4b565c");
+    const shopExit = new THREE.Mesh(new RoundedBoxGeometry(4.6, 0.62, 0.13, 3, 0.04), shopExitMat);
+    shopExit.position.set(0, 3.1, 9.44);
+    shopExit.rotation.y = Math.PI;
+    skateShopInterior.add(shopFloor, shopRearWall, shopLeftWall, shopRightWall, shopLogo, shopCounter, shopCounterTop, shopAttendant, shopExit);
+    skateShopInterior.visible = false;
+    scene.add(skateShopInterior);
+
     const districtPalettes: Record<DistrictTheme, { base: string; lot: string; facades: string[] }> = {
       coast: { base: "#b8b4a7", lot: "#d1c7ad", facades: ["#d5c4ad", "#b9d0cb", "#d9b7a9", "#aebfcb"] },
       suburb: { base: "#858f82", lot: "#78906c", facades: ["#b9a28e", "#9faeaa", "#c1b79e", "#a7a1b0"] },
@@ -1247,7 +1342,9 @@ export default function LobbyPage() {
       industrial: { base: "#8d8982", lot: "#918b81", facades: ["#9a6652", "#777c76", "#8b725f", "#6f777c"] },
     };
 
-    const venuePoints: Array<VenueInfo & { x: number; z: number }> = [];
+    const venuePoints: Array<VenueInfo & { x: number; z: number }> = [
+      { ...CENTRAL_SKATE_SHOP, x: 16, z: -38.7 },
+    ];
     const streetActors: Array<{ group: THREE.Group; x: number; z: number; axis: "x" | "z"; range: number; speed: number; phase: number }> = [];
 
     const addStreetActor = (x: number, z: number, accent: string, axis: "x" | "z", phase: number) => {
@@ -1616,8 +1713,7 @@ export default function LobbyPage() {
       if (!event.repeat && (event.code === "KeyE" || event.code === "Enter")) interactRequestRef.current = true;
       if (event.code === "KeyM" && !venueOpenRef.current) setMapOpen((value) => !value);
       if (event.code === "Escape" && venueOpenRef.current) {
-        venueOpenRef.current = false;
-        setActiveVenue(null);
+        leaveVenueRef.current();
       }
     };
     const onKeyUp = (event: KeyboardEvent) => keysRef.current.delete(event.code);
@@ -1641,6 +1737,9 @@ export default function LobbyPage() {
     let travelNoticeTimer: number | undefined;
     let currentDistrictId: DistrictId | null = null;
     let nearbyVenueId: string | null = null;
+    let skateShopInteriorActive = false;
+    const venueReturnPosition = new THREE.Vector3();
+    let venueReturnYaw = 0;
     const activeWorldCenter = new THREE.Vector3(0, 0, 0);
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
@@ -1715,6 +1814,51 @@ export default function LobbyPage() {
       travelNoticeTimer = window.setTimeout(() => setTravelNotice(null), 2200);
     };
     teleportRef.current = travelTo;
+
+    const rememberVenue = (venue: VenueInfo) => {
+      setDiscoveredVenues((current) => {
+        if (current.includes(venue.id)) return current;
+        const next = [...current, venue.id];
+        try { window.localStorage.setItem("67verse-discovered-venues", JSON.stringify(next)); } catch { /* Session-only progress. */ }
+        return next;
+      });
+    };
+
+    const enterVenueWorld = (venue: VenueInfo) => {
+      venueOpenRef.current = true;
+      velocityRef.current.set(0, 0, 0);
+      if (venue.id === CENTRAL_SKATE_SHOP.id && !skateShopInteriorActive) {
+        venueReturnPosition.copy(character.position);
+        venueReturnYaw = cameraYaw;
+        skateShopInteriorActive = true;
+        centralWorld.visible = false;
+        districtWorlds.forEach((world) => { world.visible = false; });
+        skateShopInterior.visible = true;
+        character.position.set(0, 1.03, 5.8);
+        character.rotation.y = 0;
+        cameraYaw = 0;
+        supported = true;
+      }
+      setActiveVenue(venue);
+      rememberVenue(venue);
+    };
+
+    const leaveVenueWorld = () => {
+      venueOpenRef.current = false;
+      setActiveVenue(null);
+      if (skateShopInteriorActive) {
+        skateShopInteriorActive = false;
+        skateShopInterior.visible = false;
+        centralWorld.visible = !currentDistrictId;
+        districtWorlds.forEach((world, districtId) => { world.visible = currentDistrictId === districtId; });
+        character.position.copy(venueReturnPosition);
+        cameraYaw = venueReturnYaw;
+        velocityRef.current.set(0, 0, 0);
+        supported = true;
+      }
+    };
+    enterVenueRef.current = enterVenueWorld;
+    leaveVenueRef.current = leaveVenueWorld;
 
     const onCameraPointerDown = (event: PointerEvent) => {
       cameraDragged = false;
@@ -1827,8 +1971,6 @@ export default function LobbyPage() {
           velocityRef.current.z += boostDirection.z * 3.4;
           rollCooldownUntil = now + 650;
         }
-        rollPivot.rotation.x = 0;
-
         const boosting = keys.has("ShiftLeft") || keys.has("ShiftRight");
         const speed = boosting ? 16.4 : 8.8;
         const glideResponse = input.lengthSq() > 0.01 ? (boosting ? 8.2 : 6.2) : 1.42;
@@ -1868,7 +2010,7 @@ export default function LobbyPage() {
         character.position.x = THREE.MathUtils.clamp(character.position.x, activeWorldCenter.x - 42.5, activeWorldCenter.x + 42.5);
         character.position.z = THREE.MathUtils.clamp(
           character.position.z,
-          activeWorldCenter.z + (currentDistrictId ? -42.5 : -26),
+          activeWorldCenter.z + (currentDistrictId ? -42.5 : -39),
           activeWorldCenter.z + (currentDistrictId ? 42.5 : 38),
         );
         if (currentDistrictId) {
@@ -1950,6 +2092,15 @@ export default function LobbyPage() {
         const localDeckNormal = deckNormal.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), -character.rotation.y);
         const deckTarget = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), localDeckNormal);
         skateboard.quaternion.slerp(deckTarget, 1 - Math.exp(-9 * delta));
+        // Keep the rider's feet above steep bowl walls. The board follows the
+        // exact normal while the body takes a restrained share of that tilt,
+        // avoiding both wall clipping and the old folded-character look.
+        const riderNormal = new THREE.Vector3(0, 1, 0).lerp(deckNormal, 0.32).normalize();
+        const localRiderNormal = riderNormal.applyAxisAngle(new THREE.Vector3(0, 1, 0), -character.rotation.y);
+        const riderTarget = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), localRiderNormal);
+        rollPivot.quaternion.slerp(riderTarget, 1 - Math.exp(-8 * delta));
+        const slopeLift = supported ? (1 - deckNormal.y) * 0.34 : 0;
+        rollPivot.position.y = THREE.MathUtils.damp(rollPivot.position.y, 0.46 + slopeLift, 10, delta);
         const riderForward = new THREE.Vector3(-Math.sin(character.rotation.y), 0, -Math.cos(character.rotation.y));
         const signedWheelSpeed = velocityRef.current.dot(riderForward);
         wheelSpin -= signedWheelSpeed * delta / 0.1;
@@ -1966,10 +2117,10 @@ export default function LobbyPage() {
       }
 
       let closestVenue: (VenueInfo & { x: number; z: number }) | null = null;
-      if (currentDistrictId && !mapOpenRef.current && !venueOpenRef.current) {
+      if (!mapOpenRef.current && !venueOpenRef.current) {
         let closestDistance = 5.4;
         venuePoints.forEach((venue) => {
-          if (venue.districtId !== currentDistrictId) return;
+          if (venue.districtId !== (currentDistrictId ?? "park")) return;
           const distance = Math.hypot(character.position.x - venue.x, character.position.z - venue.z);
           if (distance < closestDistance) {
             closestDistance = distance;
@@ -1986,15 +2137,7 @@ export default function LobbyPage() {
         interactRequestRef.current = false;
         if (closestVenue) {
           const selectedVenue: VenueInfo = closestVenue;
-          venueOpenRef.current = true;
-          velocityRef.current.set(0, 0, 0);
-          setActiveVenue(selectedVenue);
-          setDiscoveredVenues((current) => {
-            if (current.includes(selectedVenue.id)) return current;
-            const next = [...current, selectedVenue.id];
-            try { window.localStorage.setItem("67verse-discovered-venues", JSON.stringify(next)); } catch { /* Session-only progress. */ }
-            return next;
-          });
+          enterVenueWorld(selectedVenue);
         }
       }
 
@@ -2010,15 +2153,16 @@ export default function LobbyPage() {
         worldFog.far = 250;
         camera.up.set(0, 1, 0);
         const portraitMobile = camera.aspect < 0.72;
-        const cameraDistance = (portraitMobile ? 16.2 : 13.8) * Math.cos(cameraPitch);
+        const bowlCameraActive = !currentDistrictId && Math.hypot(character.position.x - bowlCenterX, character.position.z - bowlCenterZ) < bowlRadius + 0.35;
+        const cameraDistance = (bowlCameraActive ? (portraitMobile ? 8.4 : 7.2) : (portraitMobile ? 16.2 : 13.8)) * Math.cos(cameraPitch);
         const cameraOffset = new THREE.Vector3(
           Math.sin(cameraYaw) * cameraDistance,
-          (portraitMobile ? 10.4 : 9.2) + Math.sin(cameraPitch) * 3.2,
+          (bowlCameraActive ? (portraitMobile ? 9.4 : 8.6) : (portraitMobile ? 10.4 : 9.2)) + Math.sin(cameraPitch) * 3.2,
           Math.cos(cameraYaw) * cameraDistance,
         );
         const cameraAnchor = character.position.clone().add(new THREE.Vector3(0, 1.15, 0));
         const viewForward = new THREE.Vector3(-Math.sin(cameraYaw), 0, -Math.cos(cameraYaw));
-        const lookTarget = cameraAnchor.clone().addScaledVector(viewForward, portraitMobile ? 5 : 5.6);
+        const lookTarget = cameraAnchor.clone().addScaledVector(viewForward, bowlCameraActive ? 2.4 : portraitMobile ? 5 : 5.6);
         camera.position.lerp(cameraAnchor.clone().add(cameraOffset), 1 - Math.exp(-delta * 5.5));
         camera.lookAt(lookTarget);
       }
@@ -2040,6 +2184,8 @@ export default function LobbyPage() {
       renderer.domElement.removeEventListener("pointercancel", onCameraPointerUp);
       renderer.domElement.removeEventListener("click", onWorldClick);
       teleportRef.current = () => undefined;
+      enterVenueRef.current = () => undefined;
+      leaveVenueRef.current = () => undefined;
       if (travelNoticeTimer) window.clearTimeout(travelNoticeTimer);
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {
@@ -2064,19 +2210,10 @@ export default function LobbyPage() {
   };
   const activeDistrictInfo = activeDistrict ? DISTRICTS.find((district) => district.id === activeDistrict) ?? null : null;
   const enterVenue = (venue: VenueInfo) => {
-    venueOpenRef.current = true;
-    velocityRef.current.set(0, 0, 0);
-    setActiveVenue(venue);
-    setDiscoveredVenues((current) => {
-      if (current.includes(venue.id)) return current;
-      const next = [...current, venue.id];
-      try { window.localStorage.setItem("67verse-discovered-venues", JSON.stringify(next)); } catch { /* Session-only progress. */ }
-      return next;
-    });
+    enterVenueRef.current(venue);
   };
   const leaveVenue = () => {
-    venueOpenRef.current = false;
-    setActiveVenue(null);
+    leaveVenueRef.current();
   };
 
   return (
@@ -2100,7 +2237,7 @@ export default function LobbyPage() {
       <section className="lobby-location" aria-label="Current lobby location">
         <small>{activeDistrictInfo ? activeDistrictInfo.zone.toUpperCase() : "PUBLIC LOBBY"}</small>
         <strong>{activeDistrictInfo ? activeDistrictInfo.name : "67VERSE City Park"}</strong>
-        <span>{loaded && worldLoaded ? (activeDistrictInfo ? "Street network · Open session" : "Central hub · Four districts open") : "Loading city district…"}</span>
+        <span>{loaded && worldLoaded ? (activeDistrictInfo ? "Street network · Open session" : "Central hub · District gates locked") : "Loading city district…"}</span>
         {activeDistrictInfo && (
           <button className="lobby-return" type="button" onClick={() => teleportRef.current("park")}>RETURN TO CENTRAL PARK</button>
         )}
@@ -2114,7 +2251,7 @@ export default function LobbyPage() {
             <button key={district.id} className={district.locked ? "locked" : undefined} type="button" aria-disabled={district.locked} onClick={() => teleportRef.current(district.id)}>
               <span>{district.index}</span>
               <strong>{district.name}</strong>
-              <em>{district.locked ? "LOCKED" : "ENTER"}</em>
+              <em>{district.locked ? <><LockSimple size={11} weight="bold" aria-hidden="true" />LOCKED</> : "ENTER"}</em>
             </button>
           ))}
           <Link className="lobby-map-games" href="/games">
@@ -2122,7 +2259,7 @@ export default function LobbyPage() {
             <strong>City Party Games</strong>
             <em>3 EVENTS</em>
           </Link>
-          <p>Each world loads separately. Select one to leave Central Park and teleport there.</p>
+          <p>Districts are private creator previews. Public travel opens after the city release.</p>
         </section>
       )}
 
@@ -2136,13 +2273,20 @@ export default function LobbyPage() {
       )}
 
       {activeVenue && (
-        <section className="lobby-venue-panel" role="dialog" aria-modal="true" aria-label={`${activeVenue.name} venue`}>
+        <section className={`lobby-venue-panel${activeVenue.id === CENTRAL_SKATE_SHOP.id ? " skate-shop" : ""}`} role="dialog" aria-modal="true" aria-label={`${activeVenue.name} venue`}>
           <div className="lobby-venue-heading">
             <span>{activeVenue.category}</span>
             <em>OPEN NOW</em>
           </div>
           <h2>{activeVenue.name}</h2>
           <p>{activeVenue.description}</p>
+          {activeVenue.id === CENTRAL_SKATE_SHOP.id && (
+            <div className="lobby-skate-inventory" aria-label="Skate shop inventory">
+              <span><small>COMPLETE</small><strong>67 Street 8.0</strong></span>
+              <span><small>DECK</small><strong>Park Shape 8.25</strong></span>
+              <span><small>WHEELS</small><strong>Soft City 54 mm</strong></span>
+            </div>
+          )}
           <div className="lobby-venue-activity">
             <small>AVAILABLE ACTIVITY</small>
             <strong>{activeVenue.activity}</strong>
