@@ -391,7 +391,8 @@ export default function LobbyPage() {
     scene.add(plaza);
 
     const lawnMaterial = surface("#718864", 0.99);
-    [[-24, 24, 30, 16], [24, 24, 30, 16], [-39.5, -5, 6, 22], [39.5, -5, 6, 22]].forEach(([x, z, width, depth]) => {
+    const sideLawnCenterX = 37.8;
+    [[-24, 24, 30, 16], [24, 24, 30, 16], [-sideLawnCenterX, -5, 6, 22], [sideLawnCenterX, -5, 6, 22]].forEach(([x, z, width, depth]) => {
       const curb = box([width + 0.7, 0.24, depth + 0.7], "#8b8c87", 0.93);
       curb.position.set(x, 0.17, z);
       const lawn = new THREE.Mesh(new RoundedBoxGeometry(width, 0.14, depth, 3, 0.07), lawnMaterial);
@@ -520,8 +521,8 @@ export default function LobbyPage() {
       const onRaisedLawn = (
         (Math.abs(x + 24) <= 15 && Math.abs(z - 24) <= 8)
         || (Math.abs(x - 24) <= 15 && Math.abs(z - 24) <= 8)
-        || (Math.abs(x + 39.5) <= 3 && Math.abs(z + 5) <= 11)
-        || (Math.abs(x - 39.5) <= 3 && Math.abs(z + 5) <= 11)
+        || (Math.abs(x + sideLawnCenterX) <= 3 && Math.abs(z + 5) <= 11)
+        || (Math.abs(x - sideLawnCenterX) <= 3 && Math.abs(z + 5) <= 11)
       );
       const insidePark = Math.abs(x) <= 42.5 && z >= -26 && z <= 38;
       let result = { height: onRaisedLawn ? 0.38 : onSkatePad ? 0.3 : insidePark ? 0.17 : 0.05, normal: up };
@@ -1147,8 +1148,8 @@ export default function LobbyPage() {
     });
 
     const trees: Array<[number, number, number, number]> = [
-      [-38.3, -14, 0.82, 0.36], [-38.2, -3, 0.88, 0.36],
-      [39, -14, 0.96, 0.36], [39, -3, 1.02, 0.36],
+      [-37.8, -14, 0.82, 0.36], [-37.8, -3, 0.88, 0.36],
+      [37.8, -14, 0.96, 0.36], [37.8, -3, 1.02, 0.36],
       [-32, 21, 1, 0.36], [-23, 24, 0.92, 0.36], [-13, 21, 0.88, 0.36],
       [13, 21, 0.9, 0.36], [24, 24, 1, 0.36], [34, 21, 0.9, 0.36],
       [-25, -24, 0.86, 0.14], [25, -24, 0.88, 0.14],
@@ -1156,8 +1157,8 @@ export default function LobbyPage() {
     trees.forEach(([x, z, scale, baseY]) => addTree(scene, x, z, scale, baseY));
     addBench(scene, -23, 20, Math.PI, 0.36);
     addBench(scene, 24, 20, Math.PI, 0.36);
-    addBench(scene, -39, 5, Math.PI / 2, 0.36);
-    addBench(scene, 39, 5, -Math.PI / 2, 0.36);
+    addBench(scene, -37.8, 5, Math.PI / 2, 0.36);
+    addBench(scene, 37.8, 5, -Math.PI / 2, 0.36);
     [[-39, -25], [-21, -25], [21, -25], [39, -25], [-39, 32], [-18, 32], [18, 32], [39, 32]].forEach(([x, z]) => addLamp(scene, x, z));
     const portalMaterial = new THREE.MeshStandardMaterial({
       color: "#ece8d9",
