@@ -1425,3 +1425,204 @@ button { color: inherit; }
   .party-stick > span { background: var(--party-divider); }
   .party-action { border: 0; border-radius: 50%; color: #fff; background: var(--party-ink); box-shadow: 0 10px 26px rgba(6,12,33,.12); }
 }
+
+/* 67VERSE Online Skate Hub V4 */
+.park-v4-shell {
+  --park-ink: #171c1e;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  color: var(--park-ink);
+  background: #b7c3c1;
+  font-family: var(--font-figtree), Arial, sans-serif;
+}
+.park-v4-canvas { position: absolute; inset: 0; outline: none; }
+.park-v4-canvas canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.park-v4-topbar {
+  position: absolute;
+  z-index: 12;
+  top: 18px;
+  right: 18px;
+  left: 18px;
+  min-height: 54px;
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 9px 8px 17px;
+  border: 1px solid rgba(20, 25, 27, .13);
+  border-radius: 14px;
+  background: rgba(247, 246, 242, .94);
+  box-shadow: 0 14px 38px rgba(20, 27, 31, .15);
+  backdrop-filter: blur(20px) saturate(1.12);
+}
+.park-v4-brand { display: grid; gap: 1px; }
+.park-v4-brand strong { font-size: 14px; line-height: 17px; font-weight: 850; letter-spacing: -.02em; }
+.park-v4-brand span { color: #70777a; font: 690 7px/11px var(--font-geist-mono); letter-spacing: .09em; }
+.park-v4-online { display: flex; align-items: center; gap: 6px; color: #4d5658; font: 700 8px var(--font-geist-mono); letter-spacing: .05em; }
+.park-v4-online i { width: 7px; height: 7px; border-radius: 50%; background: #55a66f; box-shadow: 0 0 0 4px rgba(85, 166, 111, .12); }
+.park-v4-overview {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid rgba(20, 25, 27, .12);
+  border-radius: 9px;
+  color: #596164;
+  background: #e9e7e0;
+  font: 720 8px var(--font-geist-mono);
+  letter-spacing: .04em;
+  cursor: pointer;
+}
+.park-v4-overview:hover, .park-v4-overview.active { color: #fff; border-color: #315b40; background: #315b40; }
+.park-v4-topbar > a { min-height: 36px; display: inline-flex; align-items: center; padding: 0 13px; border-radius: 9px; color: #fff; background: #171c1e; font-size: 9px; font-weight: 760; text-decoration: none; }
+.park-v4-topbar > a:hover { background: #303638; }
+.park-v4-location {
+  position: absolute;
+  z-index: 10;
+  left: 18px;
+  bottom: 18px;
+  width: 250px;
+  display: grid;
+  gap: 3px;
+  padding: 14px 15px;
+  border: 1px solid rgba(20, 25, 27, .13);
+  border-radius: 12px;
+  background: rgba(247, 246, 242, .93);
+  box-shadow: 0 14px 34px rgba(20, 27, 31, .14);
+  backdrop-filter: blur(18px);
+}
+.park-v4-location small { color: #747a7d; font: 690 7px/11px var(--font-geist-mono); letter-spacing: .09em; }
+.park-v4-location strong { font-size: 17px; line-height: 21px; letter-spacing: -.02em; }
+.park-v4-location span { color: #6d7476; font-size: 9px; line-height: 13px; }
+.park-v4-ride-picker {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  bottom: 24px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 5px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(20, 25, 27, .14);
+  border-radius: 14px;
+  background: rgba(247, 246, 242, .94);
+  box-shadow: 0 16px 38px rgba(20, 27, 31, .17);
+  backdrop-filter: blur(20px);
+}
+.park-v4-ride-picker button {
+  min-width: 108px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  color: #6d7476;
+  background: transparent;
+  cursor: pointer;
+  transition: color .16s ease, background .16s ease, transform .16s ease;
+}
+.park-v4-ride-picker button:hover { color: var(--park-ink); background: #e9e7e0; }
+.park-v4-ride-picker button:active { transform: scale(.97); }
+.park-v4-ride-picker button.active { color: #fff; background: #315b40; }
+.park-v4-ride-picker button > span { display: grid; gap: 1px; font-size: 10px; font-weight: 760; text-align: left; }
+.park-v4-ride-picker button small { color: currentColor; font: 680 6px/9px var(--font-geist-mono); letter-spacing: .09em; opacity: .7; }
+.park-v4-tip {
+  position: absolute;
+  z-index: 8;
+  left: 50%;
+  bottom: 91px;
+  transform: translateX(-50%);
+  padding: 8px 11px;
+  border: 1px solid rgba(20, 25, 27, .12);
+  border-radius: 999px;
+  color: #606769;
+  background: rgba(247, 246, 242, .88);
+  box-shadow: 0 10px 28px rgba(20, 27, 31, .12);
+  font: 680 7px/11px var(--font-geist-mono);
+  letter-spacing: .05em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.park-v4-mobile { display: none; }
+.park-v4-topbar a:focus-visible,
+.park-v4-overview:focus-visible,
+.park-v4-ride-picker button:focus-visible,
+.park-v4-mobile button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; box-shadow: 0 0 0 4px #171c1e; }
+
+@media (max-width: 720px), (pointer: coarse) {
+  .park-v4-topbar { top: max(8px, env(safe-area-inset-top)); right: 8px; left: 8px; min-height: 48px; gap: 8px; padding: 6px 7px 6px 11px; border-radius: 12px; }
+  .park-v4-brand strong { font-size: 12px; }
+  .park-v4-brand span { font-size: 6px; }
+  .park-v4-online span, .park-v4-online svg { display: none; }
+  .park-v4-overview span { display: none; }
+  .park-v4-overview { width: 32px; min-height: 32px; justify-content: center; padding: 0; }
+  .park-v4-topbar > a { min-height: 32px; padding: 0 9px; font-size: 7px; }
+  .park-v4-location { top: 64px; bottom: auto; left: 8px; width: 205px; padding: 10px 12px; }
+  .park-v4-location strong { font-size: 14px; line-height: 18px; }
+  .park-v4-location span { display: none; }
+  .park-v4-tip { display: none; }
+  .park-v4-ride-picker { top: 64px; right: 8px; bottom: auto; left: auto; display: flex; gap: 3px; padding: 4px; transform: none; border-radius: 12px; }
+  .park-v4-ride-picker button { min-width: 42px; min-height: 42px; padding: 0; border-radius: 9px; }
+  .park-v4-ride-picker button > span { display: none; }
+  .park-v4-mobile {
+    position: absolute;
+    z-index: 11;
+    right: 12px;
+    bottom: max(16px, env(safe-area-inset-bottom));
+    left: 12px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    pointer-events: none;
+  }
+  .park-v4-stick {
+    position: relative;
+    width: 126px;
+    height: 126px;
+    border: 1px solid rgba(20, 25, 27, .12);
+    border-radius: 50%;
+    background: rgba(247, 246, 242, .91);
+    box-shadow: 0 14px 32px rgba(20, 27, 31, .16);
+    pointer-events: auto;
+  }
+  .park-v4-stick button {
+    position: absolute;
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 13px;
+    color: #171c1e;
+    background: transparent;
+    touch-action: none;
+  }
+  .park-v4-stick button:active { background: #deddd7; transform: scale(.92); }
+  .park-v4-stick .up { top: 3px; left: 42px; }
+  .park-v4-stick .down { bottom: 3px; left: 42px; }
+  .park-v4-stick .left { top: 42px; left: 3px; }
+  .park-v4-stick .right { top: 42px; right: 3px; }
+  .park-v4-stick > span { position: absolute; top: 50%; left: 50%; width: 30px; height: 30px; transform: translate(-50%, -50%); border-radius: 50%; background: #dfded8; }
+  .park-v4-mobile-actions { display: flex; align-items: flex-end; gap: 9px; pointer-events: auto; }
+  .park-v4-mobile-actions button { display: grid; place-items: center; padding: 0; border: 1px solid rgba(20, 25, 27, .13); border-radius: 20px; box-shadow: 0 14px 32px rgba(20, 27, 31, .17); touch-action: none; }
+  .park-v4-mobile-actions button:active { transform: scale(.92); }
+  .park-v4-mobile-actions .boost { width: 57px; height: 57px; color: #252b2e; background: #e6b75a; }
+  .park-v4-mobile-actions .jump { width: 69px; height: 69px; color: #fff; background: #171c1e; }
+}
+
+@media (max-height: 500px) and (pointer: coarse) {
+  .park-v4-location { display: none; }
+  .park-v4-ride-picker { top: 64px; }
+  .park-v4-mobile { bottom: max(8px, env(safe-area-inset-bottom)); }
+  .park-v4-stick { width: 110px; height: 110px; }
+  .park-v4-stick button { width: 38px; height: 38px; }
+  .park-v4-stick .up, .park-v4-stick .down { left: 36px; }
+  .park-v4-stick .left, .park-v4-stick .right { top: 36px; }
+}
