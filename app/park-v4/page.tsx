@@ -785,6 +785,90 @@ export default function ParkV4Page() {
       return height;
     };
 
+    // fRiENDSiES riding the park. Their decks are the same roundedBox and
+    // wheels the player's board is built from, so they sit in the same visual
+    // language, and they read surfaceAt exactly as the player does, which is
+    // what keeps them on the bowls and ramps instead of floating over them.
+    //
+    // The models are rigged — Root, Spine, ThighL/R, ArmL/R — but carry no
+    // animation clip, so the riding stance is set here: thighs bent into a
+    // crouch, arms out for balance, and a slow push rhythm on the back leg.
+    // Every bone is written as an offset from its own bind pose; an absolute
+    // rotation folds the character up on the first frame.
+    const riderUpdates: Array<(elapsed: number) => void> = [];
+    const riderRoutes = [
+      { file: "/models/friendsies/rider_1.glb", ax: -20, az: 30, bx: 18, bz: 30, speed: 5.6 },
+      { file: "/models/friendsies/rider_2.glb", ax: 26, az: 14, bx: 26, bz: 44, speed: 4.8 },
+      { file: "/models/friendsies/rider_3.glb", ax: 10, az: 46, bx: -14, bz: 46, speed: 6.2 },
+      { file: "/models/friendsies/rider_4.glb", ax: -24, az: 12, bx: -24, bz: 40, speed: 5.1 },
+    ];
+    riderRoutes.forEach((route, index) => {
+      const rider = new THREE.Group();
+      const deck = roundedBox([0.62, 0.09, 1.78], "#d2705f", 0.6, 0.08);
+      deck.position.y = 0.19;
+      rider.add(deck);
+      [-0.52, 0.52].forEach((wheelZ) => [-0.32, 0.32].forEach((wheelX) => {
+        const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.075, 12), material("#e5dbc8", 0.52));
+        wheel.rotation.z = Math.PI / 2;
+        wheel.position.set(wheelX, 0.095, wheelZ);
+        rider.add(wheel);
+      }));
+      scene.add(rider);
+
+      new GLTFLoader().load(route.file, (gltf) => {
+        if (disposed) return;
+        const model = gltf.scene;
+        const bounds = new THREE.Box3().setFromObject(model);
+        const height = Math.max(bounds.max.y - bounds.min.y, 0.001);
+        model.scale.setScalar(1.78 / height);
+        model.updateMatrixWorld(true);
+        const scaled = new THREE.Box3().setFromObject(model);
+        model.position.set(0, 0.26 - scaled.min.y, 0);
+        model.traverse((object) => {
+          if (object instanceof THREE.Mesh) {
+            object.castShadow = true;
+            object.receiveShadow = true;
+            object.frustumCulled = false;
+          }
+        });
+        const bones = new Map<string, THREE.Object3D>();
+        model.traverse((object) => {
+          if (!(object instanceof THREE.Bone) || bones.has(object.name)) return;
+          object.userData.restX = object.rotation.x;
+          object.userData.restZ = object.rotation.z;
+          bones.set(object.name, object);
+        });
+        const bend = (name: string, x: number, z = 0) => {
+          const bone = bones.get(name);
+          if (!bone) return;
+          bone.rotation.x = (bone.userData.restX as number) + x;
+          bone.rotation.z = (bone.userData.restZ as number) + z;
+        };
+        rider.add(model);
+
+        const span = Math.hypot(route.bx - route.ax, route.bz - route.az) || 1;
+        const offset = (index / riderRoutes.length) * span * 2;
+        riderUpdates.push((elapsed) => {
+          const travelled = (offset + elapsed * route.speed) % (span * 2);
+          const outbound = travelled <= span;
+          const t = (outbound ? travelled : span * 2 - travelled) / span;
+          const x = route.ax + (route.bx - route.ax) * t;
+          const z = route.az + (route.bz - route.az) * t;
+          rider.position.set(x, surfaceAt(x, z), z);
+          rider.rotation.y = Math.atan2(
+            outbound ? route.bx - route.ax : route.ax - route.bx,
+            outbound ? route.bz - route.az : route.az - route.bz,
+          );
+          const push = Math.sin(elapsed * 2.2 + index);
+          bend("ThighL", -0.34);
+          bend("ThighR", -0.2 + push * 0.22);
+          bend("ArmL", -0.5, 0.28);
+          bend("ArmR", -0.34, -0.28);
+          bend("Spine1", 0.12);
+        });
+      }, undefined, () => {});
+    });
+
     let cameraYaw = 0.28;
     let cameraPitch = 0.12;
     let pointerId: number | null = null;
@@ -934,6 +1018,8 @@ export default function ParkV4Page() {
         camera.position.lerp(anchor.clone().add(cameraOffset), 1 - Math.exp(-5.6 * delta));
         camera.lookAt(look);
       }
+      const riderClock = now / 1000;
+      for (let i = 0; i < riderUpdates.length; i += 1) riderUpdates[i](riderClock);
       renderer.render(scene, camera);
     };
     animate();
