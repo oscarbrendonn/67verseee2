@@ -70,6 +70,16 @@ type OwnedItem = StoreItem & {
 
 type Collider = { minX: number; maxX: number; minZ: number; maxZ: number };
 
+type MeshHeightField = {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+  columns: number;
+  rows: number;
+  heights: Float32Array;
+};
+
 type HeroDefinition = {
   id: HeroId;
   name: string;
@@ -203,6 +213,68 @@ function roundedBox(size: [number, number, number], color: string, radius = 0.24
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   return mesh;
+}
+
+function buildMeshHeightField(root: THREE.Object3D, cellSize = 0.34): MeshHeightField | null {
+  root.updateWorldMatrix(true, true);
+  const bounds = new THREE.Box3().setFromObject(root);
+  if (bounds.isEmpty()) return null;
+
+  const width = Math.max(0.1, bounds.max.x - bounds.min.x);
+  const depth = Math.max(0.1, bounds.max.z - bounds.min.z);
+  const columns = Math.max(2, Math.ceil(width / cellSize) + 1);
+  const rows = Math.max(2, Math.ceil(depth / cellSize) + 1);
+  let heights = new Float32Array(columns * rows);
+  heights.fill(Number.NEGATIVE_INFINITY);
+  const point = new THREE.Vector3();
+
+  root.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    const position = object.geometry.getAttribute("position");
+    if (!position) return;
+    for (let index = 0; index < position.count; index += 1) {
+      point.fromBufferAttribute(position, index).applyMatrix4(object.matrixWorld);
+      const column = THREE.MathUtils.clamp(Math.round(((point.x - bounds.min.x) / width) * (columns - 1)), 0, columns - 1);
+      const row = THREE.MathUtils.clamp(Math.round(((point.z - bounds.min.z) / depth) * (rows - 1)), 0, rows - 1);
+      const fieldIndex = row * columns + column;
+      heights[fieldIndex] = Math.max(heights[fieldIndex], point.y);
+    }
+  });
+
+  // Meshy geometry is dense but not laid out as a height map. A small local
+  // dilation closes sub-cell gaps without turning empty areas into platforms.
+  for (let pass = 0; pass < 2; pass += 1) {
+    const next = heights.slice();
+    for (let row = 0; row < rows; row += 1) {
+      for (let column = 0; column < columns; column += 1) {
+        const fieldIndex = row * columns + column;
+        if (Number.isFinite(heights[fieldIndex])) continue;
+        let neighborHeight = Number.NEGATIVE_INFINITY;
+        for (let rowOffset = -1; rowOffset <= 1; rowOffset += 1) {
+          for (let columnOffset = -1; columnOffset <= 1; columnOffset += 1) {
+            const sampleRow = row + rowOffset;
+            const sampleColumn = column + columnOffset;
+            if (sampleRow < 0 || sampleRow >= rows || sampleColumn < 0 || sampleColumn >= columns) continue;
+            neighborHeight = Math.max(neighborHeight, heights[sampleRow * columns + sampleColumn]);
+          }
+        }
+        if (Number.isFinite(neighborHeight)) next[fieldIndex] = neighborHeight;
+      }
+    }
+    heights = next;
+  }
+
+  return { minX: bounds.min.x, maxX: bounds.max.x, minZ: bounds.min.z, maxZ: bounds.max.z, columns, rows, heights };
+}
+
+function sampleMeshHeightField(field: MeshHeightField, x: number, z: number) {
+  if (x < field.minX || x > field.maxX || z < field.minZ || z > field.maxZ) return null;
+  const width = Math.max(0.1, field.maxX - field.minX);
+  const depth = Math.max(0.1, field.maxZ - field.minZ);
+  const column = THREE.MathUtils.clamp(Math.round(((x - field.minX) / width) * (field.columns - 1)), 0, field.columns - 1);
+  const row = THREE.MathUtils.clamp(Math.round(((z - field.minZ) / depth) * (field.rows - 1)), 0, field.rows - 1);
+  const height = field.heights[row * field.columns + column];
+  return Number.isFinite(height) ? height : null;
 }
 
 function addTree(parent: THREE.Group, x: number, z: number, scale = 1) {
@@ -818,6 +890,9 @@ export default function WorldPage() {
 
     const worldRoot = new THREE.Group();
     const colliders: Collider[] = [];
+    const skateRideSurfaces: THREE.Mesh[] = [];
+    const skateMeshHeightFields: MeshHeightField[] = [];
+    const grindRails: Array<{ name: string; start: THREE.Vector3; end: THREE.Vector3 }> = [];
     scene.add(worldRoot);
 
     const water = roundedBox([360, 0.7, 360], "#3f94b0", 7);
@@ -879,6 +954,7 @@ export default function WorldPage() {
     const skateBase = roundedBox([58, 0.55, 47], "#cdb6a4", 2.4);
     skateBase.position.set(0, 0.23, -75);
     worldRoot.add(skateBase);
+    skateRideSurfaces.push(skateBase);
     const bowlMaterial = material("#b8847a", 0.95);
     [[-14, -78, 7], [11, -69, 8], [7, -90, 5], [-13, -91, 4]].forEach(([x, z, radius]) => {
       const bowl = new THREE.Mesh(new THREE.TorusGeometry(radius, 1.15, 12, 40), bowlMaterial);
@@ -886,21 +962,51 @@ export default function WorldPage() {
       bowl.position.set(x, 0.46, z);
       bowl.scale.set(1, 0.38, 1);
       worldRoot.add(bowl);
+      skateRideSurfaces.push(bowl);
     });
     [-20, 0, 20].forEach((x, index) => {
+      const z = -56.6 - index * 2.2;
       const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 9, 10), material("#727879", 0.35, 0.5));
       rail.rotation.z = Math.PI / 2;
-      rail.position.set(x, 1.1, -56.6 - index * 2.2);
+      rail.position.set(x, 1.1, z);
       worldRoot.add(rail);
+      [-3.7, 3.7].forEach((offset) => {
+        const support = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 0.58, 9), material("#727879", 0.35, 0.5));
+        support.position.set(x + offset, 0.79, z);
+        worldRoot.add(support);
+      });
+      grindRails.push({
+        name: `STREET RAIL ${index + 1}`,
+        start: new THREE.Vector3(x - 4.5, 1.24, z),
+        end: new THREE.Vector3(x + 4.5, 1.24, z),
+      });
     });
-    const stairDeck = roundedBox([15, 1.5, 8], "#c7b9ad", 0.55);
-    stairDeck.position.set(-19, 0.76, -62);
+    const stairDeck = roundedBox([15, 1, 8], "#c7b9ad", 0.55);
+    stairDeck.position.set(-19, 1.01, -64);
     worldRoot.add(stairDeck);
+    skateRideSurfaces.push(stairDeck);
     for (let step = 0; step < 5; step += 1) {
-      const stair = roundedBox([7, 0.25 + step * 0.23, 1.2], "#c9bbb0", 0.12);
-      stair.position.set(-19, (0.25 + step * 0.23) / 2, -56 + step * 1.05);
+      const stepHeight = 0.25 + step * 0.2;
+      const stair = roundedBox([7, stepHeight, 1.2], "#c9bbb0", 0.12);
+      stair.position.set(-19, 0.505 + stepHeight / 2, -55.4 - step * 1.08);
       worldRoot.add(stair);
+      skateRideSurfaces.push(stair);
     }
+    const stairRailStart = new THREE.Vector3(-19, 0.98, -55.2);
+    const stairRailEnd = new THREE.Vector3(-19, 1.76, -60.2);
+    const stairRailDirection = stairRailEnd.clone().sub(stairRailStart);
+    const stairRail = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.11, 0.11, stairRailDirection.length(), 10),
+      material("#727879", 0.35, 0.5),
+    );
+    stairRail.position.copy(stairRailStart).add(stairRailEnd).multiplyScalar(0.5);
+    stairRail.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), stairRailDirection.clone().normalize());
+    worldRoot.add(stairRail);
+    grindRails.push({
+      name: "STAIR HANDRAIL",
+      start: stairRailStart.clone().add(new THREE.Vector3(0, 0.12, 0)),
+      end: stairRailEnd.clone().add(new THREE.Vector3(0, 0.12, 0)),
+    });
 
     // Waterfront amusement park and marina.
     const amusementPad = roundedBox([46, 0.42, 47], "#d8cabe", 2);
@@ -1012,6 +1118,8 @@ export default function WorldPage() {
         }
       });
       worldRoot.add(ramp);
+      const heightField = buildMeshHeightField(ramp);
+      if (heightField) skateMeshHeightFields.push(heightField);
     });
     loader.load("/models/meshy/coconut-palm-tree.glb", (gltf) => {
       [[91, -105], [102, -64], [111, 40], [104, 75]].forEach(([x, z], index) => {
@@ -1255,18 +1363,69 @@ export default function WorldPage() {
 
     let velocityY = 0;
     let grounded = true;
+    let lastSurfaceRise = 0;
+    let grindCooldown = 0;
+    let activeGrind: { rail: (typeof grindRails)[number]; progress: number; direction: 1 | -1; speed: number } | null = null;
     const forward = new THREE.Vector3();
     const right = new THREE.Vector3();
     const movement = new THREE.Vector3();
     const desiredPosition = new THREE.Vector3();
+    const grindDirection = new THREE.Vector3();
+    const grindPoint = new THREE.Vector3();
+    const skateSurfaceRay = new THREE.Raycaster();
+    const skateSurfaceOrigin = new THREE.Vector3();
+    const skateSurfaceDown = new THREE.Vector3(0, -1, 0);
     let previousFrameTime = performance.now();
     let elapsedTime = 0;
     let frame = 0;
 
     const collides = (x: number, z: number) => colliders.some((collider) => x > collider.minX && x < collider.maxX && z > collider.minZ && z < collider.maxZ);
+    worldRoot.updateMatrixWorld(true);
+    const skateSurfaceAt = (x: number, z: number) => {
+      if (x < -30.5 || x > 30.5 || z < -100 || z > -49.5) return 0.06;
+      let height = 0.06;
+      skateSurfaceOrigin.set(x, 24, z);
+      skateSurfaceRay.set(skateSurfaceOrigin, skateSurfaceDown);
+      skateSurfaceRay.far = 30;
+      const intersections = skateSurfaceRay.intersectObjects(skateRideSurfaces, false);
+      for (const intersection of intersections) height = Math.max(height, intersection.point.y + 0.055);
+      for (const field of skateMeshHeightFields) {
+        const fieldHeight = sampleMeshHeightField(field, x, z);
+        if (fieldHeight !== null) height = Math.max(height, fieldHeight + 0.055);
+      }
+      return height;
+    };
+    const closestGrindRail = () => {
+      let candidate: { rail: (typeof grindRails)[number]; progress: number; distance: number; alignment: number } | null = null;
+      grindRails.forEach((rail) => {
+        grindDirection.subVectors(rail.end, rail.start);
+        const lengthSquared = grindDirection.x * grindDirection.x + grindDirection.z * grindDirection.z;
+        if (lengthSquared < 0.001) return;
+        const progress = THREE.MathUtils.clamp(
+          ((player.position.x - rail.start.x) * grindDirection.x + (player.position.z - rail.start.z) * grindDirection.z) / lengthSquared,
+          0,
+          1,
+        );
+        grindPoint.lerpVectors(rail.start, rail.end, progress);
+        const distance = Math.hypot(player.position.x - grindPoint.x, player.position.z - grindPoint.z);
+        const horizontalLength = Math.hypot(grindDirection.x, grindDirection.z);
+        const alignment = horizontalLength > 0.001
+          ? Math.abs((movement.x * grindDirection.x + movement.z * grindDirection.z) / horizontalLength)
+          : 0;
+        const verticalDistance = Math.abs(player.position.y - grindPoint.y);
+        if (distance < 0.82 && verticalDistance < 1.05 && alignment > 0.52 && (!candidate || distance < candidate.distance)) {
+          candidate = { rail, progress, distance, alignment };
+        }
+      });
+      return candidate;
+    };
     const cycleRide = () => {
       setRideMode((value) => {
         const next: RideMode = value === "walk" ? "skate" : value === "skate" ? "bike" : "walk";
+        if (next !== "skate") {
+          activeGrind = null;
+          grindCooldown = 0.35;
+        }
         rideModeRef.current = next;
         skateboard.visible = next === "skate";
         bike.visible = next === "bike";
@@ -1285,6 +1444,9 @@ export default function WorldPage() {
       jumpRef.current = false;
       velocityY = 0;
       grounded = true;
+      activeGrind = null;
+      grindCooldown = 0;
+      lastSurfaceRise = 0;
 
       const candidates: Array<[number, number]> = [
         district.spawn,
@@ -1294,7 +1456,7 @@ export default function WorldPage() {
         [district.spawn[0], district.spawn[1] - 4],
       ];
       const safe = candidates.find(([x, z]) => !collides(x, z)) ?? [0, 32];
-      player.position.set(safe[0], 0.06, safe[1]);
+      player.position.set(safe[0], skateSurfaceAt(safe[0], safe[1]), safe[1]);
       player.rotation.y = Math.PI;
       camera.position.set(safe[0] + 15, 9, safe[1]);
       cameraYaw = Math.PI / 2;
@@ -1309,6 +1471,7 @@ export default function WorldPage() {
       const delta = Math.min(Math.max(0, (frameTime - previousFrameTime) / 1000), 0.035);
       previousFrameTime = frameTime;
       elapsedTime += delta;
+      grindCooldown = Math.max(0, grindCooldown - delta);
       mixer?.update(delta);
       cameraYaw += (targetCameraYaw - cameraYaw) * (1 - Math.exp(-delta * 9));
 
@@ -1317,12 +1480,47 @@ export default function WorldPage() {
       const inputZ = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) + touch.z;
       const isBoosting = keys.has("ShiftLeft") || keys.has("ShiftRight") || boostRef.current;
       const isMoving = !mapOpenRef.current && !heroSelectOpenRef.current && (Math.abs(inputX) > 0.05 || Math.abs(inputZ) > 0.05);
+      const activeRide = rideModeRef.current;
       movement.set(0, 0, 0);
       if (isMoving) {
         forward.set(-Math.sin(cameraYaw), 0, -Math.cos(cameraYaw));
         right.set(Math.cos(cameraYaw), 0, -Math.sin(cameraYaw));
         movement.addScaledVector(forward, inputZ).addScaledVector(right, inputX).normalize();
-        const activeRide = rideModeRef.current;
+      }
+
+      let grindingThisFrame = false;
+      const runningGrind = activeGrind;
+      if (runningGrind) {
+        if (jumpRef.current || activeRide !== "skate" || currentVenue || mapOpenRef.current || heroSelectOpenRef.current) {
+          activeGrind = null;
+          grindCooldown = 0.4;
+          velocityY = jumpRef.current ? 6 : 2.15;
+          grounded = false;
+          jumpRef.current = false;
+          setToast("Grind released.");
+        } else {
+          const railLength = runningGrind.rail.start.distanceTo(runningGrind.rail.end);
+          runningGrind.progress += runningGrind.direction * runningGrind.speed * delta / Math.max(railLength, 0.01);
+          const progress = THREE.MathUtils.clamp(runningGrind.progress, 0, 1);
+          grindPoint.lerpVectors(runningGrind.rail.start, runningGrind.rail.end, progress);
+          player.position.copy(grindPoint);
+          grindDirection.subVectors(runningGrind.rail.end, runningGrind.rail.start).multiplyScalar(runningGrind.direction);
+          player.rotation.y = Math.atan2(grindDirection.x, grindDirection.z);
+          velocityY = 0;
+          grounded = false;
+          grindingThisFrame = true;
+          if (runningGrind.progress <= 0 || runningGrind.progress >= 1) {
+            activeGrind = null;
+            grindCooldown = 0.45;
+            velocityY = 2.35;
+            grindingThisFrame = false;
+            setToast(`${runningGrind.rail.name} complete.`);
+          }
+        }
+      }
+
+      const groundBeforeMove = currentVenue ? 0.06 : skateSurfaceAt(player.position.x, player.position.z);
+      if (!grindingThisFrame && isMoving) {
         const speed = currentVenue
           ? (isBoosting ? 8.1 : 5.8)
           : activeRide === "walk"
@@ -1339,24 +1537,77 @@ export default function WorldPage() {
         } else {
           desiredPosition.x = THREE.MathUtils.clamp(desiredPosition.x, -WORLD_LIMIT, WORLD_LIMIT);
           desiredPosition.z = THREE.MathUtils.clamp(desiredPosition.z, -WORLD_LIMIT, WORLD_LIMIT);
-          if (!collides(desiredPosition.x, player.position.z)) player.position.x = desiredPosition.x;
-          if (!collides(player.position.x, desiredPosition.z)) player.position.z = desiredPosition.z;
+          const maxStep = activeRide === "walk" ? 0.34 : 0.62;
+          const canMoveTo = (x: number, z: number) => {
+            if (collides(x, z)) return false;
+            const currentSurface = skateSurfaceAt(player.position.x, player.position.z);
+            const nextSurface = skateSurfaceAt(x, z);
+            if (grounded) return nextSurface - currentSurface <= maxStep;
+            return nextSurface <= player.position.y + 0.42;
+          };
+          if (canMoveTo(desiredPosition.x, player.position.z)) player.position.x = desiredPosition.x;
+          if (canMoveTo(player.position.x, desiredPosition.z)) player.position.z = desiredPosition.z;
         }
         player.rotation.y = Math.atan2(movement.x, movement.z);
       }
 
-      if (!mapOpenRef.current && !heroSelectOpenRef.current && jumpRef.current && grounded) {
-        velocityY = 7.2;
-        grounded = false;
+      const groundAfterMove = currentVenue ? 0.06 : skateSurfaceAt(player.position.x, player.position.z);
+      if (grounded && groundAfterMove > groundBeforeMove + 0.002) {
+        const riseSpeed = (groundAfterMove - groundBeforeMove) / Math.max(delta, 0.001);
+        lastSurfaceRise = THREE.MathUtils.damp(lastSurfaceRise, riseSpeed, 9, delta);
+      } else {
+        lastSurfaceRise = THREE.MathUtils.damp(lastSurfaceRise, 0, 4.5, delta);
       }
-      jumpRef.current = false;
-      if (!grounded) {
-        velocityY -= 18 * delta;
-        player.position.y += velocityY * delta;
-        if (player.position.y <= 0.06) {
-          player.position.y = 0.06;
+
+      if (!grindingThisFrame && !activeGrind && grindCooldown <= 0 && !currentVenue && activeRide === "skate" && isMoving) {
+        const candidate = closestGrindRail();
+        if (candidate) {
+          grindDirection.subVectors(candidate.rail.end, candidate.rail.start).normalize();
+          const direction: 1 | -1 = movement.dot(grindDirection) >= 0 ? 1 : -1;
+          activeGrind = {
+            rail: candidate.rail,
+            progress: candidate.progress,
+            direction,
+            speed: isBoosting ? 15.2 : 11.4,
+          };
+          grindPoint.lerpVectors(candidate.rail.start, candidate.rail.end, candidate.progress);
+          player.position.copy(grindPoint);
           velocityY = 0;
-          grounded = true;
+          grounded = false;
+          grindingThisFrame = true;
+          setToast(`${candidate.rail.name} · GRIND`);
+        }
+      }
+
+      if (grindingThisFrame) {
+        jumpRef.current = false;
+      } else {
+        if (!mapOpenRef.current && !heroSelectOpenRef.current && jumpRef.current && grounded) {
+          velocityY = activeRide === "bike" ? 6.4 : 7.2;
+          grounded = false;
+        }
+        jumpRef.current = false;
+
+        const supportHeight = currentVenue ? 0.06 : skateSurfaceAt(player.position.x, player.position.z);
+        if (grounded) {
+          const followDrop = activeRide === "walk" ? 0.34 : 0.58;
+          if (player.position.y - supportHeight > followDrop) {
+            velocityY = activeRide === "walk" ? 0 : THREE.MathUtils.clamp(lastSurfaceRise * 0.38, 0, 5.2);
+            grounded = false;
+          } else {
+            player.position.y = supportHeight;
+            velocityY = 0;
+          }
+        }
+        if (!grounded) {
+          velocityY -= 18 * delta;
+          player.position.y += velocityY * delta;
+          const landingHeight = currentVenue ? 0.06 : skateSurfaceAt(player.position.x, player.position.z);
+          if (player.position.y <= landingHeight) {
+            player.position.y = landingHeight;
+            velocityY = 0;
+            grounded = true;
+          }
         }
       }
 
@@ -1585,7 +1836,15 @@ export default function WorldPage() {
         </button>
       )}
 
-      {!mapOpen && !heroSelectOpen && <div className={styles.help}>{activeVenue ? "WASD TO WALK · E AT COUNTER OR EXIT · ESC TO CLOSE" : "WASD TO MOVE · DRAG TO ROTATE · SPACE TO JUMP · E TO CHANGE RIDE"}</div>}
+      {!mapOpen && !heroSelectOpen && (
+        <div className={styles.help}>
+          {activeVenue
+            ? "WASD TO WALK · E AT COUNTER OR EXIT · ESC TO CLOSE"
+            : rideMode === "skate"
+              ? "WASD TO RIDE · SHIFT TO BOOST · SPACE TO OLLIE · ALIGN WITH A RAIL TO GRIND · E TO CHANGE RIDE"
+              : "WASD TO MOVE · DRAG TO ROTATE · SPACE TO JUMP · E TO CHANGE RIDE"}
+        </div>
+      )}
 
       {!mapOpen && !heroSelectOpen && <section className={styles.mobileControls} aria-label="Mobile controls">
         <div className={styles.dpad}>
