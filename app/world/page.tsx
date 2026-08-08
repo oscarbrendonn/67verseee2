@@ -43,12 +43,11 @@ type HeroId =
   | "friend-2222"
   | "friend-4242"
   | "friend-8888";
-type StudioSlot = "body" | "tone" | "hat" | "glasses" | "backpack";
+type StudioSlot = "body" | "hat" | "glasses" | "backpack";
 type HatId = "sunny-beanie" | "skate-cap" | "plum-crown";
 type GlassesId = "round-specs" | "star-shades";
 type BackpackId = "sage-pack" | "cloud-wings";
 type CharacterLook = {
-  bodyColor: string;
   hat: HatId | null;
   glasses: GlassesId | null;
   backpack: BackpackId | null;
@@ -230,20 +229,10 @@ const HEROES: HeroDefinition[] = [
 ];
 
 const DEFAULT_CHARACTER_LOOK: CharacterLook = {
-  bodyColor: "#ffffff",
   hat: null,
   glasses: null,
   backpack: null,
 };
-
-const BODY_TONES = [
-  { value: "#ffffff", name: "ORIGINAL" },
-  { value: "#eeb8a7", name: "CORAL" },
-  { value: "#e8c46f", name: "SUN" },
-  { value: "#85b49a", name: "SAGE" },
-  { value: "#84a9c5", name: "COAST" },
-  { value: "#aa91cc", name: "PLUM" },
-];
 
 const WARDROBE = {
   hats: [
@@ -266,10 +255,9 @@ const WARDROBE = {
 
 const STUDIO_SLOTS: Array<{ id: StudioSlot; label: string; step: string }> = [
   { id: "body", label: "HEAD + BODY", step: "01" },
-  { id: "tone", label: "COLOR", step: "02" },
-  { id: "hat", label: "HAT", step: "03" },
-  { id: "glasses", label: "GLASSES", step: "04" },
-  { id: "backpack", label: "BACK", step: "05" },
+  { id: "hat", label: "HAT", step: "02" },
+  { id: "glasses", label: "GLASSES", step: "03" },
+  { id: "backpack", label: "BACK", step: "04" },
 ];
 
 const STORE_ITEMS: Record<VenueKind, StoreItem[]> = {
@@ -980,17 +968,12 @@ function applyCharacterLook(model: THREE.Object3D, heroId: HeroId, look: Charact
       if (prop) prop.visible = false;
     });
   }
-  const tint = new THREE.Color(look.bodyColor);
-  const hasTint = look.bodyColor.toLowerCase() !== "#ffffff";
   const preparedMaterials = new Set<THREE.Material>();
   model.traverse((object) => {
     if (!(object instanceof THREE.Mesh) || !object.visible) return;
     const tintMaterial = (entry: THREE.Material) => {
       if (preparedMaterials.has(entry)) return entry;
       preparedMaterials.add(entry);
-      if (hasTint && "color" in entry && entry.color instanceof THREE.Color) {
-        entry.color.lerp(tint, 0.24);
-      }
       if (heroId === "gorilla" && (object.name === "GORIL_KAFA" || object.name === "FS_Body")) {
         if ("roughness" in entry && typeof entry.roughness === "number") entry.roughness = Math.max(entry.roughness, 0.76);
         if ("metalness" in entry && typeof entry.metalness === "number") entry.metalness = 0;
@@ -1320,11 +1303,6 @@ export default function WorldPage() {
       const index = Math.max(0, HEROES.findIndex((hero) => hero.id === heroChoice));
       return { name: chosenHero.name, detail: chosenHero.role, index, total: HEROES.length, color: chosenHero.accent };
     }
-    if (studioSlot === "tone") {
-      const index = Math.max(0, BODY_TONES.findIndex((tone) => tone.value === draftLook.bodyColor));
-      const tone = BODY_TONES[index] ?? BODY_TONES[0];
-      return { name: tone.name, detail: "OUTFIT TONE", index, total: BODY_TONES.length, color: tone.value };
-    }
     const items = studioSlot === "hat" ? WARDROBE.hats : studioSlot === "glasses" ? WARDROBE.glasses : WARDROBE.backpacks;
     const equipped = studioSlot === "hat" ? draftLook.hat : studioSlot === "glasses" ? draftLook.glasses : draftLook.backpack;
     const index = Math.max(0, items.findIndex((item) => item.id === equipped));
@@ -1337,11 +1315,6 @@ export default function WorldPage() {
     if (studioSlot === "body") {
       const index = Math.max(0, HEROES.findIndex((hero) => hero.id === heroChoice));
       setHeroChoice(HEROES[wrap(index, HEROES.length)].id);
-      return;
-    }
-    if (studioSlot === "tone") {
-      const index = Math.max(0, BODY_TONES.findIndex((tone) => tone.value === draftLook.bodyColor));
-      setDraftLook((look) => ({ ...look, bodyColor: BODY_TONES[wrap(index, BODY_TONES.length)].value }));
       return;
     }
     if (studioSlot === "hat") {
@@ -1523,7 +1496,6 @@ export default function WorldPage() {
       const storedLook = JSON.parse(window.localStorage.getItem("67verse-character-look") ?? "null") as Partial<CharacterLook> | null;
       if (storedLook && typeof storedLook === "object") {
         const restoredLook: CharacterLook = {
-          bodyColor: typeof storedLook.bodyColor === "string" ? storedLook.bodyColor : DEFAULT_CHARACTER_LOOK.bodyColor,
           hat: WARDROBE.hats.some((entry) => entry.id === storedLook.hat) ? (storedLook.hat as HatId | null) : null,
           glasses: WARDROBE.glasses.some((entry) => entry.id === storedLook.glasses) ? (storedLook.glasses as GlassesId | null) : null,
           backpack: WARDROBE.backpacks.some((entry) => entry.id === storedLook.backpack) ? (storedLook.backpack as BackpackId | null) : null,
