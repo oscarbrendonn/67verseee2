@@ -70,3 +70,54 @@
 - Upgrade the main bowl to a denser authored collision mesh for advanced transfer lines.
 
 final result: passed
+
+---
+
+# 67VERSE World — Design QA
+
+## Target and implementation
+
+- Reference: `outputs/67verse-master-map-reference-layout-v1.png` (1254 × 1254)
+- Implementation: `/world`, master map overlay at a 1440 × 1100 desktop viewport
+- Implementation capture: `outputs/world-map-qa.png`
+- Focused crop: `outputs/world-map-qa-crop.png` (750 × 750)
+- Same-input comparison: `outputs/design-qa-comparison.png`
+- Mobile capture: `outputs/world-mobile.png` (390 × 844)
+
+## State compared
+
+The reference is a top-down master-city map, so the matched implementation state is the in-game **MAP** overlay. Building interiors are intentionally separate states that open after approaching an entrance and pressing **E**.
+
+## Visual findings
+
+- The city footprint, skatepark, sports courts, residential blocks, downtown axis, stadium, waterfront amusement district, beach, river, bridges, roads and outer housing all match the selected reference.
+- The source artwork is rendered at a square aspect ratio with no stretching, placeholder art or missing region.
+- The overlay adds only the 67VERSE product frame, close control, online state and concise interaction explanation around the source map.
+- Desktop hierarchy, spacing, corner radii, translucent surfaces and typography remain coherent with the existing premium 67VERSE interface.
+- The 390 × 844 state preserves the 3D viewport and exposes dedicated directional, jump and interact controls without horizontal overflow.
+
+## Functional checks
+
+- `/world` loads a playable Three.js scene with zero console errors in a fresh browser tab.
+- `E`/Interact enters the separate 67 Skate Shop interior from the city.
+- Repeated forward input moves the character from the entrance to the counter; the contextual prompt changes from `EXPLORE INTERIOR` to `OPEN STORE`.
+- The store exposes three real catalog items with unique prices and descriptions.
+- A test purchase reduced the balance from 7,300 CR to 7,040 CR and persisted one owned item in the inventory.
+- Google Play and Web3 Wallet are visibly distinct checkout adapters. The Web3 adapter selection state was verified.
+- Checkout explicitly states that the prototype sends no real payment and no blockchain transaction.
+- The classic `/lobby` route remains intact and links to the new world.
+
+## Build verification
+
+- `vinext build` completed successfully.
+- Route report includes `/world` alongside the pre-existing routes.
+- Build emitted only the existing large-chunk optimization warning; no build error occurred.
+
+## Comparison history
+
+1. First desktop load revealed an SSR/client locale mismatch in the credit counter; formatting was made deterministic with `en-US`.
+2. A missing local credit value was interpreted as zero; the storage guard was corrected.
+3. Persisted inventory initially caused an SSR hydration mismatch; inventory hydration was moved to a mount effect.
+4. A fresh-tab retest produced zero console errors and the final side-by-side visual comparison showed no actionable mismatch.
+
+final result: passed

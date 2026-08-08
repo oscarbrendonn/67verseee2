@@ -2749,6 +2749,7 @@ export default function LobbyPage() {
           <button type="button" disabled={Boolean(activeVenue)} onClick={() => setMapOpen((value) => !value)} aria-pressed={mapOpen}>
             <MapTrifold size={18} weight="bold" aria-hidden="true" />{mapOpen ? "CLOSE MAP" : "MAP"}
           </button>
+          <Link href="/world">NEW WORLD</Link>
           <Link href="/games">PARTY GAMES</Link>
         </div>
       </header>
