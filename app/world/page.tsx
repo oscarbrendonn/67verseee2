@@ -161,7 +161,7 @@ const VENUES: Venue[] = [
 ];
 
 const DISTRICTS: District[] = [
-  { id: "race-loop", name: "Race Loop", eyebrow: "NORTHWEST", spawn: [-116, -116], mapPosition: [-114, -116], accent: "#e58a7c" },
+  { id: "race-loop", name: "Race Loop", eyebrow: "NORTHWEST", spawn: [-117, -130], mapPosition: [-118, -124], accent: "#e58a7c" },
   { id: "sports-campus", name: "Sports Campus", eyebrow: "ATHLETICS", spawn: [-67, -54], mapPosition: [-67, -72], accent: "#729b77" },
   { id: "master-skatepark", name: "Master Skatepark", eyebrow: "MAIN LOBBY", spawn: [0, -53], mapPosition: [0, -76], accent: "#dd806f" },
   { id: "waterfront", name: "Waterfront", eyebrow: "RIDES & MARINA", spawn: [88, -55], mapPosition: [72, -76], accent: "#5c9eb0" },
@@ -335,19 +335,98 @@ function addCourt(parent: THREE.Group, x: number, z: number, width: number, dept
   });
 }
 
+function makeRaceRibbon(curve: THREE.CatmullRomCurve3, width: number, y: number, segments = 180) {
+  const positions: number[] = [];
+  const uvs: number[] = [];
+  const indices: number[] = [];
+  const point = new THREE.Vector3();
+  const previous = new THREE.Vector3();
+  const next = new THREE.Vector3();
+  const tangent = new THREE.Vector3();
+
+  for (let index = 0; index < segments; index += 1) {
+    const amount = index / segments;
+    curve.getPointAt(amount, point);
+    curve.getPointAt((amount - 1 / segments + 1) % 1, previous);
+    curve.getPointAt((amount + 1 / segments) % 1, next);
+    tangent.subVectors(next, previous).setY(0).normalize();
+    const normalX = -tangent.z;
+    const normalZ = tangent.x;
+    const halfWidth = width / 2;
+    positions.push(
+      point.x + normalX * halfWidth, y, point.z + normalZ * halfWidth,
+      point.x - normalX * halfWidth, y, point.z - normalZ * halfWidth,
+    );
+    uvs.push(0, amount * 8, 1, amount * 8);
+  }
+
+  for (let index = 0; index < segments; index += 1) {
+    const following = (index + 1) % segments;
+    const left = index * 2;
+    const right = left + 1;
+    const nextLeft = following * 2;
+    const nextRight = nextLeft + 1;
+    indices.push(left, nextLeft, right, right, nextLeft, nextRight);
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 function addRaceLoop(parent: THREE.Group) {
+  // The reference keeps the circuit completely inside one landscaped block.
+  // It never crosses or overlaps either neighboring city road.
+  const raceGreen = roundedBox([35, 0.34, 21.5], "#a9bc8d", 3.2);
+  raceGreen.position.set(-119, 0.17, -124.25);
+  parent.add(raceGreen);
+
   const points = [
-    new THREE.Vector3(-130, 0.34, -132), new THREE.Vector3(-124, 0.34, -116),
-    new THREE.Vector3(-132, 0.34, -101), new THREE.Vector3(-121, 0.34, -91),
-    new THREE.Vector3(-106, 0.34, -98), new THREE.Vector3(-103, 0.34, -117),
-    new THREE.Vector3(-111, 0.34, -133),
+    new THREE.Vector3(-131.1, 0, -115.3),
+    new THREE.Vector3(-133.2, 0, -120.5),
+    new THREE.Vector3(-132.4, 0, -130.3),
+    new THREE.Vector3(-126.6, 0, -134.1),
+    new THREE.Vector3(-108.4, 0, -133.8),
+    new THREE.Vector3(-104.1, 0, -131.1),
+    new THREE.Vector3(-104.8, 0, -127.2),
+    new THREE.Vector3(-110.1, 0, -124.8),
+    new THREE.Vector3(-124.2, 0, -125.1),
+    new THREE.Vector3(-127.2, 0, -122.9),
+    new THREE.Vector3(-126.8, 0, -118.7),
   ];
-  const curve = new THREE.CatmullRomCurve3(points, true, "catmullrom", 0.35);
-  const lane = new THREE.Mesh(new THREE.TubeGeometry(curve, 100, 2.5, 10, true), material("#c98578", 0.94));
-  parent.add(lane);
-  const line = new THREE.Mesh(new THREE.TubeGeometry(curve, 100, 0.13, 8, true), material("#f1dfd1", 0.9));
-  line.position.y = 0.14;
-  parent.add(line);
+  const curve = new THREE.CatmullRomCurve3(points, true, "catmullrom", 0.22);
+
+  const border = new THREE.Mesh(makeRaceRibbon(curve, 4.7, 0.39), material("#ead8ce", 0.92));
+  border.receiveShadow = true;
+  const lane = new THREE.Mesh(makeRaceRibbon(curve, 3.82, 0.43), material("#c98378", 0.92));
+  lane.receiveShadow = true;
+  parent.add(border, lane);
+
+  // A compact, readable start grid instead of scattered race props.
+  const startAmount = 0.015;
+  const start = curve.getPointAt(startAmount);
+  const startTangent = curve.getTangentAt(startAmount).setY(0).normalize();
+  const startNormal = new THREE.Vector3(-startTangent.z, 0, startTangent.x);
+  const heading = Math.atan2(startTangent.x, startTangent.z);
+  for (let row = 0; row < 2; row += 1) {
+    for (let column = 0; column < 6; column += 1) {
+      const tile = roundedBox([0.56, 0.045, 0.34], (row + column) % 2 === 0 ? "#f4eee7" : "#52595c", 0.04);
+      tile.position.copy(start)
+        .addScaledVector(startNormal, (column - 2.5) * 0.58)
+        .addScaledVector(startTangent, (row - 0.5) * 0.34);
+      tile.position.y = 0.47;
+      tile.rotation.y = heading;
+      parent.add(tile);
+    }
+  }
+
+  // Soft, low landscaping mirrors the reference without hiding the course.
+  addTree(parent, -135.5, -135.2, 0.54);
+  addTree(parent, -102.5, -135.1, 0.5);
+  addTree(parent, -103.2, -114.2, 0.48);
 }
 
 function addRollerCoaster(parent: THREE.Group) {

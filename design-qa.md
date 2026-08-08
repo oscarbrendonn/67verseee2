@@ -1,3 +1,55 @@
+# 67VERSE World — Race Loop QA v1
+
+## Comparison target
+
+- Source visual truth: `/tmp/codex-remote-attachments/019fbafb-ac9c-7883-b039-7e39958a743b/EF12FF8D-B661-437A-A53E-FB326DC19510/1-Fotoğraf-1.jpg` at 588 × 1280 px.
+- Focused source region: `work/reference/race-loop-crop.jpg` at 230 × 230 px.
+- Browser-rendered implementation: `work/reference/race-map-implementation-v1.jpg` at 1280 × 720 px.
+- Focused implementation region: `work/reference/race-map-implementation-v1-crop.jpg` at 240 × 150 px.
+- Same-input comparison: `work/reference/race-qa-comparison-v1.jpg`.
+- Playable chase-camera evidence: `work/reference/race-play-implementation-v1.jpg` at 1280 × 720 px.
+- Viewport: 1280 × 720 CSS px, device pixel ratio 1. No density scaling was applied to the full implementation capture. Focus crops were normalized onto equal 360 × 240 comparison panels.
+- Compared state: live Three.js world map with the Race Loop district marker visible; playable evidence was captured immediately after travelling to Race Loop.
+
+## Findings
+
+- No actionable P0, P1, or P2 issue remains in the rebuilt Race Loop.
+- The previous implementation used a raised tubular curve that crossed the horizontal city road and continued into neighboring blocks. The revised course is a flat ribbon fully contained within its own rounded green district pad, so the city road and sidewalk remain uninterrupted.
+- The new closed course follows the source's recognizable shape: a long upper loop, tight right hairpin, inner return, and short lower-left tail. It has one readable driving line with no crossing or self-intersection.
+- The pale course edge, muted coral racing surface, green infield, compact start grid, and restrained corner trees match the reference's soft-model palette and density.
+- [P3] The interactive `Race Loop` map marker partially covers the small track at the desktop overview scale. This is an accepted product-layer difference: the marker is required for district travel, and the full course is unobstructed after selection.
+
+## Required fidelity surfaces
+
+- Fonts and typography: the source race tile contains no environment text. Existing 67VERSE marker typography remains compact, English, and readable without changing the established UI system.
+- Spacing and layout rhythm: the course now respects one district block with consistent green margins on all sides; it does not overlap the adjacent road, sidewalk, sports area, or city edge.
+- Colors and visual tokens: soft sage green, dusty coral, warm cream edging, and charcoal/cream start tiles align with the source and the rest of the 67VERSE world.
+- Image quality and asset fidelity: the race area is live antialiased Three.js geometry, not the supplied screenshot or a raster map. Curves remain smooth in both overhead and chase-camera views.
+- Copy and content: the visible district name remains `Race Loop`; no extra labels or visual clutter were added to the environment.
+
+## Focused region evidence
+
+- The side-by-side comparison confirms the most important source signatures at a readable scale: a compact northwest green tile, a clean pastel ribbon course, a long top loop, a right hairpin, and no road crossing.
+- The chase-camera capture confirms the course is a real playable surface with continuous borders and a visible start grid.
+
+## Comparison history
+
+1. Earlier evidence in `outputs/world-map-live-v3-1254.png` shows the tubular course leaving its district, crossing the road, and reading as an oversized tangled pipe.
+2. The course was rebuilt as a flat ribbon, resized to the northwest block, reshaped from the supplied crop, and given a compact start grid and low landscaping.
+3. The revised browser overview and playable capture show the road fully clear, the loop fully contained, and no self-intersection. The browser console reported zero warnings or errors.
+
+## Primary interactions tested
+
+- Entered the world through the hero-selection action.
+- Opened the live Three.js map.
+- Selected `Race Loop` and completed district travel.
+- Confirmed the player spawns inside the Race district rather than on the city road or inside another building.
+- Browser console warnings/errors: 0.
+
+final result: passed
+
+---
+
 # 67VERSE World — Gorilla Hero & Mobile UI QA v3
 
 ## Comparison target
