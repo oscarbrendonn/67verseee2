@@ -196,6 +196,50 @@
   transform-origin: center bottom;
 }
 
+.characterStudio {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  overflow: hidden;
+  cursor: grab;
+}
+
+.characterStudio:active { cursor: grabbing; }
+
+.characterPreview,
+.characterPreview canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.characterPreview canvas {
+  touch-action: none;
+  filter: drop-shadow(0 28px 30px rgba(0, 0, 0, 0.38));
+}
+
+.characterLoading,
+.characterRotateHint {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  padding: 8px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.68);
+  background: rgba(4, 10, 15, 0.45);
+  backdrop-filter: blur(14px);
+  transform: translateX(-50%);
+  font: 760 7px/1 var(--font-geist-mono);
+  letter-spacing: 0.12em;
+  pointer-events: none;
+}
+
+.characterLoading { top: 50%; }
+.characterRotateHint { bottom: 4.5%; }
+
 .heroClass {
   position: absolute;
   z-index: 3;
@@ -253,8 +297,8 @@
   max-height: calc(100dvh - 116px);
   overflow: auto;
   display: grid;
-  gap: 17px;
-  padding: clamp(20px, 2.4vw, 32px);
+  gap: 13px;
+  padding: clamp(18px, 2vw, 26px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 30px;
   background: linear-gradient(150deg, rgba(255,255,255,0.105), rgba(255,255,255,0.045));
@@ -287,6 +331,220 @@
   font-size: 11px;
   line-height: 1.55;
 }
+
+.customizerSection {
+  display: grid;
+  gap: 8px;
+}
+
+.customizerSection > header {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.customizerSection > header > span {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 7px;
+  color: #061015;
+  background: color-mix(in srgb, var(--hero-accent) 70%, #fff);
+  font: 850 7px/1 var(--font-geist-mono);
+}
+
+.customizerSection > header > strong {
+  color: rgba(255, 255, 255, 0.83);
+  font: 810 8px/1 var(--font-geist-mono);
+  letter-spacing: 0.105em;
+}
+
+.customizerSection > header > small {
+  color: rgba(255, 255, 255, 0.32);
+  font: 730 6px/1 var(--font-geist-mono);
+  letter-spacing: 0.09em;
+}
+
+.bodyOptions {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(58px, 1fr));
+  gap: 6px;
+}
+
+.bodyOptions button {
+  --choice-accent: #45bbc2;
+  min-width: 0;
+  height: 68px;
+  display: grid;
+  grid-template-rows: 28px auto;
+  align-content: center;
+  justify-items: center;
+  gap: 5px;
+  padding: 6px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  color: #f7faf9;
+  background: rgba(2, 8, 12, 0.34);
+  cursor: pointer;
+  transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.bodyOptions button:hover,
+.bodyOptions button:focus-visible {
+  border-color: color-mix(in srgb, var(--choice-accent) 60%, rgba(255,255,255,0.2));
+  outline: none;
+  transform: translateY(-2px);
+}
+
+.bodyOptions button > i {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  color: #071116;
+  background: color-mix(in srgb, var(--choice-accent) 75%, #fff);
+  font: normal 880 10px/1 var(--font-geist-mono);
+}
+
+.bodyOptions button > span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  text-align: center;
+}
+
+.bodyOptions button small {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.38);
+  font: 700 4.5px/1 var(--font-geist-mono);
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bodyOptions button strong {
+  overflow: hidden;
+  font-size: 8px;
+  font-weight: 820;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bodyOptions .bodyOptionSelected {
+  border-color: var(--choice-accent);
+  background: color-mix(in srgb, var(--choice-accent) 16%, rgba(2, 8, 12, 0.5));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--choice-accent) 22%, transparent), 0 9px 22px rgba(0,0,0,0.2);
+}
+
+.swatchRow {
+  display: flex;
+  gap: 8px;
+}
+
+.swatchRow button {
+  --swatch: #fff;
+  position: relative;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 3px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: transform 150ms ease, border-color 150ms ease;
+}
+
+.swatchRow button:hover,
+.swatchRow button:focus-visible { transform: scale(1.08); outline: none; }
+
+.swatchRow .swatchSelected {
+  border-color: #fff;
+  transform: scale(1.1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--hero-accent) 42%, transparent), inset 0 0 0 3px rgba(0,0,0,0.1);
+}
+
+.wardrobeGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.wardrobeGrid button {
+  min-width: 0;
+  height: 46px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 12px;
+  color: rgba(255,255,255,0.7);
+  text-align: left;
+  background: rgba(2, 8, 12, 0.3);
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.wardrobeGrid button:hover,
+.wardrobeGrid button:focus-visible { border-color: rgba(255,255,255,0.26); outline: none; }
+
+.wardrobeGrid button > i {
+  --item-color: #90979b;
+  width: 22px;
+  height: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 34% 30%, rgba(255,255,255,0.55) 0 11%, transparent 12%),
+    var(--item-color);
+  box-shadow: inset 0 0 0 2px rgba(0,0,0,0.1);
+}
+
+.wardrobeGrid button > span {
+  overflow: hidden;
+  font-size: 7px;
+  font-weight: 720;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+}
+
+.wardrobeGrid .wardrobeOptionSelected {
+  border-color: color-mix(in srgb, var(--hero-accent) 75%, #fff 4%);
+  color: #fff;
+  background: color-mix(in srgb, var(--hero-accent) 14%, rgba(2, 8, 12, 0.46));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hero-accent) 18%, transparent);
+}
+
+.wardrobeSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.035);
+}
+
+.wardrobeSummary > span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  overflow: hidden;
+  color: rgba(255,255,255,0.42);
+  font-size: 7px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wardrobeSummary b { color: rgba(255,255,255,0.8); font-size: 8px; }
+.wardrobeSummary > strong { flex: 0 0 auto; color: var(--hero-accent); font: 800 6px/1 var(--font-geist-mono); letter-spacing: 0.08em; }
 
 .heroChoices {
   display: grid;
@@ -1894,6 +2152,8 @@
     transform: scale(1.08);
   }
 
+  .characterRotateHint { bottom: 10px; font-size: 6px; }
+
   .heroClass {
     top: 13px;
     left: 13px;
@@ -1929,6 +2189,21 @@
   .heroPanelIntro small { font-size: 6px; }
   .heroPanelIntro strong { font-size: 23px; }
   .heroPanelIntro p { display: none; }
+  .customizerSection { gap: 7px; }
+  .customizerSection > header { grid-template-columns: 19px 1fr auto; }
+  .customizerSection > header > span { width: 19px; height: 19px; }
+  .bodyOptions {
+    grid-template-columns: repeat(5, 74px);
+    overflow-x: auto;
+    padding-bottom: 3px;
+    scrollbar-width: none;
+  }
+  .bodyOptions::-webkit-scrollbar { display: none; }
+  .bodyOptions button { height: 62px; border-radius: 12px; }
+  .swatchRow button { width: 26px; height: 26px; }
+  .wardrobeGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wardrobeGrid button { height: 43px; }
+  .wardrobeSummary > span { max-width: 74%; }
   .heroChoices { gap: 7px; }
 
   .heroChoices button {

@@ -32,7 +32,16 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import styles from "./world.module.css";
 
 type RideMode = "walk" | "skate" | "bike";
-type HeroId = "gorilla" | "irem";
+type HeroId = "gorilla" | "friend-67" | "friend-1" | "friend-100" | "friend-500";
+type HatId = "sunny-beanie" | "skate-cap" | "plum-crown";
+type GlassesId = "round-specs" | "star-shades";
+type BackpackId = "sage-pack" | "cloud-wings";
+type CharacterLook = {
+  bodyColor: string;
+  hat: HatId | null;
+  glasses: GlassesId | null;
+  backpack: BackpackId | null;
+};
 type VenueKind = "skate" | "cafe" | "market" | "fashion" | "arcade" | "club";
 type CheckoutProvider = "google-play" | "web3";
 
@@ -102,10 +111,8 @@ type HeroDefinition = {
   tagline: string;
   description: string;
   model: string;
-  portrait: string;
   accent: string;
   height: number;
-  stats: Array<{ label: string; value: number }>;
 };
 
 const HEROES: HeroDefinition[] = [
@@ -113,35 +120,81 @@ const HEROES: HeroDefinition[] = [
     id: "gorilla",
     name: "GORILLA 67",
     role: "POWER CLASS",
-    tagline: "Heavy power. City control.",
-    description: "A powerful city rider built for confident movement, hard landings and unmistakable presence.",
-    model: "/models/characters/gorilla-67.glb",
-    portrait: "/gorilla-67-portrait.png",
+    tagline: "Original 67 gorilla body.",
+    description: "The original Gorilla body from the 67 collection, ready for modular hats, eyewear and back items.",
+    model: "/models/characters/gorilla.glb",
     accent: "#45bbc2",
     height: 3.7,
-    stats: [
-      { label: "POWER", value: 94 },
-      { label: "FLOW", value: 72 },
-      { label: "CONTROL", value: 86 },
-    ],
   },
   {
-    id: "irem",
-    name: "İREM",
-    role: "FLOW CLASS",
-    tagline: "Fast lines. Clean movement.",
-    description: "A precise all-round hero with quick reactions, clean lines and lightweight city movement.",
-    model: "/models/sixseven-superhero-hero-v6.glb",
-    portrait: "/irem-67-portrait.png",
-    accent: "#ef735f",
+    id: "friend-67",
+    name: "NO. 67",
+    role: "CITY BODY",
+    tagline: "The signature soft city look.",
+    description: "A complete 67 body and outfit preset that works with every modular wardrobe item.",
+    model: "/models/characters/friendsies/fr_67.glb",
+    accent: "#ef8c7a",
     height: 3.15,
-    stats: [
-      { label: "POWER", value: 68 },
-      { label: "FLOW", value: 96 },
-      { label: "CONTROL", value: 90 },
-    ],
+  },
+  {
+    id: "friend-1",
+    name: "NO. 1",
+    role: "STREET BODY",
+    tagline: "A clean everyday street fit.",
+    description: "A second complete body and clothing preset from the 67 collection.",
+    model: "/models/characters/friendsies/fr_1.glb",
+    accent: "#e5bd68",
+    height: 3.15,
+  },
+  {
+    id: "friend-100",
+    name: "NO. 100",
+    role: "SPORT BODY",
+    tagline: "A bright athletic city fit.",
+    description: "An athletic body preset with support for the full 67 wardrobe.",
+    model: "/models/characters/friendsies/fr_100.glb",
+    accent: "#78a987",
+    height: 3.15,
+  },
+  {
+    id: "friend-500",
+    name: "NO. 500",
+    role: "NIGHT BODY",
+    tagline: "A darker premium outfit preset.",
+    description: "A premium nightlife body preset with modular accessories.",
+    model: "/models/characters/friendsies/fr_500.glb",
+    accent: "#947dce",
+    height: 3.15,
   },
 ];
+
+const DEFAULT_CHARACTER_LOOK: CharacterLook = {
+  bodyColor: "#ffffff",
+  hat: null,
+  glasses: null,
+  backpack: null,
+};
+
+const BODY_COLORS = ["#ffffff", "#eeb8a7", "#e8c46f", "#85b49a", "#84a9c5", "#aa91cc"];
+
+const WARDROBE = {
+  hats: [
+    { id: null, name: "No Hat", color: "#90979b" },
+    { id: "sunny-beanie" as HatId, name: "Sunny Beanie", color: "#e8b64a" },
+    { id: "skate-cap" as HatId, name: "Skate Cap", color: "#d0775e" },
+    { id: "plum-crown" as HatId, name: "Plum Crown", color: "#8a6fb0" },
+  ],
+  glasses: [
+    { id: null, name: "No Glasses", color: "#90979b" },
+    { id: "round-specs" as GlassesId, name: "Round Specs", color: "#2a2724" },
+    { id: "star-shades" as GlassesId, name: "Star Shades", color: "#c46f8e" },
+  ],
+  backpacks: [
+    { id: null, name: "No Back Item", color: "#90979b" },
+    { id: "sage-pack" as BackpackId, name: "Sage Pack", color: "#5a9c7a" },
+    { id: "cloud-wings" as BackpackId, name: "Cloud Wings", color: "#f4efe7" },
+  ],
+};
 
 const STORE_ITEMS: Record<VenueKind, StoreItem[]> = {
   skate: [
@@ -192,9 +245,9 @@ const DISTRICTS: District[] = [
   { id: "waterfront", name: "Waterfront", eyebrow: "RIDES & MARINA", spawn: [88, -55], mapPosition: [72, -76], accent: "#5c9eb0" },
   { id: "old-town", name: "Old Town", eyebrow: "NEIGHBORHOOD", spawn: [-74, 29], mapPosition: [-67, -4], accent: "#a78471" },
   { id: "downtown", name: "67 Central", eyebrow: "DOWNTOWN", spawn: [0, 32], mapPosition: [0, -2], accent: "#887bb4" },
-  { id: "stadium", name: "67 Stadium", eyebrow: "MATCH DAY", spawn: [67, 30], mapPosition: [67, -7], accent: "#6d9470" },
+  { id: "stadium", name: "67 Stadium", eyebrow: "MATCH DAY", spawn: [67, -11.5], mapPosition: [67, -11.5], accent: "#6d9470" },
   { id: "market-square", name: "Market Square", eyebrow: "SHOPS & CAFE", spawn: [0, 72], mapPosition: [0, 55], accent: "#c68a72" },
-  { id: "green-park", name: "Green Park", eyebrow: "POOLS & TRAILS", spawn: [67, 75], mapPosition: [68, 55], accent: "#72a57f" },
+  { id: "green-park", name: "Green Park", eyebrow: "POOLS & TRAILS", spawn: [67, 65], mapPosition: [68, 53], accent: "#72a57f" },
   { id: "southside", name: "Southside", eyebrow: "RESIDENTIAL", spawn: [0, 103], mapPosition: [0, 116], accent: "#7697a2" },
 ];
 
@@ -697,6 +750,337 @@ function createInterior(venue: Venue) {
   return root;
 }
 
+function wardrobeMaterial(color: THREE.ColorRepresentation, metalness = 0.04, roughness = 0.46) {
+  return new THREE.MeshStandardMaterial({ color, metalness, roughness });
+}
+
+function prepareWardrobeGroup(group: THREE.Group) {
+  group.name = "67verse-wardrobe-item";
+  group.traverse((object) => {
+    if (object instanceof THREE.Mesh) {
+      object.castShadow = true;
+      object.receiveShadow = true;
+    }
+  });
+  return group;
+}
+
+function buildHat(id: HatId) {
+  const group = new THREE.Group();
+  if (id === "sunny-beanie") {
+    const dome = new THREE.Mesh(
+      new THREE.SphereGeometry(0.038, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+      wardrobeMaterial("#e8b64a"),
+    );
+    dome.scale.y = 0.72;
+    dome.position.y = 0.035;
+    const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.039, 0.041, 0.014, 18), wardrobeMaterial("#d0775e"));
+    cuff.position.y = 0.034;
+    const pom = new THREE.Mesh(new THREE.SphereGeometry(0.011, 10, 8), wardrobeMaterial("#fbf8f2"));
+    pom.position.y = 0.066;
+    group.add(dome, cuff, pom);
+  } else if (id === "skate-cap") {
+    const dome = new THREE.Mesh(
+      new THREE.SphereGeometry(0.039, 18, 12, 0, Math.PI * 2, 0, Math.PI / 2),
+      wardrobeMaterial("#d0775e"),
+    );
+    dome.scale.y = 0.62;
+    dome.position.y = 0.033;
+    const brim = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.006, 0.043), wardrobeMaterial("#d0775e"));
+    brim.position.set(0, 0.029, 0.042);
+    const button = new THREE.Mesh(new THREE.SphereGeometry(0.006, 8, 6), wardrobeMaterial("#f4efe7"));
+    button.position.y = 0.058;
+    group.add(dome, brim, button);
+  } else {
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.031, 0.034, 0.019, 16), wardrobeMaterial("#8a6fb0"));
+    band.position.y = 0.044;
+    group.add(band);
+    for (let index = 0; index < 5; index += 1) {
+      const angle = (index / 5) * Math.PI * 2;
+      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.007, 0.022, 8), wardrobeMaterial("#e8b64a"));
+      spike.position.set(Math.cos(angle) * 0.027, 0.064, Math.sin(angle) * 0.027);
+      group.add(spike);
+    }
+    const gem = new THREE.Mesh(new THREE.SphereGeometry(0.006, 8, 6), wardrobeMaterial("#c46f8e"));
+    gem.position.set(0, 0.044, 0.034);
+    group.add(gem);
+  }
+  return prepareWardrobeGroup(group);
+}
+
+function buildGlasses(id: GlassesId) {
+  const group = new THREE.Group();
+  if (id === "round-specs") {
+    const frame = wardrobeMaterial("#2a2724", 0.18, 0.3);
+    for (const side of [-1, 1]) {
+      const lens = new THREE.Mesh(new THREE.TorusGeometry(0.014, 0.0027, 8, 20), frame);
+      lens.position.set(side * 0.019, 0.002, 0.003);
+      group.add(lens);
+      const temple = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.003, 0.041), frame);
+      temple.position.set(side * 0.033, 0.004, -0.018);
+      group.add(temple);
+    }
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.003, 0.003), frame);
+    bridge.position.set(0, 0.004, 0.003);
+    group.add(bridge);
+  } else {
+    for (const side of [-1, 1]) {
+      const lens = new THREE.Mesh(new THREE.OctahedronGeometry(0.017), wardrobeMaterial("#c46f8e", 0.12, 0.27));
+      lens.scale.set(1, 1, 0.34);
+      lens.position.set(side * 0.019, 0.003, 0.004);
+      group.add(lens);
+      const temple = new THREE.Mesh(new THREE.BoxGeometry(0.0035, 0.0035, 0.04), wardrobeMaterial("#e8b64a", 0.18, 0.32));
+      temple.position.set(side * 0.034, 0.005, -0.017);
+      group.add(temple);
+    }
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.0035, 0.0035), wardrobeMaterial("#e8b64a", 0.18, 0.32));
+    bridge.position.set(0, 0.006, 0.004);
+    group.add(bridge);
+  }
+  return prepareWardrobeGroup(group);
+}
+
+function buildBackItem(id: BackpackId) {
+  const group = new THREE.Group();
+  if (id === "sage-pack") {
+    const body = new THREE.Mesh(new RoundedBoxGeometry(0.056, 0.067, 0.027, 3, 0.007), wardrobeMaterial("#5a9c7a"));
+    body.position.z = -0.013;
+    const flap = new THREE.Mesh(new RoundedBoxGeometry(0.058, 0.019, 0.029, 3, 0.006), wardrobeMaterial("#eae4d9"));
+    flap.position.set(0, 0.024, -0.014);
+    const pocket = new THREE.Mesh(new RoundedBoxGeometry(0.032, 0.024, 0.009, 3, 0.004), wardrobeMaterial("#e8b64a"));
+    pocket.position.set(0, -0.014, -0.03);
+    group.add(body, flap, pocket);
+  } else {
+    const hub = new THREE.Mesh(new RoundedBoxGeometry(0.022, 0.026, 0.011, 3, 0.003), wardrobeMaterial("#eae4d9"));
+    hub.position.z = -0.012;
+    group.add(hub);
+    for (const side of [-1, 1]) {
+      for (let index = 0; index < 3; index += 1) {
+        const feather = new THREE.Mesh(
+          new THREE.ConeGeometry(0.009, 0.046 - index * 0.008, 8),
+          wardrobeMaterial("#fbf8f2", 0.02, 0.54),
+        );
+        feather.scale.z = 0.45;
+        feather.rotation.z = side * (Math.PI / 2 + 0.35 + index * 0.28);
+        feather.position.set(side * (0.025 + index * 0.013), 0.008 + index * 0.01, -0.014);
+        group.add(feather);
+      }
+    }
+  }
+  return prepareWardrobeGroup(group);
+}
+
+function applyCharacterLook(model: THREE.Object3D, heroId: HeroId, look: CharacterLook) {
+  const tint = new THREE.Color(look.bodyColor);
+  const hasTint = look.bodyColor.toLowerCase() !== "#ffffff";
+  const preparedMaterials = new Set<THREE.Material>();
+  model.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    const tintMaterial = (entry: THREE.Material) => {
+      if (preparedMaterials.has(entry)) return entry;
+      preparedMaterials.add(entry);
+      if (hasTint && "color" in entry && entry.color instanceof THREE.Color) {
+        entry.color.lerp(tint, 0.24);
+      }
+      entry.needsUpdate = true;
+      return entry;
+    };
+    object.material = Array.isArray(object.material)
+      ? object.material.map(tintMaterial)
+      : tintMaterial(object.material);
+    object.castShadow = true;
+    object.receiveShadow = true;
+  });
+
+  const characterScale = heroId === "gorilla" ? 1.12 : 1;
+  const head = model.getObjectByName("Head");
+  if (head && look.hat) {
+    const holder = new THREE.Group();
+    holder.name = "67verse-hat";
+    holder.scale.setScalar(characterScale);
+    holder.position.set(0, heroId === "gorilla" ? 0.012 : 0.004, 0);
+    holder.add(buildHat(look.hat));
+    head.add(holder);
+  }
+  if (head && look.glasses) {
+    const holder = new THREE.Group();
+    holder.name = "67verse-glasses";
+    holder.scale.setScalar(characterScale);
+    holder.position.set(0, heroId === "gorilla" ? 0.006 : 0.003, heroId === "gorilla" ? 0.061 : 0.048);
+    holder.add(buildGlasses(look.glasses));
+    head.add(holder);
+  }
+  const spine = model.getObjectByName("Spine3");
+  if (spine && look.backpack) {
+    const holder = new THREE.Group();
+    holder.name = "67verse-back-item";
+    holder.scale.setScalar(characterScale);
+    holder.position.set(0, heroId === "gorilla" ? -0.015 : -0.01, heroId === "gorilla" ? -0.066 : -0.052);
+    holder.add(buildBackItem(look.backpack));
+    spine.add(holder);
+  }
+}
+
+function disposeCharacter(object: THREE.Object3D) {
+  object.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
+    child.geometry.dispose();
+    const disposeMaterial = (entry: THREE.Material) => {
+      Object.values(entry).forEach((value) => {
+        if (value instanceof THREE.Texture) value.dispose();
+      });
+      entry.dispose();
+    };
+    if (Array.isArray(child.material)) child.material.forEach(disposeMaterial);
+    else disposeMaterial(child.material);
+  });
+}
+
+function CharacterStudio({ hero, look }: { hero: HeroDefinition; look: CharacterLook }) {
+  const previewRef = useRef<HTMLDivElement>(null);
+  const [previewReady, setPreviewReady] = useState(false);
+
+  useEffect(() => {
+    if (!previewRef.current) return;
+    const mount = previewRef.current;
+    setPreviewReady(false);
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 50);
+    camera.position.set(0, 1.62, 5.65);
+    camera.lookAt(0, 1.48, 0);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.7));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.04;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    mount.appendChild(renderer.domElement);
+
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture;
+    scene.environment = environment;
+    const key = new THREE.DirectionalLight("#fff1dc", 2.5);
+    key.position.set(3.2, 5.4, 4.2);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    scene.add(key);
+    const rim = new THREE.DirectionalLight(hero.accent, 1.75);
+    rim.position.set(-3.4, 3.1, -2.8);
+    scene.add(rim, new THREE.HemisphereLight("#f5fbff", "#203039", 1.1));
+
+    const pedestal = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.32, 1.48, 0.24, 48),
+      new THREE.MeshStandardMaterial({ color: "#dfe8e8", metalness: 0.14, roughness: 0.36 }),
+    );
+    pedestal.position.y = 0.03;
+    pedestal.receiveShadow = true;
+    scene.add(pedestal);
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(1.12, 0.025, 8, 64),
+      new THREE.MeshBasicMaterial({ color: hero.accent, transparent: true, opacity: 0.8 }),
+    );
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = 0.165;
+    scene.add(ring);
+
+    const turntable = new THREE.Group();
+    scene.add(turntable);
+    let avatar: THREE.Object3D | null = null;
+    let disposed = false;
+    new GLTFLoader().load(hero.model, (gltf) => {
+      if (disposed) {
+        disposeCharacter(gltf.scene);
+        return;
+      }
+      avatar = gltf.scene;
+      const bounds = new THREE.Box3().setFromObject(avatar);
+      const size = bounds.getSize(new THREE.Vector3());
+      const scale = 3.08 / Math.max(size.y, 0.01);
+      avatar.scale.setScalar(scale);
+      const fitted = new THREE.Box3().setFromObject(avatar);
+      const center = fitted.getCenter(new THREE.Vector3());
+      avatar.position.set(-center.x, 0.18 - fitted.min.y, -center.z);
+      applyCharacterLook(avatar, hero.id, look);
+      turntable.add(avatar);
+      setPreviewReady(true);
+    }, undefined, () => setPreviewReady(true));
+
+    const resize = () => {
+      const width = Math.max(1, mount.clientWidth);
+      const height = Math.max(1, mount.clientHeight);
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    };
+    const observer = new ResizeObserver(resize);
+    observer.observe(mount);
+    resize();
+
+    let dragging = false;
+    let pointerX = 0;
+    let spinVelocity = 0;
+    const onPointerDown = (event: PointerEvent) => {
+      dragging = true;
+      pointerX = event.clientX;
+      renderer.domElement.setPointerCapture(event.pointerId);
+    };
+    const onPointerMove = (event: PointerEvent) => {
+      if (!dragging) return;
+      const delta = event.clientX - pointerX;
+      pointerX = event.clientX;
+      turntable.rotation.y += delta * 0.012;
+      spinVelocity = delta * 0.004;
+    };
+    const onPointerUp = () => { dragging = false; };
+    renderer.domElement.addEventListener("pointerdown", onPointerDown);
+    renderer.domElement.addEventListener("pointermove", onPointerMove);
+    renderer.domElement.addEventListener("pointerup", onPointerUp);
+    renderer.domElement.addEventListener("pointercancel", onPointerUp);
+
+    const clock = new THREE.Clock();
+    let frame = 0;
+    const render = () => {
+      const delta = Math.min(clock.getDelta(), 0.05);
+      if (!dragging) {
+        turntable.rotation.y += delta * 0.24 + spinVelocity;
+        spinVelocity *= 0.9;
+      }
+      ring.rotation.z += delta * 0.14;
+      renderer.render(scene, camera);
+      frame = window.requestAnimationFrame(render);
+    };
+    render();
+
+    return () => {
+      disposed = true;
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      renderer.domElement.removeEventListener("pointerdown", onPointerDown);
+      renderer.domElement.removeEventListener("pointermove", onPointerMove);
+      renderer.domElement.removeEventListener("pointerup", onPointerUp);
+      renderer.domElement.removeEventListener("pointercancel", onPointerUp);
+      if (avatar) disposeCharacter(avatar);
+      pedestal.geometry.dispose();
+      (pedestal.material as THREE.Material).dispose();
+      ring.geometry.dispose();
+      (ring.material as THREE.Material).dispose();
+      environment.dispose();
+      pmrem.dispose();
+      renderer.dispose();
+      renderer.domElement.remove();
+    };
+  }, [hero, look]);
+
+  return (
+    <div className={styles.characterStudio}>
+      <div ref={previewRef} className={styles.characterPreview} aria-label={`${hero.name} live 3D preview`} />
+      {!previewReady && <span className={styles.characterLoading}>BUILDING LOOK</span>}
+      <span className={styles.characterRotateHint}>DRAG TO ROTATE</span>
+    </div>
+  );
+}
+
 function parseStoredInventory() {
   if (typeof window === "undefined") return [] as OwnedItem[];
   try {
@@ -728,13 +1112,16 @@ export default function WorldPage() {
   const mapOpenRef = useRef(false);
   const teleportRef = useRef<(district: District) => void>(() => undefined);
   const selectedHeroRef = useRef<HeroId>("gorilla");
+  const selectedLookRef = useRef<CharacterLook>({ ...DEFAULT_CHARACTER_LOOK });
   const heroSelectOpenRef = useRef(true);
   const attractionOpenRef = useRef(false);
-  const applyHeroRef = useRef<(heroId: HeroId) => void>(() => undefined);
+  const applyHeroRef = useRef<(heroId: HeroId, look: CharacterLook) => void>(() => undefined);
 
   const [loaded, setLoaded] = useState(false);
   const [selectedHero, setSelectedHero] = useState<HeroId>("gorilla");
   const [heroChoice, setHeroChoice] = useState<HeroId>("gorilla");
+  const [characterLook, setCharacterLook] = useState<CharacterLook>({ ...DEFAULT_CHARACTER_LOOK });
+  const [draftLook, setDraftLook] = useState<CharacterLook>({ ...DEFAULT_CHARACTER_LOOK });
   const [heroSelectOpen, setHeroSelectOpen] = useState(true);
   const [rideMode, setRideMode] = useState<RideMode>("walk");
   const [mobileBoosting, setMobileBoosting] = useState(false);
@@ -759,6 +1146,7 @@ export default function WorldPage() {
 
   const chosenHero = HEROES.find((hero) => hero.id === heroChoice) ?? HEROES[0];
   const activeHero = HEROES.find((hero) => hero.id === selectedHero) ?? HEROES[0];
+  const equippedLookCount = [characterLook.hat, characterLook.glasses, characterLook.backpack].filter(Boolean).length;
 
   const rideLabel = rideMode === "walk" ? "WALK" : rideMode === "skate" ? "SKATE" : "BIKE";
   const currentPrompt = activeVenue
@@ -839,6 +1227,7 @@ export default function WorldPage() {
     setShopOpen(false);
     setCheckoutItem(null);
     setHeroChoice(selectedHeroRef.current);
+    setDraftLook({ ...selectedLookRef.current });
     setHeroSelectOpen(true);
   }, []);
 
@@ -857,20 +1246,23 @@ export default function WorldPage() {
 
   const confirmHero = useCallback(() => {
     selectedHeroRef.current = heroChoice;
+    selectedLookRef.current = { ...draftLook };
     heroSelectOpenRef.current = false;
     touchInputRef.current = { x: 0, z: 0 };
     setSelectedHero(heroChoice);
+    setCharacterLook({ ...draftLook });
     setHeroSelectOpen(false);
     setLoaded(false);
-    applyHeroRef.current(heroChoice);
+    applyHeroRef.current(heroChoice, draftLook);
     try {
       window.localStorage.setItem("67verse-selected-hero", heroChoice);
+      window.localStorage.setItem("67verse-character-look", JSON.stringify(draftLook));
     } catch {
       // Character persistence is optional in private browser sessions.
     }
     const hero = HEROES.find((entry) => entry.id === heroChoice) ?? HEROES[0];
     setToast(`${hero.name} ready. Welcome to 67VERSE.`);
-  }, [heroChoice]);
+  }, [draftLook, heroChoice]);
 
   const travelToDistrict = useCallback((district: District) => {
     teleportRef.current(district);
@@ -911,10 +1303,23 @@ export default function WorldPage() {
   useEffect(() => {
     try {
       const storedHero = window.localStorage.getItem("67verse-selected-hero");
-      if (storedHero === "gorilla" || storedHero === "irem") {
-        selectedHeroRef.current = storedHero;
-        setSelectedHero(storedHero);
-        setHeroChoice(storedHero);
+      const savedHero = HEROES.find((entry) => entry.id === storedHero)?.id;
+      if (savedHero) {
+        selectedHeroRef.current = savedHero;
+        setSelectedHero(savedHero);
+        setHeroChoice(savedHero);
+      }
+      const storedLook = JSON.parse(window.localStorage.getItem("67verse-character-look") ?? "null") as Partial<CharacterLook> | null;
+      if (storedLook && typeof storedLook === "object") {
+        const restoredLook: CharacterLook = {
+          bodyColor: typeof storedLook.bodyColor === "string" ? storedLook.bodyColor : DEFAULT_CHARACTER_LOOK.bodyColor,
+          hat: WARDROBE.hats.some((entry) => entry.id === storedLook.hat) ? (storedLook.hat as HatId | null) : null,
+          glasses: WARDROBE.glasses.some((entry) => entry.id === storedLook.glasses) ? (storedLook.glasses as GlassesId | null) : null,
+          backpack: WARDROBE.backpacks.some((entry) => entry.id === storedLook.backpack) ? (storedLook.backpack as BackpackId | null) : null,
+        };
+        selectedLookRef.current = restoredLook;
+        setCharacterLook(restoredLook);
+        setDraftLook(restoredLook);
       }
     } catch {
       // Gorilla remains the safe default.
@@ -1023,11 +1428,11 @@ export default function WorldPage() {
     const sportsCenter = roundedBox([38, 5.4, 13], "#d7d2c8", 1.6);
     sportsCenter.position.set(-67, 2.72, -119);
     worldRoot.add(sportsCenter);
-    addCourt(worldRoot, -77, -94, 17, 15, "#86a9c3");
-    addCourt(worldRoot, -56, -94, 17, 15, "#c99587");
+    addCourt(worldRoot, -77, -92, 17, 15, "#86a9c3");
+    addCourt(worldRoot, -56, -92, 17, 15, "#c99587");
     const track = new THREE.Mesh(new THREE.TorusGeometry(14.2, 2.5, 14, 48), material("#c27d70", 0.95));
     track.rotation.x = Math.PI / 2;
-    track.scale.z = 0.58;
+    track.scale.y = 0.58;
     track.position.set(-67, 0.38, -67);
     worldRoot.add(track);
     const trackInner = new THREE.Mesh(new THREE.CircleGeometry(11.7, 48), material("#87a574", 0.96));
@@ -1117,18 +1522,19 @@ export default function WorldPage() {
       });
     });
 
-    // Stadium and the lower-right green recreation park.
-    const stadiumOuter = new THREE.Mesh(new THREE.TorusGeometry(18, 5.2, 20, 48), material("#ddd4ca", 0.82));
+    // Stadium and the lower-right green recreation park. The stadium footprint
+    // stays inside the x 36–96 / z -45–22 city block, including its road verges.
+    const stadiumOuter = new THREE.Mesh(new THREE.TorusGeometry(14.5, 4.1, 20, 48), material("#ddd4ca", 0.82));
     stadiumOuter.rotation.x = Math.PI / 2;
-    stadiumOuter.scale.y = 1.4;
-    stadiumOuter.position.set(67, 2.5, -9);
+    stadiumOuter.scale.y = 1.22;
+    stadiumOuter.position.set(67, 2.15, -11.5);
     worldRoot.add(stadiumOuter);
-    const pitch = roundedBox([21, 0.2, 35], "#6f9366", 2.4);
-    pitch.position.set(67, 0.3, -9);
+    const pitch = roundedBox([17, 0.2, 28], "#6f9366", 2.4);
+    pitch.position.set(67, 0.3, -11.5);
     worldRoot.add(pitch);
     const midfield = new THREE.Mesh(new THREE.RingGeometry(3.5, 3.7, 32), material("#dce7d6", 0.96));
     midfield.rotation.x = -Math.PI / 2;
-    midfield.position.set(67, 0.44, -9);
+    midfield.position.set(67, 0.44, -11.5);
     worldRoot.add(midfield);
     const cityPark = roundedBox([45, 0.34, 44], "#91ad79", 3);
     cityPark.position.set(67, 0.16, 53);
@@ -1277,7 +1683,7 @@ export default function WorldPage() {
       nextAction.reset().fadeIn(0.14).play();
       currentCharacterAction = nextAction;
     };
-    const loadCharacter = (heroId: HeroId) => {
+    const loadCharacter = (heroId: HeroId, look: CharacterLook) => {
       const hero = HEROES.find((entry) => entry.id === heroId) ?? HEROES[0];
       const loadToken = ++characterLoadToken;
       loader.load(hero.model, (gltf) => {
@@ -1291,12 +1697,7 @@ export default function WorldPage() {
         characterRideOffset = rideModeRef.current === "skate" ? 0.25 : rideModeRef.current === "bike" ? 0.78 : 0;
         model.position.y = characterBaseY + characterRideOffset;
         model.rotation.y = 0;
-        model.traverse((object) => {
-          if (object instanceof THREE.Mesh) {
-            object.castShadow = true;
-            object.receiveShadow = true;
-          }
-        });
+        applyCharacterLook(model, heroId, look);
 
         const oldModel = characterModel;
         mixer?.stopAllAction();
@@ -1330,16 +1731,14 @@ export default function WorldPage() {
           playCharacterAction("idle");
         }
 
-        if (heroId === "gorilla") {
-          gorillaRig = {
-            head: captureGorillaJoint(model, "Head"),
-            spine: captureGorillaJoint(model, "Spine3"),
-            shoulderL: captureGorillaJoint(model, "BiscepL"),
-            shoulderR: captureGorillaJoint(model, "BiscepR"),
-            thighL: captureGorillaJoint(model, "ThighL"),
-            thighR: captureGorillaJoint(model, "ThighR"),
-          };
-        }
+        gorillaRig = {
+          head: captureGorillaJoint(model, "Head"),
+          spine: captureGorillaJoint(model, "Spine3"),
+          shoulderL: captureGorillaJoint(model, "BiscepL"),
+          shoulderR: captureGorillaJoint(model, "BiscepR"),
+          thighL: captureGorillaJoint(model, "ThighL"),
+          thighR: captureGorillaJoint(model, "ThighR"),
+        };
         setLoaded(true);
       }, undefined, () => {
         if (loadToken === characterLoadToken) {
@@ -1349,7 +1748,7 @@ export default function WorldPage() {
       });
     };
     applyHeroRef.current = loadCharacter;
-    loadCharacter(selectedHeroRef.current);
+    loadCharacter(selectedHeroRef.current, selectedLookRef.current);
 
     let interiorRoot: THREE.Group | null = null;
     const returnPosition = new THREE.Vector3();
@@ -1717,7 +2116,7 @@ export default function WorldPage() {
       else if (isMoving) playCharacterAction(isBoosting ? "run" : "walk");
       else playCharacterAction("idle");
 
-      if (selectedHeroRef.current === "gorilla" && gorillaRig && characterModel) {
+      if (gorillaRig && characterModel) {
         const elapsed = elapsedTime;
         const walking = rideModeRef.current === "walk" && isMoving;
         const stridePhase = elapsed * (isBoosting ? 10.5 : 7.2);
@@ -1874,51 +2273,112 @@ export default function WorldPage() {
           <div className={styles.heroStage}>
             <div className={styles.heroPortrait}>
               <span className={styles.heroClass}>{chosenHero.role}</span>
-              <img src={chosenHero.portrait} alt={`${chosenHero.name} 3D character`} draggable={false} />
+              <CharacterStudio hero={chosenHero} look={draftLook} />
               <div className={styles.heroNameplate}>
-                <small>SELECTED HERO</small>
+                <small>LIVE 3D LOOK</small>
                 <strong>{chosenHero.name}</strong>
                 <span>{chosenHero.tagline}</span>
               </div>
             </div>
             <aside className={styles.heroPanel}>
               <div className={styles.heroPanelIntro}>
-                <small>67VERSE / HERO SELECT</small>
-                <strong>CHOOSE YOUR HERO</strong>
-                <p>Select a character before entering the live city. You can switch again at any time.</p>
+                <small>67VERSE / CHARACTER STUDIO</small>
+                <strong>BUILD YOUR LOOK</strong>
+                <p>Choose a body and outfit preset, then layer original hats, glasses and back items.</p>
               </div>
-              <div className={styles.heroChoices} aria-label="Available heroes">
+              <section className={styles.customizerSection}>
+                <header><span>01</span><strong>BODY &amp; OUTFIT</strong><small>{HEROES.length} UNLOCKED</small></header>
+                <div className={styles.bodyOptions} aria-label="Available body and outfit presets">
                 {HEROES.map((hero) => (
                   <button
                     type="button"
                     key={hero.id}
-                    className={heroChoice === hero.id ? styles.heroChoiceSelected : ""}
+                    className={heroChoice === hero.id ? styles.bodyOptionSelected : ""}
                     style={{ "--choice-accent": hero.accent } as CSSProperties}
                     onClick={() => setHeroChoice(hero.id)}
                     aria-pressed={heroChoice === hero.id}
                   >
-                    <img src={hero.portrait} alt="" draggable={false} />
+                    <i>{hero.id === "gorilla" ? "G" : hero.name.replace("NO. ", "")}</i>
                     <span><small>{hero.role}</small><strong>{hero.name}</strong></span>
-                    <i />
                   </button>
                 ))}
-              </div>
-              <div className={styles.heroDetails}>
-                <p>{chosenHero.description}</p>
-                <div className={styles.heroStats}>
-                  {chosenHero.stats.map((stat) => (
-                    <span key={stat.label}>
-                      <small>{stat.label}</small>
-                      <i><b style={{ width: `${stat.value}%` }} /></i>
-                      <strong>{stat.value}</strong>
-                    </span>
+                </div>
+              </section>
+              <section className={styles.customizerSection}>
+                <header><span>02</span><strong>OUTFIT TONE</strong><small>LIVE COLOR</small></header>
+                <div className={styles.swatchRow} aria-label="Outfit color tone">
+                  {BODY_COLORS.map((color) => (
+                    <button
+                      type="button"
+                      key={color}
+                      style={{ "--swatch": color } as CSSProperties}
+                      className={draftLook.bodyColor === color ? styles.swatchSelected : ""}
+                      onClick={() => setDraftLook((look) => ({ ...look, bodyColor: color }))}
+                      aria-label={`Use ${color} outfit tone`}
+                      aria-pressed={draftLook.bodyColor === color}
+                    />
                   ))}
                 </div>
+              </section>
+              <section className={styles.customizerSection}>
+                <header><span>03</span><strong>HEADWEAR</strong><small>MODULAR</small></header>
+                <div className={styles.wardrobeGrid} aria-label="Headwear">
+                  {WARDROBE.hats.map((item) => (
+                    <button
+                      type="button"
+                      key={item.id ?? "no-hat"}
+                      className={draftLook.hat === item.id ? styles.wardrobeOptionSelected : ""}
+                      onClick={() => setDraftLook((look) => ({ ...look, hat: item.id }))}
+                      aria-pressed={draftLook.hat === item.id}
+                    >
+                      <i style={{ "--item-color": item.color } as CSSProperties} />
+                      <span>{item.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+              <section className={styles.customizerSection}>
+                <header><span>04</span><strong>EYEWEAR</strong><small>MODULAR</small></header>
+                <div className={styles.wardrobeGrid} aria-label="Eyewear">
+                  {WARDROBE.glasses.map((item) => (
+                    <button
+                      type="button"
+                      key={item.id ?? "no-glasses"}
+                      className={draftLook.glasses === item.id ? styles.wardrobeOptionSelected : ""}
+                      onClick={() => setDraftLook((look) => ({ ...look, glasses: item.id }))}
+                      aria-pressed={draftLook.glasses === item.id}
+                    >
+                      <i style={{ "--item-color": item.color } as CSSProperties} />
+                      <span>{item.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+              <section className={styles.customizerSection}>
+                <header><span>05</span><strong>BACK ITEM</strong><small>MODULAR</small></header>
+                <div className={styles.wardrobeGrid} aria-label="Back items">
+                  {WARDROBE.backpacks.map((item) => (
+                    <button
+                      type="button"
+                      key={item.id ?? "no-back-item"}
+                      className={draftLook.backpack === item.id ? styles.wardrobeOptionSelected : ""}
+                      onClick={() => setDraftLook((look) => ({ ...look, backpack: item.id }))}
+                      aria-pressed={draftLook.backpack === item.id}
+                    >
+                      <i style={{ "--item-color": item.color } as CSSProperties} />
+                      <span>{item.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+              <div className={styles.wardrobeSummary}>
+                <span><b>{chosenHero.name}</b>{chosenHero.description}</span>
+                <strong>{[draftLook.hat, draftLook.glasses, draftLook.backpack].filter(Boolean).length}/3 ITEMS</strong>
               </div>
               <button type="button" className={styles.enterWorld} onClick={confirmHero}>
-                <span>ENTER 67VERSE</span><strong>{chosenHero.name}</strong><NavigationArrow size={18} weight="fill" />
+                <span>SAVE LOOK &amp; ENTER</span><strong>{chosenHero.name}</strong><NavigationArrow size={18} weight="fill" />
               </button>
-              <small className={styles.heroHint}>CHANGE LATER FROM THE HERO BUTTON</small>
+              <small className={styles.heroHint}>EVERY PART CAN BE CHANGED LATER</small>
             </aside>
           </div>
         </section>
@@ -1934,7 +2394,7 @@ export default function WorldPage() {
           <strong>{activeVenue?.name ?? nearbyAttraction?.name ?? currentDistrict}</strong>
         </div>
         <nav className={styles.actions} aria-label="World actions">
-          <button type="button" className={styles.heroAction} aria-label={`Change hero. Current hero ${activeHero.name}`} onClick={openHeroSelector}><UserCircle size={21} weight="fill" /><span>{activeHero.name}</span></button>
+          <button type="button" className={styles.heroAction} aria-label={`Customize ${activeHero.name}. ${equippedLookCount} wardrobe items equipped.`} onClick={openHeroSelector}><UserCircle size={21} weight="fill" /><span>{activeHero.name}</span></button>
           <button type="button" aria-label="Open world map" onClick={openWorldMap} disabled={Boolean(activeVenue)}><MapTrifold size={20} weight="bold" /><span>MAP</span></button>
           <button type="button" aria-label="Open inventory" onClick={() => setInventoryOpen(true)}><ShoppingBag size={20} weight="bold" /><span>{inventory.length}</span></button>
           <button type="button" aria-label="Open wallet and inventory" className={styles.balance} onClick={() => setInventoryOpen(true)}><Wallet size={20} weight="bold" /><span>{credits.toLocaleString("en-US")} CR</span></button>
