@@ -957,14 +957,36 @@ export default function WorldPage() {
     let mixer: THREE.AnimationMixer | null = null;
     const characterActions = new Map<string, THREE.AnimationAction>();
     let currentCharacterAction: THREE.AnimationAction | null = null;
+    type GorillaJoint = { object: THREE.Object3D; baseQuaternion: THREE.Quaternion };
     let gorillaRig: {
-      body: THREE.Object3D | null;
-      head: THREE.Object3D | null;
-      armL: THREE.Object3D | null;
-      armR: THREE.Object3D | null;
-      legL: THREE.Object3D | null;
-      legR: THREE.Object3D | null;
+      head: GorillaJoint | null;
+      spine: GorillaJoint | null;
+      shoulderL: GorillaJoint | null;
+      shoulderR: GorillaJoint | null;
+      thighL: GorillaJoint | null;
+      thighR: GorillaJoint | null;
     } | null = null;
+    const rigTargetQuaternion = new THREE.Quaternion();
+    const rigOffsetQuaternion = new THREE.Quaternion();
+    const rigOffsetEuler = new THREE.Euler();
+    const captureGorillaJoint = (model: THREE.Object3D, name: string): GorillaJoint | null => {
+      const object = model.getObjectByName(name);
+      return object ? { object, baseQuaternion: object.quaternion.clone() } : null;
+    };
+    const poseGorillaJoint = (
+      joint: GorillaJoint | null,
+      x: number,
+      y: number,
+      z: number,
+      damping: number,
+      delta: number,
+    ) => {
+      if (!joint) return;
+      rigOffsetEuler.set(x, y, z);
+      rigOffsetQuaternion.setFromEuler(rigOffsetEuler);
+      rigTargetQuaternion.copy(joint.baseQuaternion).multiply(rigOffsetQuaternion);
+      joint.object.quaternion.slerp(rigTargetQuaternion, 1 - Math.exp(-damping * delta));
+    };
     const playCharacterAction = (name: string) => {
       const nextAction = characterActions.get(name) ?? characterActions.get("idle");
       if (!nextAction || nextAction === currentCharacterAction) return;
@@ -1012,19 +1034,28 @@ export default function WorldPage() {
           });
         }
 
+        if (gltf.animations.length) {
+          mixer = new THREE.AnimationMixer(model);
+          gltf.animations.forEach((clip) => {
+            const action = mixer!.clipAction(clip);
+            const normalizedName = clip.name.toLowerCase();
+            characterActions.set(normalizedName, action);
+            (["idle", "walk", "run", "jump", "fall"] as const).forEach((alias) => {
+              if (normalizedName.includes(alias) && !characterActions.has(alias)) characterActions.set(alias, action);
+            });
+          });
+          playCharacterAction("idle");
+        }
+
         if (heroId === "gorilla") {
           gorillaRig = {
-            body: model.getObjectByName("GorillaBody") ?? null,
-            head: model.getObjectByName("GorillaHeadRig") ?? null,
-            armL: model.getObjectByName("GorillaArmL") ?? null,
-            armR: model.getObjectByName("GorillaArmR") ?? null,
-            legL: model.getObjectByName("GorillaLegL") ?? null,
-            legR: model.getObjectByName("GorillaLegR") ?? null,
+            head: captureGorillaJoint(model, "Head"),
+            spine: captureGorillaJoint(model, "Spine3"),
+            shoulderL: captureGorillaJoint(model, "BiscepL"),
+            shoulderR: captureGorillaJoint(model, "BiscepR"),
+            thighL: captureGorillaJoint(model, "ThighL"),
+            thighR: captureGorillaJoint(model, "ThighR"),
           };
-        } else if (gltf.animations.length) {
-          mixer = new THREE.AnimationMixer(model);
-          gltf.animations.forEach((clip) => characterActions.set(clip.name.toLowerCase(), mixer!.clipAction(clip)));
-          playCharacterAction("idle");
         }
         setLoaded(true);
       }, undefined, () => {
@@ -1243,13 +1274,16 @@ export default function WorldPage() {
         const walking = rideModeRef.current === "walk" && isMoving;
         const stridePhase = elapsed * (keys.has("ShiftLeft") || keys.has("ShiftRight") ? 10.5 : 7.2);
         const stride = walking && grounded ? Math.sin(stridePhase) : 0;
-        const airPose = grounded ? 0 : -0.72;
-        if (gorillaRig.armL) gorillaRig.armL.rotation.x = THREE.MathUtils.damp(gorillaRig.armL.rotation.x, airPose + stride * 0.52, 12, delta);
-        if (gorillaRig.armR) gorillaRig.armR.rotation.x = THREE.MathUtils.damp(gorillaRig.armR.rotation.x, airPose - stride * 0.52, 12, delta);
-        if (gorillaRig.legL) gorillaRig.legL.rotation.x = THREE.MathUtils.damp(gorillaRig.legL.rotation.x, -stride * 0.28, 13, delta);
-        if (gorillaRig.legR) gorillaRig.legR.rotation.x = THREE.MathUtils.damp(gorillaRig.legR.rotation.x, stride * 0.28, 13, delta);
-        if (gorillaRig.body) gorillaRig.body.rotation.z = THREE.MathUtils.damp(gorillaRig.body.rotation.z, walking ? stride * 0.035 : Math.sin(elapsed * 1.7) * 0.012, 8, delta);
-        if (gorillaRig.head) gorillaRig.head.rotation.z = THREE.MathUtils.damp(gorillaRig.head.rotation.z, walking ? -stride * 0.025 : Math.sin(elapsed * 1.25) * 0.018, 8, delta);
+        const riding = rideModeRef.current !== "walk";
+        const armBase = grounded ? (riding ? 0.88 : 1.08) : 0.42;
+        const armStride = grounded && walking ? stride * 0.46 : 0;
+        const legStride = grounded && walking ? stride * 0.34 : grounded && riding ? 0.12 : -0.22;
+        poseGorillaJoint(gorillaRig.shoulderL, armBase - armStride, 0, 0, 13, delta);
+        poseGorillaJoint(gorillaRig.shoulderR, armBase + armStride, 0, 0, 13, delta);
+        poseGorillaJoint(gorillaRig.thighL, legStride, 0, 0, 14, delta);
+        poseGorillaJoint(gorillaRig.thighR, -legStride, 0, 0, 14, delta);
+        poseGorillaJoint(gorillaRig.spine, 0, 0, walking ? stride * 0.025 : Math.sin(elapsed * 1.7) * 0.009, 9, delta);
+        poseGorillaJoint(gorillaRig.head, 0, 0, walking ? -stride * 0.018 : Math.sin(elapsed * 1.25) * 0.012, 9, delta);
         const movementBob = walking && grounded ? Math.abs(Math.sin(stridePhase)) * 0.045 : grounded ? Math.sin(elapsed * 1.8) * 0.014 : 0;
         characterModel.position.y = characterBaseY + characterRideOffset + movementBob;
       }
