@@ -32,7 +32,18 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import styles from "./world.module.css";
 
 type RideMode = "walk" | "skate" | "bike";
-type HeroId = "gorilla" | "friend-67" | "friend-1" | "friend-100" | "friend-500";
+type HeroId =
+  | "gorilla"
+  | "friend-67"
+  | "friend-1"
+  | "friend-100"
+  | "friend-500"
+  | "friend-777"
+  | "friend-1000"
+  | "friend-2222"
+  | "friend-4242"
+  | "friend-8888";
+type StudioSlot = "body" | "tone" | "hat" | "glasses" | "backpack";
 type HatId = "sunny-beanie" | "skate-cap" | "plum-crown";
 type GlassesId = "round-specs" | "star-shades";
 type BackpackId = "sage-pack" | "cloud-wings";
@@ -166,6 +177,56 @@ const HEROES: HeroDefinition[] = [
     accent: "#947dce",
     height: 3.15,
   },
+  {
+    id: "friend-777",
+    name: "NO. 777",
+    role: "COAST BODY",
+    tagline: "A soft coastal outfit preset.",
+    description: "A light coastal character body from the complete 67 collection.",
+    model: "/models/characters/friendsies/fr_777.glb",
+    accent: "#71b7c1",
+    height: 3.15,
+  },
+  {
+    id: "friend-1000",
+    name: "NO. 1000",
+    role: "PREMIUM BODY",
+    tagline: "A polished premium city fit.",
+    description: "A premium body and outfit preset from the complete 67 collection.",
+    model: "/models/characters/friendsies/fr_1000.glb",
+    accent: "#d39a6f",
+    height: 3.15,
+  },
+  {
+    id: "friend-2222",
+    name: "NO. 2222",
+    role: "PARK BODY",
+    tagline: "A relaxed everyday park fit.",
+    description: "A relaxed body and clothing preset built for the shared park.",
+    model: "/models/characters/friendsies/fr_2222.glb",
+    accent: "#77a77f",
+    height: 3.15,
+  },
+  {
+    id: "friend-4242",
+    name: "NO. 4242",
+    role: "ARCADE BODY",
+    tagline: "A colorful arcade outfit preset.",
+    description: "A bright body and clothing preset from the complete 67 collection.",
+    model: "/models/characters/friendsies/fr_4242.glb",
+    accent: "#ce7eab",
+    height: 3.15,
+  },
+  {
+    id: "friend-8888",
+    name: "NO. 8888",
+    role: "SIGNATURE BODY",
+    tagline: "A rare signature city fit.",
+    description: "A signature body and outfit preset from the complete 67 collection.",
+    model: "/models/characters/friendsies/fr_8888.glb",
+    accent: "#e0b75f",
+    height: 3.15,
+  },
 ];
 
 const DEFAULT_CHARACTER_LOOK: CharacterLook = {
@@ -175,7 +236,14 @@ const DEFAULT_CHARACTER_LOOK: CharacterLook = {
   backpack: null,
 };
 
-const BODY_COLORS = ["#ffffff", "#eeb8a7", "#e8c46f", "#85b49a", "#84a9c5", "#aa91cc"];
+const BODY_TONES = [
+  { value: "#ffffff", name: "ORIGINAL" },
+  { value: "#eeb8a7", name: "CORAL" },
+  { value: "#e8c46f", name: "SUN" },
+  { value: "#85b49a", name: "SAGE" },
+  { value: "#84a9c5", name: "COAST" },
+  { value: "#aa91cc", name: "PLUM" },
+];
 
 const WARDROBE = {
   hats: [
@@ -195,6 +263,14 @@ const WARDROBE = {
     { id: "cloud-wings" as BackpackId, name: "Cloud Wings", color: "#f4efe7" },
   ],
 };
+
+const STUDIO_SLOTS: Array<{ id: StudioSlot; label: string; step: string }> = [
+  { id: "body", label: "HEAD + BODY", step: "01" },
+  { id: "tone", label: "COLOR", step: "02" },
+  { id: "hat", label: "HAT", step: "03" },
+  { id: "glasses", label: "GLASSES", step: "04" },
+  { id: "backpack", label: "BACK", step: "05" },
+];
 
 const STORE_ITEMS: Record<VenueKind, StoreItem[]> = {
   skate: [
@@ -711,6 +787,10 @@ function createInterior(venue: Venue) {
   left.position.set(-18, 3, 0);
   const right = left.clone();
   right.position.x = 18;
+  const frontLeft = roundedBox([15.7, 6, 0.6], "#eee7dc", 0.35);
+  frontLeft.position.set(-10.15, 3, 15);
+  const frontRight = frontLeft.clone();
+  frontRight.position.x = 10.15;
   const counter = roundedBox([14, 1.35, 2.4], venue.accent, 0.36);
   counter.position.set(0, 0.68, -8.6);
   const counterTop = roundedBox([14.6, 0.22, 2.8], "#f1e9dc", 0.18);
@@ -718,7 +798,7 @@ function createInterior(venue: Venue) {
   const exitMat = material("#2f373a", 0.58);
   const exit = new THREE.Mesh(new RoundedBoxGeometry(4.4, 3.4, 0.28, 3, 0.16), exitMat);
   exit.position.set(0, 1.7, 15.05);
-  root.add(floor, back, left, right, counter, counterTop, exit);
+  root.add(floor, back, left, right, frontLeft, frontRight, counter, counterTop, exit);
 
   const worker = new THREE.Group();
   const body = roundedBox([1.2, 1.7, 0.8], venue.accent, 0.28);
@@ -748,6 +828,27 @@ function createInterior(venue: Venue) {
     }
   }
   return root;
+}
+
+function createInteriorColliders(): Collider[] {
+  const withPlayerRadius = (x: number, z: number, width: number, depth: number): Collider => ({
+    minX: x - width / 2 - 0.62,
+    maxX: x + width / 2 + 0.62,
+    minZ: z - depth / 2 - 0.62,
+    maxZ: z + depth / 2 + 0.62,
+  });
+  const fixtures: Collider[] = [
+    withPlayerRadius(0, -8.6, 17, 3.3),
+    withPlayerRadius(0, -11.2, 1.5, 1.2),
+    withPlayerRadius(-9, 2, 3.8, 3),
+    withPlayerRadius(0, 2, 3.8, 3),
+    withPlayerRadius(9, 2, 3.8, 3),
+  ];
+  for (let column = 0; column < 4; column += 1) {
+    fixtures.push(withPlayerRadius(-13.4 + column * 8.9, -13.8, 2.8, 0.8));
+    fixtures.push(withPlayerRadius(-13.4 + column * 8.9, 13, 2.8, 0.8));
+  }
+  return fixtures;
 }
 
 function wardrobeMaterial(color: THREE.ColorRepresentation, metalness = 0.04, roughness = 0.46) {
@@ -892,32 +993,83 @@ function applyCharacterLook(model: THREE.Object3D, heroId: HeroId, look: Charact
     object.receiveShadow = true;
   });
 
-  const characterScale = heroId === "gorilla" ? 1.12 : 1;
-  const head = model.getObjectByName("Head");
-  if (head && look.hat) {
+  // The authored collection uses different head and torso proportions on every
+  // body. Sample the real vertices—matching the Friendsies reference loader—so
+  // hats, glasses and back items land on the character instead of using one
+  // hard-coded Gorilla offset.
+  model.updateMatrixWorld(true);
+  const inverseModelMatrix = model.matrixWorld.clone().invert();
+  const sampledPoints: THREE.Vector3[] = [];
+  const bodyBounds = new THREE.Box3().makeEmpty();
+  const point = new THREE.Vector3();
+  model.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    const position = object.geometry?.attributes?.position;
+    if (!position) return;
+    const step = Math.max(1, Math.ceil(position.count / 3200));
+    for (let index = 0; index < position.count; index += step) {
+      point.fromBufferAttribute(position, index).applyMatrix4(object.matrixWorld).applyMatrix4(inverseModelMatrix);
+      bodyBounds.expandByPoint(point);
+      sampledPoints.push(point.clone());
+    }
+  });
+  if (bodyBounds.isEmpty()) return;
+  const bodySize = bodyBounds.getSize(new THREE.Vector3());
+  const headBounds = new THREE.Box3().makeEmpty();
+  const crownBounds = new THREE.Box3().makeEmpty();
+  const torsoBounds = new THREE.Box3().makeEmpty();
+  const headStart = bodyBounds.min.y + bodySize.y * 0.55;
+  const crownStart = bodyBounds.max.y - bodySize.y * 0.18;
+  const torsoStart = bodyBounds.min.y + bodySize.y * 0.15;
+  sampledPoints.forEach((sample) => {
+    if (sample.y >= headStart) headBounds.expandByPoint(sample);
+    if (sample.y >= crownStart) crownBounds.expandByPoint(sample);
+    if (sample.y >= torsoStart && sample.y < headStart) torsoBounds.expandByPoint(sample);
+  });
+  if (headBounds.isEmpty()) headBounds.copy(bodyBounds);
+  if (crownBounds.isEmpty()) crownBounds.copy(headBounds);
+  if (torsoBounds.isEmpty()) torsoBounds.copy(bodyBounds);
+  const headSize = headBounds.getSize(new THREE.Vector3());
+  const crownSize = crownBounds.getSize(new THREE.Vector3());
+  const torsoSize = torsoBounds.getSize(new THREE.Vector3());
+  const headCenterX = (crownBounds.min.x + crownBounds.max.x) / 2;
+  const headCenterZ = (crownBounds.min.z + crownBounds.max.z) / 2;
+  const gorillaBias = heroId === "gorilla" ? 1.04 : 1;
+
+  if (look.hat) {
+    const scale = THREE.MathUtils.clamp((Math.max(crownSize.x, crownSize.z) / 0.082) * 0.94 * gorillaBias, 0.82, 2.65);
     const holder = new THREE.Group();
     holder.name = "67verse-hat";
-    holder.scale.setScalar(characterScale);
-    holder.position.set(0, heroId === "gorilla" ? 0.012 : 0.004, 0);
+    holder.scale.setScalar(scale);
+    holder.position.set(headCenterX, crownBounds.max.y - 0.029 * scale, headCenterZ);
     holder.add(buildHat(look.hat));
-    head.add(holder);
+    model.add(holder);
   }
-  if (head && look.glasses) {
+  if (look.glasses) {
+    const scale = THREE.MathUtils.clamp((Math.max(crownSize.x, headSize.z) / 0.076) * 0.9 * gorillaBias, 0.82, 2.6);
     const holder = new THREE.Group();
     holder.name = "67verse-glasses";
-    holder.scale.setScalar(characterScale);
-    holder.position.set(0, heroId === "gorilla" ? 0.006 : 0.003, heroId === "gorilla" ? 0.061 : 0.048);
+    holder.scale.setScalar(scale);
+    holder.position.set(
+      (headBounds.min.x + headBounds.max.x) / 2,
+      headBounds.min.y + headSize.y * 0.57,
+      headBounds.max.z + 0.002,
+    );
     holder.add(buildGlasses(look.glasses));
-    head.add(holder);
+    model.add(holder);
   }
-  const spine = model.getObjectByName("Spine3");
-  if (spine && look.backpack) {
+  if (look.backpack) {
+    const scale = THREE.MathUtils.clamp((Math.max(torsoSize.x, torsoSize.y * 0.55) / 0.07) * 0.82, 0.78, 2.25);
     const holder = new THREE.Group();
     holder.name = "67verse-back-item";
-    holder.scale.setScalar(characterScale);
-    holder.position.set(0, heroId === "gorilla" ? -0.015 : -0.01, heroId === "gorilla" ? -0.066 : -0.052);
+    holder.scale.setScalar(scale);
+    holder.position.set(
+      (torsoBounds.min.x + torsoBounds.max.x) / 2,
+      (torsoBounds.min.y + torsoBounds.max.y) / 2,
+      torsoBounds.min.z - 0.003,
+    );
     holder.add(buildBackItem(look.backpack));
-    spine.add(holder);
+    model.add(holder);
   }
 }
 
@@ -1122,9 +1274,11 @@ export default function WorldPage() {
   const [heroChoice, setHeroChoice] = useState<HeroId>("gorilla");
   const [characterLook, setCharacterLook] = useState<CharacterLook>({ ...DEFAULT_CHARACTER_LOOK });
   const [draftLook, setDraftLook] = useState<CharacterLook>({ ...DEFAULT_CHARACTER_LOOK });
+  const [studioSlot, setStudioSlot] = useState<StudioSlot>("body");
   const [heroSelectOpen, setHeroSelectOpen] = useState(true);
   const [rideMode, setRideMode] = useState<RideMode>("walk");
   const [mobileBoosting, setMobileBoosting] = useState(false);
+  const [speedometer, setSpeedometer] = useState(0);
   const [mapOpen, setMapOpen] = useState(false);
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
@@ -1147,6 +1301,49 @@ export default function WorldPage() {
   const chosenHero = HEROES.find((hero) => hero.id === heroChoice) ?? HEROES[0];
   const activeHero = HEROES.find((hero) => hero.id === selectedHero) ?? HEROES[0];
   const equippedLookCount = [characterLook.hat, characterLook.glasses, characterLook.backpack].filter(Boolean).length;
+
+  const studioSelection = (() => {
+    if (studioSlot === "body") {
+      const index = Math.max(0, HEROES.findIndex((hero) => hero.id === heroChoice));
+      return { name: chosenHero.name, detail: chosenHero.role, index, total: HEROES.length, color: chosenHero.accent };
+    }
+    if (studioSlot === "tone") {
+      const index = Math.max(0, BODY_TONES.findIndex((tone) => tone.value === draftLook.bodyColor));
+      const tone = BODY_TONES[index] ?? BODY_TONES[0];
+      return { name: tone.name, detail: "OUTFIT TONE", index, total: BODY_TONES.length, color: tone.value };
+    }
+    const items = studioSlot === "hat" ? WARDROBE.hats : studioSlot === "glasses" ? WARDROBE.glasses : WARDROBE.backpacks;
+    const equipped = studioSlot === "hat" ? draftLook.hat : studioSlot === "glasses" ? draftLook.glasses : draftLook.backpack;
+    const index = Math.max(0, items.findIndex((item) => item.id === equipped));
+    const item = items[index] ?? items[0];
+    return { name: item.name.toUpperCase(), detail: studioSlot === "backpack" ? "BACK ITEM" : studioSlot.toUpperCase(), index, total: items.length, color: item.color };
+  })();
+
+  const cycleStudioSelection = (direction: -1 | 1) => {
+    const wrap = (index: number, total: number) => (index + direction + total) % total;
+    if (studioSlot === "body") {
+      const index = Math.max(0, HEROES.findIndex((hero) => hero.id === heroChoice));
+      setHeroChoice(HEROES[wrap(index, HEROES.length)].id);
+      return;
+    }
+    if (studioSlot === "tone") {
+      const index = Math.max(0, BODY_TONES.findIndex((tone) => tone.value === draftLook.bodyColor));
+      setDraftLook((look) => ({ ...look, bodyColor: BODY_TONES[wrap(index, BODY_TONES.length)].value }));
+      return;
+    }
+    if (studioSlot === "hat") {
+      const index = Math.max(0, WARDROBE.hats.findIndex((item) => item.id === draftLook.hat));
+      setDraftLook((look) => ({ ...look, hat: WARDROBE.hats[wrap(index, WARDROBE.hats.length)].id }));
+      return;
+    }
+    if (studioSlot === "glasses") {
+      const index = Math.max(0, WARDROBE.glasses.findIndex((item) => item.id === draftLook.glasses));
+      setDraftLook((look) => ({ ...look, glasses: WARDROBE.glasses[wrap(index, WARDROBE.glasses.length)].id }));
+      return;
+    }
+    const index = Math.max(0, WARDROBE.backpacks.findIndex((item) => item.id === draftLook.backpack));
+    setDraftLook((look) => ({ ...look, backpack: WARDROBE.backpacks[wrap(index, WARDROBE.backpacks.length)].id }));
+  };
 
   const rideLabel = rideMode === "walk" ? "WALK" : rideMode === "skate" ? "SKATE" : "BIKE";
   const currentPrompt = activeVenue
@@ -1228,6 +1425,7 @@ export default function WorldPage() {
     setCheckoutItem(null);
     setHeroChoice(selectedHeroRef.current);
     setDraftLook({ ...selectedLookRef.current });
+    setStudioSlot("body");
     setHeroSelectOpen(true);
   }, []);
 
@@ -1381,6 +1579,18 @@ export default function WorldPage() {
 
     const worldRoot = new THREE.Group();
     const colliders: Collider[] = [];
+    const worldBlockers: Array<(x: number, z: number) => boolean> = [];
+    const blockCircle = (centerX: number, centerZ: number, radius: number) => {
+      worldBlockers.push((x, z) => Math.hypot(x - centerX, z - centerZ) < radius);
+    };
+    const blockBox = (centerX: number, centerZ: number, width: number, depth: number) => {
+      colliders.push({
+        minX: centerX - width / 2 - 0.62,
+        maxX: centerX + width / 2 + 0.62,
+        minZ: centerZ - depth / 2 - 0.62,
+        maxZ: centerZ + depth / 2 + 0.62,
+      });
+    };
     const skateRideSurfaces: THREE.Mesh[] = [];
     const skateMeshHeightFields: MeshHeightField[] = [];
     const grindRails: Array<{ name: string; start: THREE.Vector3; end: THREE.Vector3 }> = [];
@@ -1428,6 +1638,7 @@ export default function WorldPage() {
     const sportsCenter = roundedBox([38, 5.4, 13], "#d7d2c8", 1.6);
     sportsCenter.position.set(-67, 2.72, -119);
     worldRoot.add(sportsCenter);
+    blockBox(-67, -119, 38, 13);
     addCourt(worldRoot, -77, -92, 17, 15, "#86a9c3");
     addCourt(worldRoot, -56, -92, 17, 15, "#c99587");
     const track = new THREE.Mesh(new THREE.TorusGeometry(14.2, 2.5, 14, 48), material("#c27d70", 0.95));
@@ -1505,12 +1716,15 @@ export default function WorldPage() {
     worldRoot.add(amusementPad);
     addRollerCoaster(worldRoot);
     addFerrisWheel(worldRoot, 67, -76);
+    blockCircle(67, -76, 4.4);
     const carousel = new THREE.Mesh(new THREE.ConeGeometry(6.5, 3.4, 24), material("#e6a492", 0.78));
     carousel.position.set(79, 2.2, -58);
     worldRoot.add(carousel);
+    blockCircle(79, -58, 7.1);
     const marina = roundedBox([34, 0.25, 48], "#79b8c8", 1.4);
     marina.position.set(119, -0.02, -75);
     worldRoot.add(marina);
+    worldBlockers.push((x, z) => x > 101.3 && x < 137 && z > -99.5 && z < -50.5);
     [-88, -73, -58].forEach((z) => {
       const dock = roundedBox([25, 0.24, 2.2], "#a78669", 0.2);
       dock.position.set(119, 0.19, z);
@@ -1529,6 +1743,13 @@ export default function WorldPage() {
     stadiumOuter.scale.y = 1.22;
     stadiumOuter.position.set(67, 2.15, -11.5);
     worldRoot.add(stadiumOuter);
+    worldBlockers.push((x, z) => {
+      const dx = x - 67;
+      const dz = (z + 11.5) / 1.22;
+      const radius = Math.hypot(dx, dz);
+      const atEntrance = Math.abs(dx) < 3.2 && Math.abs(dz) > 10.5;
+      return !atEntrance && radius > 10.1 && radius < 19.3;
+    });
     const pitch = roundedBox([17, 0.2, 28], "#6f9366", 2.4);
     pitch.position.set(67, 0.3, -11.5);
     worldRoot.add(pitch);
@@ -1544,9 +1765,11 @@ export default function WorldPage() {
     pond.scale.set(1.4, 0.9, 1);
     pond.position.set(73, 0.36, 58);
     worldRoot.add(pond);
+    worldBlockers.push((x, z) => ((x - 73) / 14.7) ** 2 + ((z - 58) / 9.7) ** 2 < 1);
     const pool = roundedBox([14, 0.25, 9], "#70b3c5", 2.6);
     pool.position.set(51, 0.33, 42);
     worldRoot.add(pool);
+    blockBox(51, 42, 14, 9);
 
     // Old town, central skyline and the southern market blocks.
     const palettes = ["#bf9184", "#91aa93", "#b88b90", "#8ea6b1", "#bfa970", "#a18b80"];
@@ -1564,6 +1787,8 @@ export default function WorldPage() {
     worldRoot.add(oldTownCourt);
     addFountain(worldRoot, 0, 4);
     addFountain(worldRoot, 0, 42);
+    blockCircle(0, 4, 5.25);
+    blockCircle(0, 42, 5.25);
 
     // Building rows finish the island as a coherent city, without blocking roads.
     [-123, 123].forEach((z, row) => {
@@ -1751,6 +1976,7 @@ export default function WorldPage() {
     loadCharacter(selectedHeroRef.current, selectedLookRef.current);
 
     let interiorRoot: THREE.Group | null = null;
+    let interiorColliders: Collider[] = [];
     const returnPosition = new THREE.Vector3();
     let currentVenue: Venue | null = null;
     const enterVenue = (venue: Venue) => {
@@ -1758,6 +1984,7 @@ export default function WorldPage() {
       currentVenue = venue;
       worldRoot.visible = false;
       interiorRoot = createInterior(venue);
+      interiorColliders = createInteriorColliders();
       scene.add(interiorRoot);
       player.position.set(0, 0.06, 10.5);
       player.rotation.y = Math.PI;
@@ -1767,6 +1994,7 @@ export default function WorldPage() {
       rideModeRef.current = "walk";
       characterRideOffset = 0;
       if (characterModel) characterModel.position.y = characterBaseY;
+      planarVelocity.set(0, 0, 0);
       setNearbyVenue(null);
       setNearbyAttraction(null);
       setActiveVenue(venue);
@@ -1786,6 +2014,8 @@ export default function WorldPage() {
       }
       worldRoot.visible = true;
       player.position.copy(returnPosition);
+      planarVelocity.set(0, 0, 0);
+      interiorColliders = [];
       currentVenue = null;
       setActiveVenue(null);
       setNearCounter(false);
@@ -1865,6 +2095,9 @@ export default function WorldPage() {
     const forward = new THREE.Vector3();
     const right = new THREE.Vector3();
     const movement = new THREE.Vector3();
+    const planarVelocity = new THREE.Vector3();
+    const targetVelocity = new THREE.Vector3();
+    const grindTravelDirection = new THREE.Vector3();
     const desiredPosition = new THREE.Vector3();
     const grindDirection = new THREE.Vector3();
     const grindPoint = new THREE.Vector3();
@@ -1874,8 +2107,11 @@ export default function WorldPage() {
     let previousFrameTime = performance.now();
     let elapsedTime = 0;
     let frame = 0;
+    let hudFrame = 0;
 
-    const collides = (x: number, z: number) => colliders.some((collider) => x > collider.minX && x < collider.maxX && z > collider.minZ && z < collider.maxZ);
+    const intersects = (items: Collider[], x: number, z: number) => items.some((collider) => x > collider.minX && x < collider.maxX && z > collider.minZ && z < collider.maxZ);
+    const collides = (x: number, z: number) => intersects(colliders, x, z) || worldBlockers.some((test) => test(x, z));
+    const collidesInterior = (x: number, z: number) => intersects(interiorColliders, x, z);
     worldRoot.updateMatrixWorld(true);
     const skateSurfaceAt = (x: number, z: number) => {
       if (x < -30.5 || x > 30.5 || z < -100 || z > -49.5) return 0.06;
@@ -1905,8 +2141,10 @@ export default function WorldPage() {
         grindPoint.lerpVectors(rail.start, rail.end, progress);
         const distance = Math.hypot(player.position.x - grindPoint.x, player.position.z - grindPoint.z);
         const horizontalLength = Math.hypot(grindDirection.x, grindDirection.z);
+        grindTravelDirection.copy(movement);
+        if (grindTravelDirection.lengthSq() < 0.001) grindTravelDirection.copy(planarVelocity).normalize();
         const alignment = horizontalLength > 0.001
-          ? Math.abs((movement.x * grindDirection.x + movement.z * grindDirection.z) / horizontalLength)
+          ? Math.abs((grindTravelDirection.x * grindDirection.x + grindTravelDirection.z * grindDirection.z) / horizontalLength)
           : 0;
         const verticalDistance = Math.abs(player.position.y - grindPoint.y);
         if (distance < 0.82 && verticalDistance < 1.05 && alignment > 0.52 && (!candidate || distance < candidate.distance)) {
@@ -1922,6 +2160,7 @@ export default function WorldPage() {
           activeGrind = null;
           grindCooldown = 0.35;
         }
+        planarVelocity.set(0, 0, 0);
         rideModeRef.current = next;
         skateboard.visible = next === "skate";
         bike.visible = next === "bike";
@@ -1941,6 +2180,7 @@ export default function WorldPage() {
       velocityY = 0;
       grounded = true;
       activeGrind = null;
+      planarVelocity.set(0, 0, 0);
       grindCooldown = 0;
       lastSurfaceRise = 0;
 
@@ -1988,6 +2228,34 @@ export default function WorldPage() {
         movement.addScaledVector(forward, inputZ).addScaledVector(right, inputX).normalize();
       }
 
+      const maximumSpeed = currentVenue
+        ? (isBoosting ? 8.1 : 5.8)
+        : activeRide === "walk"
+          ? (isBoosting ? 9.6 : 6.4)
+          : activeRide === "skate"
+            ? (isBoosting ? 14.5 : 10.5)
+            : (isBoosting ? 16.2 : 12.5);
+      targetVelocity.copy(movement).multiplyScalar(maximumSpeed);
+      if (isMoving) {
+        const reversing = planarVelocity.lengthSq() > 0.04 && planarVelocity.dot(targetVelocity) < 0;
+        const acceleration = currentVenue || activeRide === "walk"
+          ? 14
+          : activeRide === "skate"
+            ? (reversing ? 10 : isBoosting ? 5.5 : 4.2)
+            : (reversing ? 9 : isBoosting ? 4.6 : 3.5);
+        planarVelocity.x = THREE.MathUtils.damp(planarVelocity.x, targetVelocity.x, acceleration, delta);
+        planarVelocity.z = THREE.MathUtils.damp(planarVelocity.z, targetVelocity.z, acceleration, delta);
+      } else {
+        const controlsBlocked = mapOpenRef.current || heroSelectOpenRef.current || attractionOpenRef.current;
+        const drag = controlsBlocked || currentVenue || activeRide === "walk" ? 14 : activeRide === "skate" ? 0.9 : 0.65;
+        planarVelocity.x = THREE.MathUtils.damp(planarVelocity.x, 0, drag, delta);
+        planarVelocity.z = THREE.MathUtils.damp(planarVelocity.z, 0, drag, delta);
+      }
+      if (planarVelocity.lengthSq() < 0.0025) planarVelocity.set(0, 0, 0);
+      const hasPlanarMotion = planarVelocity.lengthSq() > 0.0025;
+      hudFrame += 1;
+      if (hudFrame % 6 === 0) setSpeedometer(Math.round(planarVelocity.length() * 3.6));
+
       let grindingThisFrame = false;
       const runningGrind = activeGrind;
       if (runningGrind) {
@@ -2005,6 +2273,7 @@ export default function WorldPage() {
           grindPoint.lerpVectors(runningGrind.rail.start, runningGrind.rail.end, progress);
           player.position.copy(grindPoint);
           grindDirection.subVectors(runningGrind.rail.end, runningGrind.rail.start).multiplyScalar(runningGrind.direction);
+          planarVelocity.copy(grindDirection).normalize().multiplyScalar(runningGrind.speed);
           player.rotation.y = Math.atan2(grindDirection.x, grindDirection.z);
           velocityY = 0;
           grounded = false;
@@ -2020,20 +2289,15 @@ export default function WorldPage() {
       }
 
       const groundBeforeMove = currentVenue ? 0.06 : skateSurfaceAt(player.position.x, player.position.z);
-      if (!grindingThisFrame && isMoving) {
-        const speed = currentVenue
-          ? (isBoosting ? 8.1 : 5.8)
-          : activeRide === "walk"
-            ? (isBoosting ? 9.6 : 6.4)
-            : activeRide === "skate"
-              ? (isBoosting ? 14.5 : 10.5)
-              : (isBoosting ? 16.2 : 12.5);
-        desiredPosition.copy(player.position).addScaledVector(movement, speed * delta);
+      if (!grindingThisFrame && hasPlanarMotion) {
+        desiredPosition.copy(player.position).addScaledVector(planarVelocity, delta);
         if (currentVenue) {
           desiredPosition.x = THREE.MathUtils.clamp(desiredPosition.x, -16.5, 16.5);
-          desiredPosition.z = THREE.MathUtils.clamp(desiredPosition.z, -6.35, 13.5);
-          player.position.x = desiredPosition.x;
-          player.position.z = desiredPosition.z;
+          desiredPosition.z = THREE.MathUtils.clamp(desiredPosition.z, -13.8, 13.5);
+          if (!collidesInterior(desiredPosition.x, player.position.z)) player.position.x = desiredPosition.x;
+          else planarVelocity.x = 0;
+          if (!collidesInterior(player.position.x, desiredPosition.z)) player.position.z = desiredPosition.z;
+          else planarVelocity.z = 0;
         } else {
           desiredPosition.x = THREE.MathUtils.clamp(desiredPosition.x, -WORLD_LIMIT, WORLD_LIMIT);
           desiredPosition.z = THREE.MathUtils.clamp(desiredPosition.z, -WORLD_LIMIT, WORLD_LIMIT);
@@ -2046,9 +2310,11 @@ export default function WorldPage() {
             return nextSurface <= player.position.y + 0.42;
           };
           if (canMoveTo(desiredPosition.x, player.position.z)) player.position.x = desiredPosition.x;
+          else planarVelocity.x = 0;
           if (canMoveTo(player.position.x, desiredPosition.z)) player.position.z = desiredPosition.z;
+          else planarVelocity.z = 0;
         }
-        player.rotation.y = Math.atan2(movement.x, movement.z);
+        if (planarVelocity.lengthSq() > 0.01) player.rotation.y = Math.atan2(planarVelocity.x, planarVelocity.z);
       }
 
       const groundAfterMove = currentVenue ? 0.06 : skateSurfaceAt(player.position.x, player.position.z);
@@ -2059,11 +2325,13 @@ export default function WorldPage() {
         lastSurfaceRise = THREE.MathUtils.damp(lastSurfaceRise, 0, 4.5, delta);
       }
 
-      if (!grindingThisFrame && !activeGrind && grindCooldown <= 0 && !currentVenue && activeRide === "skate" && isMoving) {
+      if (!grindingThisFrame && !activeGrind && grindCooldown <= 0 && !currentVenue && activeRide === "skate" && hasPlanarMotion) {
         const candidate = closestGrindRail();
         if (candidate) {
           grindDirection.subVectors(candidate.rail.end, candidate.rail.start).normalize();
-          const direction: 1 | -1 = movement.dot(grindDirection) >= 0 ? 1 : -1;
+          grindTravelDirection.copy(movement);
+          if (grindTravelDirection.lengthSq() < 0.001) grindTravelDirection.copy(planarVelocity).normalize();
+          const direction: 1 | -1 = grindTravelDirection.dot(grindDirection) >= 0 ? 1 : -1;
           activeGrind = {
             rail: candidate.rail,
             progress: candidate.progress,
@@ -2113,12 +2381,12 @@ export default function WorldPage() {
 
       if (mapOpenRef.current || rideModeRef.current !== "walk") playCharacterAction("idle");
       else if (!grounded) playCharacterAction(velocityY > 0.35 ? "jump" : "fall");
-      else if (isMoving) playCharacterAction(isBoosting ? "run" : "walk");
+      else if (hasPlanarMotion) playCharacterAction(isBoosting ? "run" : "walk");
       else playCharacterAction("idle");
 
       if (gorillaRig && characterModel) {
         const elapsed = elapsedTime;
-        const walking = rideModeRef.current === "walk" && isMoving;
+        const walking = rideModeRef.current === "walk" && hasPlanarMotion;
         const stridePhase = elapsed * (isBoosting ? 10.5 : 7.2);
         const stride = walking && grounded ? Math.sin(stridePhase) : 0;
         const riding = rideModeRef.current !== "walk";
@@ -2283,102 +2551,55 @@ export default function WorldPage() {
             <aside className={styles.heroPanel}>
               <div className={styles.heroPanelIntro}>
                 <small>67VERSE / CHARACTER STUDIO</small>
-                <strong>BUILD YOUR LOOK</strong>
-                <p>Choose a body and outfit preset, then layer original hats, glasses and back items.</p>
+                <strong>ONE STAGE. YOUR LOOK.</strong>
+                <p>Pick a part below, then use the left and right arrows. Every change appears live on the same character.</p>
               </div>
-              <section className={styles.customizerSection}>
-                <header><span>01</span><strong>BODY &amp; OUTFIT</strong><small>{HEROES.length} UNLOCKED</small></header>
-                <div className={styles.bodyOptions} aria-label="Available body and outfit presets">
-                {HEROES.map((hero) => (
+              <div className={styles.studioTutorial}>
+                <b>HOW TO BUILD</b>
+                <span><i>1</i>CHOOSE A PART</span>
+                <span><i>2</i>PRESS AN ARROW</span>
+                <span><i>3</i>SAVE YOUR LOOK</span>
+              </div>
+              <nav className={styles.studioTabs} aria-label="Character parts">
+                {STUDIO_SLOTS.map((slot) => (
                   <button
                     type="button"
-                    key={hero.id}
-                    className={heroChoice === hero.id ? styles.bodyOptionSelected : ""}
-                    style={{ "--choice-accent": hero.accent } as CSSProperties}
-                    onClick={() => setHeroChoice(hero.id)}
-                    aria-pressed={heroChoice === hero.id}
+                    key={slot.id}
+                    className={studioSlot === slot.id ? styles.studioTabSelected : ""}
+                    onClick={() => setStudioSlot(slot.id)}
+                    aria-pressed={studioSlot === slot.id}
                   >
-                    <i>{hero.id === "gorilla" ? "G" : hero.name.replace("NO. ", "")}</i>
-                    <span><small>{hero.role}</small><strong>{hero.name}</strong></span>
+                    <small>{slot.step}</small><strong>{slot.label}</strong>
                   </button>
                 ))}
+              </nav>
+              <section className={styles.studioCarousel} style={{ "--item-color": studioSelection.color } as CSSProperties}>
+                <button type="button" onClick={() => cycleStudioSelection(-1)} aria-label={`Previous ${studioSlot}`}>
+                  <CaretLeft size={27} weight="bold" />
+                </button>
+                <div className={styles.studioCurrent}>
+                  <small>{studioSelection.detail}</small>
+                  <strong>{studioSelection.name}</strong>
+                  <span><i /> LIVE ON CHARACTER</span>
                 </div>
+                <button type="button" onClick={() => cycleStudioSelection(1)} aria-label={`Next ${studioSlot}`}>
+                  <CaretRight size={27} weight="bold" />
+                </button>
               </section>
-              <section className={styles.customizerSection}>
-                <header><span>02</span><strong>OUTFIT TONE</strong><small>LIVE COLOR</small></header>
-                <div className={styles.swatchRow} aria-label="Outfit color tone">
-                  {BODY_COLORS.map((color) => (
-                    <button
-                      type="button"
-                      key={color}
-                      style={{ "--swatch": color } as CSSProperties}
-                      className={draftLook.bodyColor === color ? styles.swatchSelected : ""}
-                      onClick={() => setDraftLook((look) => ({ ...look, bodyColor: color }))}
-                      aria-label={`Use ${color} outfit tone`}
-                      aria-pressed={draftLook.bodyColor === color}
-                    />
-                  ))}
-                </div>
-              </section>
-              <section className={styles.customizerSection}>
-                <header><span>03</span><strong>HEADWEAR</strong><small>MODULAR</small></header>
-                <div className={styles.wardrobeGrid} aria-label="Headwear">
-                  {WARDROBE.hats.map((item) => (
-                    <button
-                      type="button"
-                      key={item.id ?? "no-hat"}
-                      className={draftLook.hat === item.id ? styles.wardrobeOptionSelected : ""}
-                      onClick={() => setDraftLook((look) => ({ ...look, hat: item.id }))}
-                      aria-pressed={draftLook.hat === item.id}
-                    >
-                      <i style={{ "--item-color": item.color } as CSSProperties} />
-                      <span>{item.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </section>
-              <section className={styles.customizerSection}>
-                <header><span>04</span><strong>EYEWEAR</strong><small>MODULAR</small></header>
-                <div className={styles.wardrobeGrid} aria-label="Eyewear">
-                  {WARDROBE.glasses.map((item) => (
-                    <button
-                      type="button"
-                      key={item.id ?? "no-glasses"}
-                      className={draftLook.glasses === item.id ? styles.wardrobeOptionSelected : ""}
-                      onClick={() => setDraftLook((look) => ({ ...look, glasses: item.id }))}
-                      aria-pressed={draftLook.glasses === item.id}
-                    >
-                      <i style={{ "--item-color": item.color } as CSSProperties} />
-                      <span>{item.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </section>
-              <section className={styles.customizerSection}>
-                <header><span>05</span><strong>BACK ITEM</strong><small>MODULAR</small></header>
-                <div className={styles.wardrobeGrid} aria-label="Back items">
-                  {WARDROBE.backpacks.map((item) => (
-                    <button
-                      type="button"
-                      key={item.id ?? "no-back-item"}
-                      className={draftLook.backpack === item.id ? styles.wardrobeOptionSelected : ""}
-                      onClick={() => setDraftLook((look) => ({ ...look, backpack: item.id }))}
-                      aria-pressed={draftLook.backpack === item.id}
-                    >
-                      <i style={{ "--item-color": item.color } as CSSProperties} />
-                      <span>{item.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </section>
-              <div className={styles.wardrobeSummary}>
-                <span><b>{chosenHero.name}</b>{chosenHero.description}</span>
-                <strong>{[draftLook.hat, draftLook.glasses, draftLook.backpack].filter(Boolean).length}/3 ITEMS</strong>
+              <div className={styles.studioProgress} aria-label={`${studioSelection.index + 1} of ${studioSelection.total}`}>
+                {Array.from({ length: studioSelection.total }, (_, index) => (
+                  <i key={index} className={index === studioSelection.index ? styles.studioProgressActive : ""} />
+                ))}
+                <strong>{String(studioSelection.index + 1).padStart(2, "0")} / {String(studioSelection.total).padStart(2, "0")}</strong>
+              </div>
+              <div className={styles.studioLookSummary}>
+                <span><small>ACTIVE CHARACTER</small><strong>{chosenHero.name}</strong></span>
+                <span><small>WARDROBE</small><strong>{[draftLook.hat, draftLook.glasses, draftLook.backpack].filter(Boolean).length} ITEMS</strong></span>
               </div>
               <button type="button" className={styles.enterWorld} onClick={confirmHero}>
                 <span>SAVE LOOK &amp; ENTER</span><strong>{chosenHero.name}</strong><NavigationArrow size={18} weight="fill" />
               </button>
-              <small className={styles.heroHint}>EVERY PART CAN BE CHANGED LATER</small>
+              <small className={styles.heroHint}>USE THE CHARACTER BUTTON TO RETURN TO THIS STAGE</small>
             </aside>
           </div>
         </section>
@@ -2404,6 +2625,7 @@ export default function WorldPage() {
       {!mapOpen && !heroSelectOpen && !attractionOpen && <aside className={styles.modeCard}>
         {rideMode === "bike" ? <Bicycle size={22} weight="bold" /> : <PersonSimpleRun size={22} weight="bold" />}
         <span><small>MOVEMENT</small><strong>{rideLabel}</strong></span>
+        {rideMode !== "walk" && <em><b>{speedometer}</b><small>KM/H</small></em>}
       </aside>}
 
       {nearbyAttraction && !mapOpen && !heroSelectOpen && !attractionOpen && !activeVenue && (
@@ -2439,7 +2661,7 @@ export default function WorldPage() {
           {activeVenue
             ? "WASD TO WALK · E AT COUNTER OR EXIT · ESC TO CLOSE"
             : rideMode === "skate"
-              ? "WASD TO RIDE · SHIFT TO BOOST · SPACE TO OLLIE · ALIGN WITH A RAIL TO GRIND · E TO CHANGE RIDE"
+              ? "WASD TO RIDE · SHIFT TO BOOST · RELEASE TO GLIDE · SPACE TO OLLIE · ALIGN WITH A RAIL TO GRIND · E TO CHANGE RIDE"
               : "WASD TO MOVE · DRAG TO ROTATE · SPACE TO JUMP · E TO CHANGE RIDE"}
         </div>
       )}
