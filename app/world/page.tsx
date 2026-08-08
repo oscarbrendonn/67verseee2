@@ -972,16 +972,28 @@ function buildBackItem(id: BackpackId) {
 }
 
 function applyCharacterLook(model: THREE.Object3D, heroId: HeroId, look: CharacterLook) {
+  if (heroId === "gorilla") {
+    // These are authored props inside gorilla.glb, not part of the wardrobe.
+    // Keep the clean Gorilla body and let the player add cosmetics deliberately.
+    ["TAC", "CICEK"].forEach((name) => {
+      const prop = model.getObjectByName(name);
+      if (prop) prop.visible = false;
+    });
+  }
   const tint = new THREE.Color(look.bodyColor);
   const hasTint = look.bodyColor.toLowerCase() !== "#ffffff";
   const preparedMaterials = new Set<THREE.Material>();
   model.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
+    if (!(object instanceof THREE.Mesh) || !object.visible) return;
     const tintMaterial = (entry: THREE.Material) => {
       if (preparedMaterials.has(entry)) return entry;
       preparedMaterials.add(entry);
       if (hasTint && "color" in entry && entry.color instanceof THREE.Color) {
         entry.color.lerp(tint, 0.24);
+      }
+      if (heroId === "gorilla" && (object.name === "GORIL_KAFA" || object.name === "FS_Body")) {
+        if ("roughness" in entry && typeof entry.roughness === "number") entry.roughness = Math.max(entry.roughness, 0.76);
+        if ("metalness" in entry && typeof entry.metalness === "number") entry.metalness = 0;
       }
       entry.needsUpdate = true;
       return entry;
@@ -1003,7 +1015,7 @@ function applyCharacterLook(model: THREE.Object3D, heroId: HeroId, look: Charact
   const bodyBounds = new THREE.Box3().makeEmpty();
   const point = new THREE.Vector3();
   model.traverse((object) => {
-    if (!(object instanceof THREE.Mesh)) return;
+    if (!(object instanceof THREE.Mesh) || !object.visible) return;
     const position = object.geometry?.attributes?.position;
     if (!position) return;
     const step = Math.max(1, Math.ceil(position.count / 3200));
@@ -1104,7 +1116,7 @@ function CharacterStudio({ hero, look }: { hero: HeroDefinition; look: Character
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.7));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.04;
+    renderer.toneMappingExposure = 0.78;
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mount.appendChild(renderer.domElement);
@@ -1112,25 +1124,26 @@ function CharacterStudio({ hero, look }: { hero: HeroDefinition; look: Character
     const pmrem = new THREE.PMREMGenerator(renderer);
     const environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture;
     scene.environment = environment;
-    const key = new THREE.DirectionalLight("#fff1dc", 2.5);
+    scene.environmentIntensity = 0.52;
+    const key = new THREE.DirectionalLight("#f7dfc6", 1.28);
     key.position.set(3.2, 5.4, 4.2);
     key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
     scene.add(key);
-    const rim = new THREE.DirectionalLight(hero.accent, 1.75);
+    const rim = new THREE.DirectionalLight(hero.accent, 0.58);
     rim.position.set(-3.4, 3.1, -2.8);
-    scene.add(rim, new THREE.HemisphereLight("#f5fbff", "#203039", 1.1));
+    scene.add(rim, new THREE.HemisphereLight("#dce9ec", "#111a20", 0.46));
 
     const pedestal = new THREE.Mesh(
       new THREE.CylinderGeometry(1.32, 1.48, 0.24, 48),
-      new THREE.MeshStandardMaterial({ color: "#dfe8e8", metalness: 0.14, roughness: 0.36 }),
+      new THREE.MeshStandardMaterial({ color: "#b9c8c8", metalness: 0.08, roughness: 0.56 }),
     );
     pedestal.position.y = 0.03;
     pedestal.receiveShadow = true;
     scene.add(pedestal);
     const ring = new THREE.Mesh(
       new THREE.TorusGeometry(1.12, 0.025, 8, 64),
-      new THREE.MeshBasicMaterial({ color: hero.accent, transparent: true, opacity: 0.8 }),
+      new THREE.MeshBasicMaterial({ color: hero.accent, transparent: true, opacity: 0.52 }),
     );
     ring.rotation.x = Math.PI / 2;
     ring.position.y = 0.165;
