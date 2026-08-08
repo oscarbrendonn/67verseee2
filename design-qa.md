@@ -1,3 +1,44 @@
+# 67VERSE World — Gorilla Hero & Mobile UI QA v3
+
+## Comparison target
+
+- Selected soft-model visual truth: `outputs/67verse-master-map-reference-layout-v1.png` at 1254 × 1254.
+- Browser-rendered live Three.js implementation: `outputs/world-map-live-v3-1254.png` at the same 1254 × 1254 viewport.
+- Same-input side-by-side comparison: `outputs/world-map-reference-vs-live-v3.png`.
+- Mobile map capture: `outputs/world-map-mobile-v3.png` at 390 × 844.
+- Mobile entry/hero-selection capture: `outputs/world-hero-select-mobile-v3.png` at 390 × 844.
+- User-reported prior mobile state: `/tmp/codex-remote-attachments/019fbafb-ac9c-7883-b039-7e39958a743b/A9B93680-0EF8-4E69-A4C7-FA7CD9708B20/1-Fotoğraf-1.jpg`.
+
+## Findings and iteration
+
+- The road flashing was traced to full-length horizontal and vertical road/sidewalk meshes occupying the same depth at every junction. Vertical streets and sidewalks are now split at all intersections, leaving one authoritative surface at each junction.
+- Two 390 × 844 static map frames captured 650 ms apart produced `0 / 329,160` changed pixels. This provides direct evidence that the previous road z-fighting is no longer visible in the tested map state.
+- The mobile district UI no longer places long horizontal label pills on the same row. Each marker now uses a centered icon-and-label stack with a constrained width; all ten targets remain visible, distinct, and tappable.
+- The live city received a stronger soft-model palette, less washed-out lighting, colored roofs, roof equipment, skylights, clearer roads, stronger park contours, and richer water/land separation. It remains real Three.js geometry rather than a raster map.
+- The remaining difference from the offline reference is P3 authored-asset density: the reference contains texture-painted façades, dense foliage, and offline-rendered micro-detail. The realtime version intentionally uses lightweight soft geometry and web-safe materials while preserving the district layout and visual hierarchy.
+- No actionable P0, P1, or P2 issue remains for the requested road stability, mobile map usability, Gorilla gameplay character, or hero-selection flow.
+
+## Hero selection and character checks
+
+- A full-screen English entry scene now opens before gameplay with clear `67VERSE`, online state, selected class, character portrait, stats, and a single `ENTER 67VERSE` action.
+- Gorilla 67 is the new-player default. Its actual GLB is loaded into the playable scene, not used only as a portrait.
+- İrem is independently selectable from the same entry scene. Returning to the hero control, choosing İrem, and entering the world replaced the live GLB successfully.
+- The selected hero is stored locally and the selector remains available from the persistent hero button.
+- Gorilla forward movement was held and captured while the character faced the direction of travel; the manual arm/leg/body rig animated during movement.
+- Gorilla jump was captured in the air with an intact model and separated ground shadow; no body split, disappearing half, or sideways snap occurred.
+- World-map travel to `Master Skatepark` completed successfully with Gorilla still active.
+
+## Technical verification
+
+- Production build completes and includes `/world`.
+- Browser console errors: `0`.
+- The final implementation uses no deprecated Three.js clock or soft-shadow mode in this route.
+- The existing interiors, inventory, ride switching, district teleport controls, and classic lobby route remain in place.
+
+final result: passed
+
+---
+
 **Comparison Target**
 
 - Source visual truth: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/outputs/67verse-online-skatepark-master-v4.png`

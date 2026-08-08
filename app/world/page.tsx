@@ -19,6 +19,7 @@ import { Package } from "@phosphor-icons/react/Package";
 import { PersonSimpleRun } from "@phosphor-icons/react/PersonSimpleRun";
 import { ShoppingBag } from "@phosphor-icons/react/ShoppingBag";
 import { Ticket } from "@phosphor-icons/react/Ticket";
+import { UserCircle } from "@phosphor-icons/react/UserCircle";
 import { Wallet } from "@phosphor-icons/react/Wallet";
 import { X } from "@phosphor-icons/react/X";
 import * as THREE from "three";
@@ -28,6 +29,7 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import styles from "./world.module.css";
 
 type RideMode = "walk" | "skate" | "bike";
+type HeroId = "gorilla" | "irem";
 type VenueKind = "skate" | "cafe" | "market" | "fashion" | "arcade" | "club";
 type CheckoutProvider = "google-play" | "web3";
 
@@ -67,6 +69,54 @@ type OwnedItem = StoreItem & {
 };
 
 type Collider = { minX: number; maxX: number; minZ: number; maxZ: number };
+
+type HeroDefinition = {
+  id: HeroId;
+  name: string;
+  role: string;
+  tagline: string;
+  description: string;
+  model: string;
+  portrait: string;
+  accent: string;
+  height: number;
+  stats: Array<{ label: string; value: number }>;
+};
+
+const HEROES: HeroDefinition[] = [
+  {
+    id: "gorilla",
+    name: "GORILLA 67",
+    role: "POWER CLASS",
+    tagline: "Heavy power. City control.",
+    description: "A powerful city rider built for confident movement, hard landings and unmistakable presence.",
+    model: "/models/characters/gorilla-67.glb",
+    portrait: "/gorilla-67-portrait.png",
+    accent: "#45bbc2",
+    height: 3.7,
+    stats: [
+      { label: "POWER", value: 94 },
+      { label: "FLOW", value: 72 },
+      { label: "CONTROL", value: 86 },
+    ],
+  },
+  {
+    id: "irem",
+    name: "İREM",
+    role: "FLOW CLASS",
+    tagline: "Fast lines. Clean movement.",
+    description: "A precise all-round hero with quick reactions, clean lines and lightweight city movement.",
+    model: "/models/sixseven-superhero-hero-v6.glb",
+    portrait: "/irem-67-portrait.png",
+    accent: "#ef735f",
+    height: 3.15,
+    stats: [
+      { label: "POWER", value: 68 },
+      { label: "FLOW", value: 96 },
+      { label: "CONTROL", value: 90 },
+    ],
+  },
+];
 
 const STORE_ITEMS: Record<VenueKind, StoreItem[]> = {
   skate: [
@@ -125,6 +175,20 @@ const DISTRICTS: District[] = [
 
 const ROAD_X = [-96, -36, 36, 96];
 const ROAD_Z = [-106, -45, 22, 82];
+const VERTICAL_ROAD_SEGMENTS: Array<[number, number]> = [
+  [-135, -111],
+  [-101, -50],
+  [-40, 17],
+  [27, 77],
+  [87, 135],
+];
+const VERTICAL_SIDEWALK_SEGMENTS: Array<[number, number]> = [
+  [-135, -113.5],
+  [-98.5, -52.5],
+  [-37.5, 14.5],
+  [29.5, 74.5],
+  [89.5, 135],
+];
 const WORLD_LIMIT = 134;
 
 function material(color: string, roughness = 0.82, metalness = 0.02) {
@@ -145,7 +209,7 @@ function addTree(parent: THREE.Group, x: number, z: number, scale = 1) {
   const tree = new THREE.Group();
   const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.16 * scale, 0.24 * scale, 1.8 * scale, 10), material("#776254", 0.96));
   trunk.position.y = 0.9 * scale;
-  const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(1.12 * scale, 2), material("#6f8d65", 0.95));
+  const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(1.12 * scale, 2), material("#5f865a", 0.95));
   crown.position.y = 2.35 * scale;
   crown.scale.set(1.05, 1.1, 0.98);
   trunk.castShadow = true;
@@ -169,9 +233,16 @@ function addBuilding(
   const group = new THREE.Group();
   const body = roundedBox([width, height, depth], color, 0.45);
   body.position.y = height / 2;
-  const roof = roundedBox([width * 0.88, 0.36, depth * 0.84], accent, 0.18);
+  const roofColor = accent === "#e7dfd3"
+    ? `#${new THREE.Color(color).lerp(new THREE.Color("#f0e4d7"), 0.27).getHexString()}`
+    : accent;
+  const roof = roundedBox([width * 0.88, 0.36, depth * 0.84], roofColor, 0.18);
   roof.position.y = height + 0.18;
-  group.add(body, roof);
+  const rooftopUnit = roundedBox([Math.min(2.4, width * 0.24), 0.48, Math.min(2, depth * 0.28)], "#71858a", 0.14);
+  rooftopUnit.position.set(width * 0.16, height + 0.6, -depth * 0.12);
+  const skylight = roundedBox([Math.min(1.5, width * 0.15), 0.2, Math.min(1.3, depth * 0.18)], "#8fb7bf", 0.12);
+  skylight.position.set(-width * 0.2, height + 0.46, depth * 0.14);
+  group.add(body, roof, rooftopUnit, skylight);
 
   const windowMaterial = material("#90aeb6", 0.3, 0.08);
   const floors = Math.min(3, Math.max(1, Math.floor(height / 2.5)));
@@ -190,7 +261,7 @@ function addBuilding(
 }
 
 function addRoad(parent: THREE.Group, x: number, z: number, width: number, depth: number) {
-  const road = roundedBox([width, 0.14, depth], "#8d9294", 0.42);
+  const road = roundedBox([width, 0.14, depth], "#667174", 0.42);
   road.position.set(x, 0.04, z);
   parent.add(road);
 
@@ -453,8 +524,14 @@ export default function WorldPage() {
   const exitVenueRef = useRef<() => void>(() => undefined);
   const mapOpenRef = useRef(false);
   const teleportRef = useRef<(district: District) => void>(() => undefined);
+  const selectedHeroRef = useRef<HeroId>("gorilla");
+  const heroSelectOpenRef = useRef(true);
+  const applyHeroRef = useRef<(heroId: HeroId) => void>(() => undefined);
 
   const [loaded, setLoaded] = useState(false);
+  const [selectedHero, setSelectedHero] = useState<HeroId>("gorilla");
+  const [heroChoice, setHeroChoice] = useState<HeroId>("gorilla");
+  const [heroSelectOpen, setHeroSelectOpen] = useState(true);
   const [rideMode, setRideMode] = useState<RideMode>("walk");
   const [mapOpen, setMapOpen] = useState(false);
   const [inventoryOpen, setInventoryOpen] = useState(false);
@@ -470,6 +547,9 @@ export default function WorldPage() {
   const [inventory, setInventory] = useState<OwnedItem[]>([]);
   const [currentDistrict, setCurrentDistrict] = useState("67 Central");
   const [toast, setToast] = useState("Welcome to the new 67VERSE world.");
+
+  const chosenHero = HEROES.find((hero) => hero.id === heroChoice) ?? HEROES[0];
+  const activeHero = HEROES.find((hero) => hero.id === selectedHero) ?? HEROES[0];
 
   const rideLabel = rideMode === "walk" ? "WALK" : rideMode === "skate" ? "SKATE" : "BIKE";
   const currentPrompt = activeVenue
@@ -535,6 +615,35 @@ export default function WorldPage() {
     setMapOpen(false);
   }, []);
 
+  const openHeroSelector = useCallback(() => {
+    mapOpenRef.current = false;
+    heroSelectOpenRef.current = true;
+    touchInputRef.current = { x: 0, z: 0 };
+    setMapOpen(false);
+    setInventoryOpen(false);
+    setShopOpen(false);
+    setCheckoutItem(null);
+    setHeroChoice(selectedHeroRef.current);
+    setHeroSelectOpen(true);
+  }, []);
+
+  const confirmHero = useCallback(() => {
+    selectedHeroRef.current = heroChoice;
+    heroSelectOpenRef.current = false;
+    touchInputRef.current = { x: 0, z: 0 };
+    setSelectedHero(heroChoice);
+    setHeroSelectOpen(false);
+    setLoaded(false);
+    applyHeroRef.current(heroChoice);
+    try {
+      window.localStorage.setItem("67verse-selected-hero", heroChoice);
+    } catch {
+      // Character persistence is optional in private browser sessions.
+    }
+    const hero = HEROES.find((entry) => entry.id === heroChoice) ?? HEROES[0];
+    setToast(`${hero.name} ready. Welcome to 67VERSE.`);
+  }, [heroChoice]);
+
   const travelToDistrict = useCallback((district: District) => {
     teleportRef.current(district);
     mapOpenRef.current = false;
@@ -548,11 +657,29 @@ export default function WorldPage() {
   }, [mapOpen]);
 
   useEffect(() => {
+    heroSelectOpenRef.current = heroSelectOpen;
+    if (heroSelectOpen) touchInputRef.current = { x: 0, z: 0 };
+  }, [heroSelectOpen]);
+
+  useEffect(() => {
+    try {
+      const storedHero = window.localStorage.getItem("67verse-selected-hero");
+      if (storedHero === "gorilla" || storedHero === "irem") {
+        selectedHeroRef.current = storedHero;
+        setSelectedHero(storedHero);
+        setHeroChoice(storedHero);
+      }
+    } catch {
+      // Gorilla remains the safe default.
+    }
+  }, []);
+
+  useEffect(() => {
     if (!mountRef.current) return;
     const mount = mountRef.current;
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#b9d9e5");
-    scene.fog = new THREE.Fog("#b9d9e5", 135, 310);
+    scene.background = new THREE.Color("#83bed0");
+    scene.fog = new THREE.Fog("#83bed0", 145, 315);
 
     const camera = new THREE.PerspectiveCamera(52, mount.clientWidth / mount.clientHeight, 0.1, 800);
     const overviewCamera = new THREE.OrthographicCamera(-152.5, 152.5, 152.5, -152.5, 0.1, 800);
@@ -579,18 +706,18 @@ export default function WorldPage() {
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.88;
+    renderer.toneMappingExposure = 0.91;
     mount.appendChild(renderer.domElement);
 
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture;
 
-    const hemisphere = new THREE.HemisphereLight("#dff2f7", "#756c60", 1.25);
+    const hemisphere = new THREE.HemisphereLight("#e9f6f8", "#665d54", 0.88);
     scene.add(hemisphere);
-    const sun = new THREE.DirectionalLight("#fff0d8", 2.15);
+    const sun = new THREE.DirectionalLight("#fff0d8", 1.78);
     sun.position.set(-74, 130, 58);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -604,17 +731,21 @@ export default function WorldPage() {
     const colliders: Collider[] = [];
     scene.add(worldRoot);
 
-    const water = roundedBox([360, 0.7, 360], "#75b9ca", 7);
+    const water = roundedBox([360, 0.7, 360], "#3f94b0", 7);
     water.position.y = -1.35;
     worldRoot.add(water);
-    const island = roundedBox([278, 1.5, 278], "#b8c49e", 10);
+    const island = roundedBox([278, 1.5, 278], "#9db27c", 10);
     island.position.y = -0.78;
     worldRoot.add(island);
 
     ROAD_Z.forEach((z) => addRoad(worldRoot, 0, z, 270, 10));
-    ROAD_X.forEach((x) => addRoad(worldRoot, x, 0, 10, 270));
+    // Vertical streets stop at each junction so no coplanar road meshes overlap.
+    // This removes the visible z-fighting/road flashing on mobile GPUs.
+    ROAD_X.forEach((x) => {
+      VERTICAL_ROAD_SEGMENTS.forEach(([from, to]) => addRoad(worldRoot, x, (from + to) / 2, 10, to - from));
+    });
 
-    const sidewalkColor = "#d8d2c7";
+    const sidewalkColor = "#c7bcad";
     ROAD_Z.forEach((z) => {
       const north = roundedBox([270, 0.14, 2.4], sidewalkColor, 0.3);
       north.position.set(0, 0.12, z - 6.3);
@@ -623,11 +754,13 @@ export default function WorldPage() {
       worldRoot.add(north, south);
     });
     ROAD_X.forEach((x) => {
-      const west = roundedBox([2.4, 0.14, 270], sidewalkColor, 0.3);
-      west.position.set(x - 6.3, 0.12, 0);
-      const east = west.clone();
-      east.position.x = x + 6.3;
-      worldRoot.add(west, east);
+      VERTICAL_SIDEWALK_SEGMENTS.forEach(([from, to]) => {
+        const west = roundedBox([2.4, 0.14, to - from], sidewalkColor, 0.3);
+        west.position.set(x - 6.3, 0.12, (from + to) / 2);
+        const east = west.clone();
+        east.position.x = x + 6.3;
+        worldRoot.add(west, east);
+      });
     });
 
     // The city is built from the approved bird's-eye plan. The map screen renders
@@ -654,10 +787,10 @@ export default function WorldPage() {
     worldRoot.add(trackInner);
 
     // Large playable master skatepark and its recognizable soft concrete bowls.
-    const skateBase = roundedBox([58, 0.55, 47], "#d7c9bb", 2.4);
+    const skateBase = roundedBox([58, 0.55, 47], "#cdb6a4", 2.4);
     skateBase.position.set(0, 0.23, -75);
     worldRoot.add(skateBase);
-    const bowlMaterial = material("#b9aaa0", 0.95);
+    const bowlMaterial = material("#b8847a", 0.95);
     [[-14, -78, 7], [11, -69, 8], [7, -90, 5], [-13, -91, 4]].forEach(([x, z, radius]) => {
       const bowl = new THREE.Mesh(new THREE.TorusGeometry(radius, 1.15, 12, 40), bowlMaterial);
       bowl.rotation.x = Math.PI / 2;
@@ -729,7 +862,7 @@ export default function WorldPage() {
     worldRoot.add(pool);
 
     // Old town, central skyline and the southern market blocks.
-    const palettes = ["#d0afa1", "#aebead", "#caa4a1", "#aab9c1", "#d1c39d", "#b7a79b"];
+    const palettes = ["#bf9184", "#91aa93", "#b88b90", "#8ea6b1", "#bfa970", "#a18b80"];
     const blockBuildings: Array<[number, number, number, number, number]> = [
       [-80, -31, 13, 10, 7], [-79, -16, 13, 11, 6], [-80, 5, 14, 12, 8], [-48, 8, 11, 12, 7],
       [-21, -17, 11, 11, 15], [0, -20, 12, 10, 19], [21, -17, 11, 11, 14], [-22, 4, 11, 11, 12], [22, 4, 11, 11, 13],
@@ -818,9 +951,20 @@ export default function WorldPage() {
     bike.visible = false;
     player.add(bike);
     let characterModel: THREE.Object3D | null = null;
+    let characterBaseY = 0;
+    let characterRideOffset = 0;
+    let characterLoadToken = 0;
     let mixer: THREE.AnimationMixer | null = null;
     const characterActions = new Map<string, THREE.AnimationAction>();
     let currentCharacterAction: THREE.AnimationAction | null = null;
+    let gorillaRig: {
+      body: THREE.Object3D | null;
+      head: THREE.Object3D | null;
+      armL: THREE.Object3D | null;
+      armR: THREE.Object3D | null;
+      legL: THREE.Object3D | null;
+      legR: THREE.Object3D | null;
+    } | null = null;
     const playCharacterAction = (name: string) => {
       const nextAction = characterActions.get(name) ?? characterActions.get("idle");
       if (!nextAction || nextAction === currentCharacterAction) return;
@@ -828,30 +972,70 @@ export default function WorldPage() {
       nextAction.reset().fadeIn(0.14).play();
       currentCharacterAction = nextAction;
     };
-    loader.load("/models/sixseven-superhero-hero-v6.glb", (gltf) => {
-      const model = gltf.scene;
-      const bounds = new THREE.Box3().setFromObject(model);
-      const size = bounds.getSize(new THREE.Vector3());
-      model.scale.setScalar(3.15 / Math.max(size.y, 1));
-      const corrected = new THREE.Box3().setFromObject(model);
-      model.position.y = -corrected.min.y;
-      // The asset's native forward axis already matches the player group.
-      model.rotation.y = 0;
-      model.traverse((object) => {
-        if (object instanceof THREE.Mesh) {
-          object.castShadow = true;
-          object.receiveShadow = true;
+    const loadCharacter = (heroId: HeroId) => {
+      const hero = HEROES.find((entry) => entry.id === heroId) ?? HEROES[0];
+      const loadToken = ++characterLoadToken;
+      loader.load(hero.model, (gltf) => {
+        if (loadToken !== characterLoadToken) return;
+        const model = gltf.scene;
+        const bounds = new THREE.Box3().setFromObject(model);
+        const size = bounds.getSize(new THREE.Vector3());
+        model.scale.setScalar(hero.height / Math.max(size.y, 1));
+        const corrected = new THREE.Box3().setFromObject(model);
+        characterBaseY = -corrected.min.y;
+        characterRideOffset = rideModeRef.current === "skate" ? 0.25 : rideModeRef.current === "bike" ? 0.78 : 0;
+        model.position.y = characterBaseY + characterRideOffset;
+        model.rotation.y = 0;
+        model.traverse((object) => {
+          if (object instanceof THREE.Mesh) {
+            object.castShadow = true;
+            object.receiveShadow = true;
+          }
+        });
+
+        const oldModel = characterModel;
+        mixer?.stopAllAction();
+        mixer = null;
+        characterActions.clear();
+        currentCharacterAction = null;
+        gorillaRig = null;
+        characterModel = model;
+        player.add(model);
+        if (oldModel) {
+          player.remove(oldModel);
+          oldModel.traverse((object) => {
+            if (object instanceof THREE.Mesh) {
+              object.geometry.dispose();
+              if (Array.isArray(object.material)) object.material.forEach((entry) => entry.dispose());
+              else object.material.dispose();
+            }
+          });
+        }
+
+        if (heroId === "gorilla") {
+          gorillaRig = {
+            body: model.getObjectByName("GorillaBody") ?? null,
+            head: model.getObjectByName("GorillaHeadRig") ?? null,
+            armL: model.getObjectByName("GorillaArmL") ?? null,
+            armR: model.getObjectByName("GorillaArmR") ?? null,
+            legL: model.getObjectByName("GorillaLegL") ?? null,
+            legR: model.getObjectByName("GorillaLegR") ?? null,
+          };
+        } else if (gltf.animations.length) {
+          mixer = new THREE.AnimationMixer(model);
+          gltf.animations.forEach((clip) => characterActions.set(clip.name.toLowerCase(), mixer!.clipAction(clip)));
+          playCharacterAction("idle");
+        }
+        setLoaded(true);
+      }, undefined, () => {
+        if (loadToken === characterLoadToken) {
+          setLoaded(true);
+          setToast(`Could not load ${hero.name}. Try another hero.`);
         }
       });
-      player.add(model);
-      characterModel = model;
-      if (gltf.animations.length) {
-        mixer = new THREE.AnimationMixer(model);
-        gltf.animations.forEach((clip) => characterActions.set(clip.name.toLowerCase(), mixer!.clipAction(clip)));
-        playCharacterAction("idle");
-      }
-      setLoaded(true);
-    }, undefined, () => setLoaded(true));
+    };
+    applyHeroRef.current = loadCharacter;
+    loadCharacter(selectedHeroRef.current);
 
     let interiorRoot: THREE.Group | null = null;
     const returnPosition = new THREE.Vector3();
@@ -868,6 +1052,8 @@ export default function WorldPage() {
       bike.visible = false;
       setRideMode("walk");
       rideModeRef.current = "walk";
+      characterRideOffset = 0;
+      if (characterModel) characterModel.position.y = characterBaseY;
       setNearbyVenue(null);
       setActiveVenue(venue);
       setToast(`Entered ${venue.name}. Walk to the counter to browse.`);
@@ -900,6 +1086,7 @@ export default function WorldPage() {
     const keys = new Set<string>();
     const onKeyDown = (event: KeyboardEvent) => {
       if (["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
+      if (heroSelectOpenRef.current) return;
       keys.add(event.code);
       if (!event.repeat && (event.code === "KeyE" || event.code === "Enter")) interactRef.current = true;
       if (!event.repeat && event.code === "Space") jumpRef.current = true;
@@ -927,7 +1114,7 @@ export default function WorldPage() {
     let dragging = false;
     let pointerX = 0;
     const onPointerDown = (event: PointerEvent) => {
-      if (event.button !== 0 || mapOpenRef.current) return;
+      if (event.button !== 0 || mapOpenRef.current || heroSelectOpenRef.current) return;
       dragging = true;
       pointerX = event.clientX;
       renderer.domElement.setPointerCapture(event.pointerId);
@@ -952,7 +1139,8 @@ export default function WorldPage() {
     const right = new THREE.Vector3();
     const movement = new THREE.Vector3();
     const desiredPosition = new THREE.Vector3();
-    const clock = new THREE.Clock();
+    let previousFrameTime = performance.now();
+    let elapsedTime = 0;
     let frame = 0;
 
     const collides = (x: number, z: number) => colliders.some((collider) => x > collider.minX && x < collider.maxX && z > collider.minZ && z < collider.maxZ);
@@ -962,7 +1150,8 @@ export default function WorldPage() {
         rideModeRef.current = next;
         skateboard.visible = next === "skate";
         bike.visible = next === "bike";
-        if (characterModel) characterModel.position.y = next === "skate" ? 0.25 : next === "bike" ? 0.78 : 0;
+        characterRideOffset = next === "skate" ? 0.25 : next === "bike" ? 0.78 : 0;
+        if (characterModel) characterModel.position.y = characterBaseY + characterRideOffset;
         setToast(next === "walk" ? "Walking mode." : next === "skate" ? "Skateboard equipped." : "Bike equipped.");
         return next;
       });
@@ -996,14 +1185,17 @@ export default function WorldPage() {
 
     const animate = () => {
       frame = requestAnimationFrame(animate);
-      const delta = Math.min(clock.getDelta(), 0.035);
+      const frameTime = performance.now();
+      const delta = Math.min(Math.max(0, (frameTime - previousFrameTime) / 1000), 0.035);
+      previousFrameTime = frameTime;
+      elapsedTime += delta;
       mixer?.update(delta);
       cameraYaw += (targetCameraYaw - cameraYaw) * (1 - Math.exp(-delta * 9));
 
       const touch = touchInputRef.current;
       const inputX = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0) + touch.x;
       const inputZ = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) + touch.z;
-      const isMoving = !mapOpenRef.current && (Math.abs(inputX) > 0.05 || Math.abs(inputZ) > 0.05);
+      const isMoving = !mapOpenRef.current && !heroSelectOpenRef.current && (Math.abs(inputX) > 0.05 || Math.abs(inputZ) > 0.05);
       movement.set(0, 0, 0);
       if (isMoving) {
         forward.set(-Math.sin(cameraYaw), 0, -Math.cos(cameraYaw));
@@ -1026,7 +1218,7 @@ export default function WorldPage() {
         player.rotation.y = Math.atan2(movement.x, movement.z);
       }
 
-      if (!mapOpenRef.current && jumpRef.current && grounded) {
+      if (!mapOpenRef.current && !heroSelectOpenRef.current && jumpRef.current && grounded) {
         velocityY = 7.2;
         grounded = false;
       }
@@ -1046,7 +1238,23 @@ export default function WorldPage() {
       else if (isMoving) playCharacterAction(keys.has("ShiftLeft") || keys.has("ShiftRight") ? "run" : "walk");
       else playCharacterAction("idle");
 
-      if (mapOpenRef.current) {
+      if (selectedHeroRef.current === "gorilla" && gorillaRig && characterModel) {
+        const elapsed = elapsedTime;
+        const walking = rideModeRef.current === "walk" && isMoving;
+        const stridePhase = elapsed * (keys.has("ShiftLeft") || keys.has("ShiftRight") ? 10.5 : 7.2);
+        const stride = walking && grounded ? Math.sin(stridePhase) : 0;
+        const airPose = grounded ? 0 : -0.72;
+        if (gorillaRig.armL) gorillaRig.armL.rotation.x = THREE.MathUtils.damp(gorillaRig.armL.rotation.x, airPose + stride * 0.52, 12, delta);
+        if (gorillaRig.armR) gorillaRig.armR.rotation.x = THREE.MathUtils.damp(gorillaRig.armR.rotation.x, airPose - stride * 0.52, 12, delta);
+        if (gorillaRig.legL) gorillaRig.legL.rotation.x = THREE.MathUtils.damp(gorillaRig.legL.rotation.x, -stride * 0.28, 13, delta);
+        if (gorillaRig.legR) gorillaRig.legR.rotation.x = THREE.MathUtils.damp(gorillaRig.legR.rotation.x, stride * 0.28, 13, delta);
+        if (gorillaRig.body) gorillaRig.body.rotation.z = THREE.MathUtils.damp(gorillaRig.body.rotation.z, walking ? stride * 0.035 : Math.sin(elapsed * 1.7) * 0.012, 8, delta);
+        if (gorillaRig.head) gorillaRig.head.rotation.z = THREE.MathUtils.damp(gorillaRig.head.rotation.z, walking ? -stride * 0.025 : Math.sin(elapsed * 1.25) * 0.018, 8, delta);
+        const movementBob = walking && grounded ? Math.abs(Math.sin(stridePhase)) * 0.045 : grounded ? Math.sin(elapsed * 1.8) * 0.014 : 0;
+        characterModel.position.y = characterBaseY + characterRideOffset + movementBob;
+      }
+
+      if (mapOpenRef.current || heroSelectOpenRef.current) {
         interactRef.current = false;
       } else if (currentVenue) {
         const counterNearby = Math.hypot(player.position.x, player.position.z + 7.1) < 5.4;
@@ -1111,6 +1319,8 @@ export default function WorldPage() {
       renderer.domElement.removeEventListener("pointercancel", onPointerUp);
       renderer.dispose();
       teleportRef.current = () => undefined;
+      applyHeroRef.current = () => undefined;
+      characterLoadToken += 1;
       pmrem.dispose();
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {
@@ -1129,7 +1339,7 @@ export default function WorldPage() {
   }, [toast]);
 
   const handleInteract = () => {
-    if (mapOpen || inventoryOpen || checkoutItem) return;
+    if (mapOpen || heroSelectOpen || inventoryOpen || checkoutItem) return;
     interactRef.current = true;
   };
 
@@ -1143,6 +1353,72 @@ export default function WorldPage() {
     <main className={styles.shell} tabIndex={0} aria-label="67Verse playable world">
       <div className={styles.canvas} ref={mountRef} />
 
+      {heroSelectOpen && (
+        <section
+          className={styles.heroSelect}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Choose your 67VERSE hero"
+          style={{ "--hero-accent": chosenHero.accent } as CSSProperties}
+        >
+          <div className={styles.heroGlow} />
+          <header className={styles.heroSelectHeader}>
+            <span className={styles.heroSelectBrand}><b>67</b><strong>VERSE</strong></span>
+            <span className={styles.heroSelectStatus}><i /> ONLINE WORLD <em>01</em></span>
+          </header>
+          <div className={styles.heroStage}>
+            <div className={styles.heroPortrait}>
+              <span className={styles.heroClass}>{chosenHero.role}</span>
+              <img src={chosenHero.portrait} alt={`${chosenHero.name} 3D character`} draggable={false} />
+              <div className={styles.heroNameplate}>
+                <small>SELECTED HERO</small>
+                <strong>{chosenHero.name}</strong>
+                <span>{chosenHero.tagline}</span>
+              </div>
+            </div>
+            <aside className={styles.heroPanel}>
+              <div className={styles.heroPanelIntro}>
+                <small>67VERSE / HERO SELECT</small>
+                <strong>CHOOSE YOUR HERO</strong>
+                <p>Select a character before entering the live city. You can switch again at any time.</p>
+              </div>
+              <div className={styles.heroChoices} aria-label="Available heroes">
+                {HEROES.map((hero) => (
+                  <button
+                    type="button"
+                    key={hero.id}
+                    className={heroChoice === hero.id ? styles.heroChoiceSelected : ""}
+                    style={{ "--choice-accent": hero.accent } as CSSProperties}
+                    onClick={() => setHeroChoice(hero.id)}
+                    aria-pressed={heroChoice === hero.id}
+                  >
+                    <img src={hero.portrait} alt="" draggable={false} />
+                    <span><small>{hero.role}</small><strong>{hero.name}</strong></span>
+                    <i />
+                  </button>
+                ))}
+              </div>
+              <div className={styles.heroDetails}>
+                <p>{chosenHero.description}</p>
+                <div className={styles.heroStats}>
+                  {chosenHero.stats.map((stat) => (
+                    <span key={stat.label}>
+                      <small>{stat.label}</small>
+                      <i><b style={{ width: `${stat.value}%` }} /></i>
+                      <strong>{stat.value}</strong>
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <button type="button" className={styles.enterWorld} onClick={confirmHero}>
+                <span>ENTER 67VERSE</span><strong>{chosenHero.name}</strong><NavigationArrow size={18} weight="fill" />
+              </button>
+              <small className={styles.heroHint}>CHANGE LATER FROM THE HERO BUTTON</small>
+            </aside>
+          </div>
+        </section>
+      )}
+
       <header className={styles.topbar}>
         <div className={styles.brand}>
           <Link href="/lobby" aria-label="Back to classic lobby"><strong>67</strong><span>VERSE</span></Link>
@@ -1153,13 +1429,14 @@ export default function WorldPage() {
           <strong>{activeVenue?.name ?? currentDistrict}</strong>
         </div>
         <nav className={styles.actions} aria-label="World actions">
+          <button type="button" className={styles.heroAction} aria-label={`Change hero. Current hero ${activeHero.name}`} onClick={openHeroSelector}><UserCircle size={21} weight="fill" /><span>{activeHero.name}</span></button>
           <button type="button" aria-label="Open world map" onClick={openWorldMap} disabled={Boolean(activeVenue)}><MapTrifold size={20} weight="bold" /><span>MAP</span></button>
           <button type="button" aria-label="Open inventory" onClick={() => setInventoryOpen(true)}><ShoppingBag size={20} weight="bold" /><span>{inventory.length}</span></button>
           <button type="button" aria-label="Open wallet and inventory" className={styles.balance} onClick={() => setInventoryOpen(true)}><Wallet size={20} weight="bold" /><span>{credits.toLocaleString("en-US")} CR</span></button>
         </nav>
       </header>
 
-      {!mapOpen && <aside className={styles.modeCard}>
+      {!mapOpen && !heroSelectOpen && <aside className={styles.modeCard}>
         {rideMode === "bike" ? <Bicycle size={22} weight="bold" /> : <PersonSimpleRun size={22} weight="bold" />}
         <span><small>MOVEMENT</small><strong>{rideLabel}</strong></span>
       </aside>}
@@ -1167,15 +1444,15 @@ export default function WorldPage() {
       {!loaded && <div className={styles.loading}><span /><strong>BUILDING 67VERSE WORLD</strong></div>}
       {toast && <div className={styles.toast}>{toast}</div>}
 
-      {!mapOpen && !inventoryOpen && !checkoutItem && !shopOpen && (
+      {!mapOpen && !heroSelectOpen && !inventoryOpen && !checkoutItem && !shopOpen && (
         <button type="button" className={`${styles.interaction} ${(nearbyVenue || nearCounter || nearExit) ? styles.ready : ""}`} onClick={handleInteract}>
           <kbd>E</kbd><span><small>INTERACT</small><strong>{currentPrompt}</strong></span>
         </button>
       )}
 
-      {!mapOpen && <div className={styles.help}>{activeVenue ? "WASD TO WALK · E AT COUNTER OR EXIT · ESC TO CLOSE" : "WASD TO MOVE · DRAG TO ROTATE · SPACE TO JUMP · E TO CHANGE RIDE"}</div>}
+      {!mapOpen && !heroSelectOpen && <div className={styles.help}>{activeVenue ? "WASD TO WALK · E AT COUNTER OR EXIT · ESC TO CLOSE" : "WASD TO MOVE · DRAG TO ROTATE · SPACE TO JUMP · E TO CHANGE RIDE"}</div>}
 
-      {!mapOpen && <section className={styles.mobileControls} aria-label="Mobile controls">
+      {!mapOpen && !heroSelectOpen && <section className={styles.mobileControls} aria-label="Mobile controls">
         <div className={styles.dpad}>
           <button type="button" className={styles.up} aria-label="Move forward" onPointerDown={() => mobileMove(0, 1)} onPointerUp={() => mobileMove(0, 0)} onPointerCancel={() => mobileMove(0, 0)}><CaretUp size={20} weight="bold" /></button>
           <button type="button" className={styles.left} aria-label="Move left" onPointerDown={() => mobileMove(-1, 0)} onPointerUp={() => mobileMove(0, 0)} onPointerCancel={() => mobileMove(0, 0)}><CaretLeft size={20} weight="bold" /></button>
