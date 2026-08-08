@@ -134,7 +134,7 @@ const HEROES: HeroDefinition[] = [
     description: "The original Gorilla body from the 67 collection, ready for modular hats, eyewear and back items.",
     model: "/models/characters/gorilla.glb",
     accent: "#45bbc2",
-    height: 3.7,
+    height: 3.15,
   },
   {
     id: "friend-67",
@@ -959,7 +959,7 @@ function buildBackItem(id: BackpackId) {
   return prepareWardrobeGroup(group);
 }
 
-function applyCharacterLook(model: THREE.Object3D, heroId: HeroId, look: CharacterLook) {
+function prepareCharacterModel(model: THREE.Object3D, heroId: HeroId) {
   if (heroId === "gorilla") {
     // These are authored props inside gorilla.glb, not part of the wardrobe.
     // Keep the clean Gorilla body and let the player add cosmetics deliberately.
@@ -968,6 +968,20 @@ function applyCharacterLook(model: THREE.Object3D, heroId: HeroId, look: Charact
       if (prop) prop.visible = false;
     });
   }
+}
+
+function getVisibleCharacterBounds(model: THREE.Object3D) {
+  model.updateMatrixWorld(true);
+  const bounds = new THREE.Box3().makeEmpty();
+  model.traverse((object) => {
+    if (!(object instanceof THREE.Mesh) || !object.visible) return;
+    bounds.union(new THREE.Box3().setFromObject(object, true));
+  });
+  return bounds.isEmpty() ? new THREE.Box3().setFromObject(model, true) : bounds;
+}
+
+function applyCharacterLook(model: THREE.Object3D, heroId: HeroId, look: CharacterLook) {
+  prepareCharacterModel(model, heroId);
   const preparedMaterials = new Set<THREE.Material>();
   model.traverse((object) => {
     if (!(object instanceof THREE.Mesh) || !object.visible) return;
@@ -1142,11 +1156,12 @@ function CharacterStudio({ hero, look }: { hero: HeroDefinition; look: Character
         return;
       }
       avatar = gltf.scene;
-      const bounds = new THREE.Box3().setFromObject(avatar);
+      prepareCharacterModel(avatar, hero.id);
+      const bounds = getVisibleCharacterBounds(avatar);
       const size = bounds.getSize(new THREE.Vector3());
       const scale = 3.08 / Math.max(size.y, 0.01);
       avatar.scale.setScalar(scale);
-      const fitted = new THREE.Box3().setFromObject(avatar);
+      const fitted = getVisibleCharacterBounds(avatar);
       const center = fitted.getCenter(new THREE.Vector3());
       avatar.position.set(-center.x, 0.18 - fitted.min.y, -center.z);
       applyCharacterLook(avatar, hero.id, look);
@@ -1899,10 +1914,11 @@ export default function WorldPage() {
       loader.load(hero.model, (gltf) => {
         if (loadToken !== characterLoadToken) return;
         const model = gltf.scene;
-        const bounds = new THREE.Box3().setFromObject(model);
+        prepareCharacterModel(model, heroId);
+        const bounds = getVisibleCharacterBounds(model);
         const size = bounds.getSize(new THREE.Vector3());
         model.scale.setScalar(hero.height / Math.max(size.y, 1));
-        const corrected = new THREE.Box3().setFromObject(model);
+        const corrected = getVisibleCharacterBounds(model);
         characterBaseY = -corrected.min.y;
         characterRideOffset = rideModeRef.current === "skate" ? 0.25 : rideModeRef.current === "bike" ? 0.78 : 0;
         model.position.y = characterBaseY + characterRideOffset;
