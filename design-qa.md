@@ -73,7 +73,39 @@ final result: passed
 
 ---
 
-# 67VERSE World — Design QA
+# 67VERSE World — Live Map QA v2
+
+## Comparison target
+
+- Selected visual truth: `outputs/67verse-master-map-reference-layout-v1.png` at 1254 × 1254.
+- Browser implementation: `/world`, with the live world camera switched to its orthographic map state at 1254 × 1254.
+- Same-input comparison inspected at `/tmp/67verse-reference-vs-live-final.png`.
+- Mobile implementation inspected at 390 × 844.
+
+## Fidelity and implementation findings
+
+- No raster map, screenshot or image placeholder is present in the runtime map. The browser inspection returned `0` image elements while the map was open.
+- The visible map is the same playable Three.js scene used by the chase camera. Roads, sidewalks, crosswalks, buildings, canal, bridges, sports campus, race loop, skatepark, waterfront rides, marina, stadium, market blocks, park, southern housing and landscaping are separate 3D objects.
+- The world reproduces the selected reference's major spatial hierarchy: northwest race loop; upper sports, skate and amusement districts; middle old town, central plaza and stadium; lower commercial blocks and green park; southern housing; and a continuous road grid.
+- The responsive live-map UI adds ten accessible district targets without obscuring the underlying city structure. Mobile labels remain readable and do not overflow the viewport.
+- The lighter realtime material finish is an intentional web-performance interpretation of the more densely textured offline reference. It preserves the approved soft-model palette and large-scale composition while avoiding a static background.
+- No actionable P0, P1 or P2 visual differences remain for the live Three.js translation.
+
+## Functional checks
+
+- The initial player spawn is a clear central plaza position outside every building collider; the first interaction is `SWITCH TO SKATE`, not a venue-entry prompt.
+- Desktop forward movement changes the player's position and faces the character away from the camera in the travel direction.
+- The GLB's native `idle`, `walk`, `run`, `jump` and `fall` clips are selected from actual movement state.
+- Map input pauses player movement and touch input; closing it restores normal play.
+- Ten district travel controls were found in the browser. `Waterfront` and `Master Skatepark` teleports were executed successfully and returned the player to their safe entrance points.
+- The 390 × 844 state exposes direction, jump and interact controls; the live map fits the phone viewport and contains no raster image.
+- Browser console errors: `0`.
+
+final result: passed
+
+---
+
+# 67VERSE World — Design QA (legacy v1, superseded by Live Map QA v2)
 
 ## Target and implementation
 
@@ -91,8 +123,8 @@ The reference is a top-down master-city map, so the matched implementation state
 ## Visual findings
 
 - The city footprint, skatepark, sports courts, residential blocks, downtown axis, stadium, waterfront amusement district, beach, river, bridges, roads and outer housing all match the selected reference.
-- The source artwork is rendered at a square aspect ratio with no stretching, placeholder art or missing region.
-- The overlay adds only the 67VERSE product frame, close control, online state and concise interaction explanation around the source map.
+- This legacy capture used the source artwork. The current v2 implementation removes that runtime artwork entirely and renders the playable Three.js world from an orthographic camera.
+- The current live-map state adds the 67VERSE product frame, close control, online state and interactive district travel targets over real scene geometry.
 - Desktop hierarchy, spacing, corner radii, translucent surfaces and typography remain coherent with the existing premium 67VERSE interface.
 - The 390 × 844 state preserves the 3D viewport and exposes dedicated directional, jump and interact controls without horizontal overflow.
 

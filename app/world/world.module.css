@@ -95,7 +95,8 @@
 }
 
 .brand > small i,
-.mapPanel footer i {
+.mapPanel footer i,
+.liveMapFooter > span i {
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -326,6 +327,174 @@
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+.liveMap {
+  position: absolute;
+  z-index: 40;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 50%, transparent 54%, rgba(17, 34, 42, 0.08) 100%),
+    linear-gradient(180deg, rgba(222, 239, 241, 0.06), rgba(12, 27, 34, 0.08));
+}
+
+.liveMapHeader {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  min-width: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 10px 10px 10px 17px;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 18px;
+  background: rgba(251, 250, 247, 0.93);
+  box-shadow: 0 18px 48px rgba(19, 39, 48, 0.2);
+  backdrop-filter: blur(20px) saturate(1.08);
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.liveMapHeader > span {
+  display: grid;
+  gap: 2px;
+}
+
+.liveMapHeader small {
+  color: #718087;
+  font: 760 7px/1.2 var(--font-geist-mono);
+  letter-spacing: 0.14em;
+}
+
+.liveMapHeader strong {
+  font-size: 14px;
+  font-weight: 880;
+  letter-spacing: -0.035em;
+}
+
+.liveMapHeader button {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 12px;
+  color: var(--ink);
+  background: rgba(8, 17, 26, 0.06);
+  cursor: pointer;
+}
+
+.mapPinStage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(91.1vw, 91.1dvh);
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.mapPin {
+  --pin-accent: #e68c79;
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+  filter: drop-shadow(0 7px 10px rgba(8, 17, 26, 0.24));
+  transform: translate(-17px, -50%);
+  transform-origin: left center;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 160ms ease, filter 160ms ease;
+}
+
+.mapPin:hover,
+.mapPin:focus-visible {
+  z-index: 4;
+  filter: drop-shadow(0 9px 14px rgba(8, 17, 26, 0.3));
+  transform: translate(-17px, -50%) scale(1.06);
+  outline: none;
+}
+
+.mapPin > i {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  display: grid;
+  place-items: center;
+  border: 3px solid rgba(255, 255, 255, 0.94);
+  border-radius: 50%;
+  color: #fff;
+  background: var(--pin-accent);
+  box-shadow: 0 0 0 2px rgba(8, 17, 26, 0.18);
+  font-style: normal;
+}
+
+.mapPin > span {
+  min-width: max-content;
+  display: grid;
+  gap: 1px;
+  padding: 6px 9px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 10px;
+  text-align: left;
+  background: rgba(251, 250, 247, 0.92);
+  box-shadow: 0 7px 18px rgba(8, 17, 26, 0.14);
+  backdrop-filter: blur(13px);
+}
+
+.mapPin > span small {
+  color: #7c858a;
+  font: 760 6px/1.2 var(--font-geist-mono);
+  letter-spacing: 0.1em;
+}
+
+.mapPin > span strong {
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+.currentPin > i {
+  color: var(--pin-accent);
+  background: #fff;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--pin-accent) 38%, transparent), 0 0 0 6px rgba(255, 255, 255, 0.88);
+}
+
+.liveMapFooter {
+  position: absolute;
+  left: 50%;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 9px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  border-radius: 999px;
+  color: #f8faf8;
+  background: rgba(8, 17, 26, 0.78);
+  box-shadow: 0 16px 38px rgba(8, 17, 26, 0.22);
+  backdrop-filter: blur(16px);
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.liveMapFooter > span,
+.liveMapFooter > strong {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  font: 760 8px/1 var(--font-geist-mono);
+  letter-spacing: 0.08em;
 }
 
 .overlay,
@@ -824,6 +993,46 @@
   .toast { top: 70px; font-size: 8px; }
   .help { display: none; }
 
+  .liveMapHeader {
+    top: 67px;
+    min-width: min(310px, calc(100vw - 30px));
+    padding: 8px 8px 8px 13px;
+    border-radius: 15px;
+  }
+
+  .liveMapHeader strong { font-size: 12px; }
+  .liveMapHeader button { width: 34px; height: 34px; border-radius: 10px; }
+
+  .mapPin {
+    gap: 3px;
+    transform: translate(-13px, -50%);
+  }
+
+  .mapPin:hover,
+  .mapPin:focus-visible {
+    transform: translate(-13px, -50%) scale(1.04);
+  }
+
+  .mapPin > i {
+    width: 27px;
+    height: 27px;
+    flex-basis: 27px;
+    border-width: 2px;
+  }
+
+  .mapPin > i svg { width: 16px; height: 16px; }
+  .mapPin > span { padding: 4px 6px 5px; border-radius: 8px; }
+  .mapPin > span small { display: none; }
+  .mapPin > span strong { font-size: 7px; }
+
+  .liveMapFooter {
+    bottom: max(10px, env(safe-area-inset-bottom));
+    padding: 9px 12px;
+  }
+
+  .liveMapFooter > span { display: none; }
+  .liveMapFooter > strong { font-size: 7px; }
+
   .interaction {
     bottom: max(105px, calc(env(safe-area-inset-bottom) + 94px));
     min-width: 0;
@@ -917,10 +1126,6 @@
     border-radius: 20px;
   }
 
-  .mapPanel {
-    width: min(100%, 620px);
-  }
-
   .mapPanel header,
   .storePanel header,
   .checkout header,
@@ -934,10 +1139,6 @@
   .drawer header strong {
     font-size: 15px;
   }
-
-  .mapImage { margin: 8px; border-radius: 14px; }
-  .mapPanel footer { padding: 5px 14px 14px; }
-  .mapPanel footer p { display: none; }
 
   .productGrid {
     grid-template-columns: 1fr;

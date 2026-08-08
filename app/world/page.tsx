@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUp } from "@phosphor-icons/react/ArrowUp";
 import { Bicycle } from "@phosphor-icons/react/Bicycle";
 import { CaretDown } from "@phosphor-icons/react/CaretDown";
@@ -13,6 +13,8 @@ import { ForkKnife } from "@phosphor-icons/react/ForkKnife";
 import { GameController } from "@phosphor-icons/react/GameController";
 import { Hoodie } from "@phosphor-icons/react/Hoodie";
 import { MapTrifold } from "@phosphor-icons/react/MapTrifold";
+import { MapPin } from "@phosphor-icons/react/MapPin";
+import { NavigationArrow } from "@phosphor-icons/react/NavigationArrow";
 import { Package } from "@phosphor-icons/react/Package";
 import { PersonSimpleRun } from "@phosphor-icons/react/PersonSimpleRun";
 import { ShoppingBag } from "@phosphor-icons/react/ShoppingBag";
@@ -28,6 +30,15 @@ import styles from "./world.module.css";
 type RideMode = "walk" | "skate" | "bike";
 type VenueKind = "skate" | "cafe" | "market" | "fashion" | "arcade" | "club";
 type CheckoutProvider = "google-play" | "web3";
+
+type District = {
+  id: string;
+  name: string;
+  eyebrow: string;
+  spawn: [number, number];
+  mapPosition: [number, number];
+  accent: string;
+};
 
 type StoreItem = {
   id: string;
@@ -91,12 +102,25 @@ const STORE_ITEMS: Record<VenueKind, StoreItem[]> = {
 };
 
 const VENUES: Venue[] = [
-  { id: "skate-shop", name: "67 Skate Shop", kind: "skate", position: [-4, -36], accent: "#d77e6c", items: STORE_ITEMS.skate },
+  { id: "skate-shop", name: "67 Skate Shop", kind: "skate", position: [-19, -32], accent: "#d77e6c", items: STORE_ITEMS.skate },
   { id: "coast-cafe", name: "Coast Cafe", kind: "cafe", position: [112, -24], accent: "#4d8778", items: STORE_ITEMS.cafe },
   { id: "city-market", name: "City Market", kind: "market", position: [18, 65], accent: "#66836d", items: STORE_ITEMS.market },
   { id: "soft-store", name: "Soft Store", kind: "fashion", position: [-18, 65], accent: "#b27d8d", items: STORE_ITEMS.fashion },
   { id: "arcade-67", name: "Arcade 67", kind: "arcade", position: [-60, -5], accent: "#578ea7", items: STORE_ITEMS.arcade },
   { id: "violet-club", name: "Violet Club", kind: "club", position: [-60, -30], accent: "#7657a0", items: STORE_ITEMS.club },
+];
+
+const DISTRICTS: District[] = [
+  { id: "race-loop", name: "Race Loop", eyebrow: "NORTHWEST", spawn: [-116, -116], mapPosition: [-114, -116], accent: "#e58a7c" },
+  { id: "sports-campus", name: "Sports Campus", eyebrow: "ATHLETICS", spawn: [-67, -54], mapPosition: [-67, -72], accent: "#729b77" },
+  { id: "master-skatepark", name: "Master Skatepark", eyebrow: "MAIN LOBBY", spawn: [0, -53], mapPosition: [0, -76], accent: "#dd806f" },
+  { id: "waterfront", name: "Waterfront", eyebrow: "RIDES & MARINA", spawn: [88, -55], mapPosition: [72, -76], accent: "#5c9eb0" },
+  { id: "old-town", name: "Old Town", eyebrow: "NEIGHBORHOOD", spawn: [-74, 29], mapPosition: [-67, -4], accent: "#a78471" },
+  { id: "downtown", name: "67 Central", eyebrow: "DOWNTOWN", spawn: [0, 32], mapPosition: [0, -2], accent: "#887bb4" },
+  { id: "stadium", name: "67 Stadium", eyebrow: "MATCH DAY", spawn: [67, 30], mapPosition: [67, -7], accent: "#6d9470" },
+  { id: "market-square", name: "Market Square", eyebrow: "SHOPS & CAFE", spawn: [0, 72], mapPosition: [0, 55], accent: "#c68a72" },
+  { id: "green-park", name: "Green Park", eyebrow: "POOLS & TRAILS", spawn: [67, 75], mapPosition: [68, 55], accent: "#72a57f" },
+  { id: "southside", name: "Southside", eyebrow: "RESIDENTIAL", spawn: [0, 103], mapPosition: [0, 116], accent: "#7697a2" },
 ];
 
 const ROAD_X = [-96, -36, 36, 96];
@@ -150,8 +174,8 @@ function addBuilding(
   group.add(body, roof);
 
   const windowMaterial = material("#90aeb6", 0.3, 0.08);
-  const floors = Math.max(1, Math.floor(height / 2.5));
-  const columns = Math.max(2, Math.floor(width / 2.4));
+  const floors = Math.min(3, Math.max(1, Math.floor(height / 2.5)));
+  const columns = Math.min(4, Math.max(2, Math.floor(width / 2.4)));
   for (let floor = 0; floor < floors; floor += 1) {
     for (let column = 0; column < columns; column += 1) {
       const pane = new THREE.Mesh(new RoundedBoxGeometry(0.76, 0.72, 0.12, 2, 0.08), windowMaterial);
@@ -185,6 +209,103 @@ function addRoad(parent: THREE.Group, x: number, z: number, width: number, depth
     );
     parent.add(stripe);
   }
+}
+
+function addCrosswalk(parent: THREE.Group, x: number, z: number) {
+  const stripeMaterial = material("#eee9df", 0.95);
+  for (let index = -3; index <= 3; index += 1) {
+    const horizontal = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.025, 3.6), stripeMaterial);
+    horizontal.position.set(x + index * 1.25, 0.17, z - 5.1);
+    const vertical = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.025, 0.8), stripeMaterial);
+    vertical.position.set(x - 5.1, 0.17, z + index * 1.25);
+    parent.add(horizontal, vertical);
+  }
+}
+
+function addCanal(parent: THREE.Group) {
+  const leftBank: Array<[number, number]> = [
+    [-132, -139], [-131, -105], [-127, -72], [-123, -38], [-116, 0], [-108, 39], [-96, 77], [-78, 108], [-65, 139],
+  ];
+  const rightBank: Array<[number, number]> = [
+    [-48, 139], [-61, 105], [-79, 74], [-91, 38], [-99, 0], [-106, -39], [-111, -74], [-114, -107], [-115, -139],
+  ];
+  const shape = new THREE.Shape();
+  shape.moveTo(leftBank[0][0], leftBank[0][1]);
+  leftBank.slice(1).forEach(([x, z]) => shape.lineTo(x, z));
+  [...rightBank].reverse().forEach(([x, z]) => shape.lineTo(x, z));
+  shape.closePath();
+  const canal = new THREE.Mesh(new THREE.ShapeGeometry(shape), material("#73b3c4", 0.22));
+  canal.rotation.x = -Math.PI / 2;
+  canal.position.y = 0.19;
+  canal.receiveShadow = true;
+  parent.add(canal);
+
+  [[-122, -106, -0.02], [-113, -45, -0.06], [-103, 22, -0.1], [-86, 82, -0.18]].forEach(([x, z, rotation], index) => {
+    const bridge = roundedBox([index < 2 ? 25 : 29, 0.55, 9.5], "#9a9c98", 0.8);
+    bridge.position.set(x, 0.46, z);
+    bridge.rotation.y = rotation;
+    parent.add(bridge);
+  });
+}
+
+function addCourt(parent: THREE.Group, x: number, z: number, width: number, depth: number, color = "#83a9c4") {
+  const court = roundedBox([width, 0.26, depth], color, 1.1);
+  court.position.set(x, 0.22, z);
+  parent.add(court);
+  const markings = material("#eee9df", 0.96);
+  const center = new THREE.Mesh(new THREE.RingGeometry(2.2, 2.4, 32), markings);
+  center.rotation.x = -Math.PI / 2;
+  center.position.set(x, 0.37, z);
+  parent.add(center);
+  [-1, 1].forEach((side) => {
+    const line = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.025, depth * 0.76), markings);
+    line.position.set(x + side * width * 0.31, 0.37, z);
+    parent.add(line);
+  });
+}
+
+function addRaceLoop(parent: THREE.Group) {
+  const points = [
+    new THREE.Vector3(-130, 0.34, -132), new THREE.Vector3(-124, 0.34, -116),
+    new THREE.Vector3(-132, 0.34, -101), new THREE.Vector3(-121, 0.34, -91),
+    new THREE.Vector3(-106, 0.34, -98), new THREE.Vector3(-103, 0.34, -117),
+    new THREE.Vector3(-111, 0.34, -133),
+  ];
+  const curve = new THREE.CatmullRomCurve3(points, true, "catmullrom", 0.35);
+  const lane = new THREE.Mesh(new THREE.TubeGeometry(curve, 100, 2.5, 10, true), material("#c98578", 0.94));
+  parent.add(lane);
+  const line = new THREE.Mesh(new THREE.TubeGeometry(curve, 100, 0.13, 8, true), material("#f1dfd1", 0.9));
+  line.position.y = 0.14;
+  parent.add(line);
+}
+
+function addRollerCoaster(parent: THREE.Group) {
+  const points = [
+    new THREE.Vector3(46, 1.8, -91), new THREE.Vector3(57, 5.4, -101),
+    new THREE.Vector3(78, 8.6, -96), new THREE.Vector3(87, 3.4, -82),
+    new THREE.Vector3(76, 6.2, -68), new THREE.Vector3(57, 3.2, -64),
+    new THREE.Vector3(45, 5.2, -77),
+  ];
+  const curve = new THREE.CatmullRomCurve3(points, true, "catmullrom", 0.45);
+  const railMaterial = material("#d17b70", 0.35, 0.34);
+  const rail = new THREE.Mesh(new THREE.TubeGeometry(curve, 120, 0.35, 8, true), railMaterial);
+  parent.add(rail);
+  for (let index = 0; index < 16; index += 1) {
+    const point = curve.getPoint(index / 16);
+    const support = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.18, Math.max(1, point.y), 8), material("#d9d1c7", 0.6, 0.18));
+    support.position.set(point.x, point.y / 2, point.z);
+    parent.add(support);
+  }
+}
+
+function addFountain(parent: THREE.Group, x: number, z: number) {
+  const basin = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.7, 0.65, 36), material("#d8d0c5", 0.85));
+  basin.position.set(x, 0.34, z);
+  const water = new THREE.Mesh(new THREE.CylinderGeometry(3.7, 3.7, 0.12, 36), material("#76b3c2", 0.24));
+  water.position.set(x, 0.72, z);
+  const column = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.72, 3.3, 18), material("#c6bdb1", 0.88));
+  column.position.set(x, 2, z);
+  parent.add(basin, water, column);
 }
 
 function addFerrisWheel(parent: THREE.Group, x: number, z: number) {
@@ -330,6 +451,8 @@ export default function WorldPage() {
   const touchInputRef = useRef({ x: 0, z: 0 });
   const enterVenueRef = useRef<(venue: Venue) => void>(() => undefined);
   const exitVenueRef = useRef<() => void>(() => undefined);
+  const mapOpenRef = useRef(false);
+  const teleportRef = useRef<(district: District) => void>(() => undefined);
 
   const [loaded, setLoaded] = useState(false);
   const [rideMode, setRideMode] = useState<RideMode>("walk");
@@ -345,6 +468,7 @@ export default function WorldPage() {
   const [nearExit, setNearExit] = useState(false);
   const [credits, setCredits] = useState(7300);
   const [inventory, setInventory] = useState<OwnedItem[]>([]);
+  const [currentDistrict, setCurrentDistrict] = useState("67 Central");
   const [toast, setToast] = useState("Welcome to the new 67VERSE world.");
 
   const rideLabel = rideMode === "walk" ? "WALK" : rideMode === "skate" ? "SKATE" : "BIKE";
@@ -400,6 +524,29 @@ export default function WorldPage() {
     setToast(`${checkoutItem.name} added to your inventory.`);
   }, [checkoutItem, credits, inventory, persistEconomy, provider]);
 
+  const openWorldMap = useCallback(() => {
+    touchInputRef.current = { x: 0, z: 0 };
+    mapOpenRef.current = true;
+    setMapOpen(true);
+  }, []);
+
+  const closeWorldMap = useCallback(() => {
+    mapOpenRef.current = false;
+    setMapOpen(false);
+  }, []);
+
+  const travelToDistrict = useCallback((district: District) => {
+    teleportRef.current(district);
+    mapOpenRef.current = false;
+    setMapOpen(false);
+    setCurrentDistrict(district.name);
+  }, []);
+
+  useEffect(() => {
+    mapOpenRef.current = mapOpen;
+    if (mapOpen) touchInputRef.current = { x: 0, z: 0 };
+  }, [mapOpen]);
+
   useEffect(() => {
     if (!mountRef.current) return;
     const mount = mountRef.current;
@@ -408,6 +555,26 @@ export default function WorldPage() {
     scene.fog = new THREE.Fog("#b9d9e5", 135, 310);
 
     const camera = new THREE.PerspectiveCamera(52, mount.clientWidth / mount.clientHeight, 0.1, 800);
+    const overviewCamera = new THREE.OrthographicCamera(-152.5, 152.5, 152.5, -152.5, 0.1, 800);
+    overviewCamera.position.set(0, 310, 0.01);
+    overviewCamera.up.set(0, 0, -1);
+    overviewCamera.lookAt(0, 0, 0);
+    const syncOverviewCamera = () => {
+      const aspect = Math.max(0.1, mount.clientWidth / Math.max(1, mount.clientHeight));
+      if (aspect >= 1) {
+        overviewCamera.left = -152.5 * aspect;
+        overviewCamera.right = 152.5 * aspect;
+        overviewCamera.top = 152.5;
+        overviewCamera.bottom = -152.5;
+      } else {
+        overviewCamera.left = -152.5;
+        overviewCamera.right = 152.5;
+        overviewCamera.top = 152.5 / aspect;
+        overviewCamera.bottom = -152.5 / aspect;
+      }
+      overviewCamera.updateProjectionMatrix();
+    };
+    syncOverviewCamera();
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.8));
@@ -415,15 +582,15 @@ export default function WorldPage() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMappingExposure = 0.88;
     mount.appendChild(renderer.domElement);
 
     const pmrem = new THREE.PMREMGenerator(renderer);
     scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.03).texture;
 
-    const hemisphere = new THREE.HemisphereLight("#eaf7ff", "#8b806f", 2.1);
+    const hemisphere = new THREE.HemisphereLight("#dff2f7", "#756c60", 1.25);
     scene.add(hemisphere);
-    const sun = new THREE.DirectionalLight("#fff1d7", 3.2);
+    const sun = new THREE.DirectionalLight("#fff0d8", 2.15);
     sun.position.set(-74, 130, 58);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -463,55 +630,80 @@ export default function WorldPage() {
       worldRoot.add(west, east);
     });
 
-    // Upper-center skate lobby.
+    // The city is built from the approved bird's-eye plan. The map screen renders
+    // this exact geometry; no map image is used at runtime.
+    addCanal(worldRoot);
+    ROAD_X.forEach((x) => ROAD_Z.forEach((z) => addCrosswalk(worldRoot, x, z)));
+    addRaceLoop(worldRoot);
+
+    // Sports campus, upper-left of the central skatepark.
+    const sportsCenter = roundedBox([38, 5.4, 13], "#d7d2c8", 1.6);
+    sportsCenter.position.set(-67, 2.72, -119);
+    worldRoot.add(sportsCenter);
+    addCourt(worldRoot, -77, -94, 17, 15, "#86a9c3");
+    addCourt(worldRoot, -56, -94, 17, 15, "#c99587");
+    const track = new THREE.Mesh(new THREE.TorusGeometry(14.2, 2.5, 14, 48), material("#c27d70", 0.95));
+    track.rotation.x = Math.PI / 2;
+    track.scale.z = 0.58;
+    track.position.set(-67, 0.38, -67);
+    worldRoot.add(track);
+    const trackInner = new THREE.Mesh(new THREE.CircleGeometry(11.7, 48), material("#87a574", 0.96));
+    trackInner.rotation.x = -Math.PI / 2;
+    trackInner.scale.y = 0.58;
+    trackInner.position.set(-67, 0.41, -67);
+    worldRoot.add(trackInner);
+
+    // Large playable master skatepark and its recognizable soft concrete bowls.
     const skateBase = roundedBox([58, 0.55, 47], "#d7c9bb", 2.4);
     skateBase.position.set(0, 0.23, -75);
     worldRoot.add(skateBase);
-    const bowlMaterial = material("#baaba0", 0.95);
-    [[-13, -78, 7], [11, -70, 9], [5, -90, 5]].forEach(([x, z, radius]) => {
-      const bowl = new THREE.Mesh(new THREE.TorusGeometry(radius, 1.25, 12, 40, Math.PI * 2), bowlMaterial);
+    const bowlMaterial = material("#b9aaa0", 0.95);
+    [[-14, -78, 7], [11, -69, 8], [7, -90, 5], [-13, -91, 4]].forEach(([x, z, radius]) => {
+      const bowl = new THREE.Mesh(new THREE.TorusGeometry(radius, 1.15, 12, 40), bowlMaterial);
       bowl.rotation.x = Math.PI / 2;
-      bowl.position.set(x, 0.38, z);
+      bowl.position.set(x, 0.46, z);
       bowl.scale.set(1, 0.38, 1);
       worldRoot.add(bowl);
     });
-    [-18, 0, 18].forEach((x, index) => {
+    [-20, 0, 20].forEach((x, index) => {
       const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 9, 10), material("#727879", 0.35, 0.5));
       rail.rotation.z = Math.PI / 2;
-      rail.position.set(x, 1.1, -58 + index * 1.8);
+      rail.position.set(x, 1.1, -56.6 - index * 2.2);
       worldRoot.add(rail);
     });
-
-    // Sports district and race track.
-    const field = roundedBox([34, 0.34, 19], "#709265", 1.2);
-    field.position.set(-67, 0.2, -60);
-    worldRoot.add(field);
-    const track = new THREE.Mesh(new THREE.TorusGeometry(15, 2.7, 16, 48), material("#c17d70", 0.95));
-    track.rotation.x = Math.PI / 2;
-    track.scale.z = 0.58;
-    track.position.set(-67, 0.38, -84);
-    worldRoot.add(track);
-    const trackInner = new THREE.Mesh(new THREE.CircleGeometry(12, 48), material("#92a976", 0.96));
-    trackInner.rotation.x = -Math.PI / 2;
-    trackInner.scale.y = 0.58;
-    trackInner.position.set(-67, 0.41, -84);
-    worldRoot.add(trackInner);
-
-    // Waterfront amusement district.
-    const amusementPad = roundedBox([45, 0.42, 47], "#d6cabe", 2);
-    amusementPad.position.set(67, 0.22, -75);
-    worldRoot.add(amusementPad);
-    addFerrisWheel(worldRoot, 65, -82);
-    const carousel = new THREE.Mesh(new THREE.ConeGeometry(6.5, 3.4, 24), material("#e6a492", 0.78));
-    carousel.position.set(78, 2.2, -62);
-    worldRoot.add(carousel);
-    for (let index = 0; index < 5; index += 1) {
-      const dock = roundedBox([3, 0.24, 16], "#a78669", 0.2);
-      dock.position.set(111 + index * 4.4, -0.1, -74 + (index % 2) * 17);
-      worldRoot.add(dock);
+    const stairDeck = roundedBox([15, 1.5, 8], "#c7b9ad", 0.55);
+    stairDeck.position.set(-19, 0.76, -62);
+    worldRoot.add(stairDeck);
+    for (let step = 0; step < 5; step += 1) {
+      const stair = roundedBox([7, 0.25 + step * 0.23, 1.2], "#c9bbb0", 0.12);
+      stair.position.set(-19, (0.25 + step * 0.23) / 2, -56 + step * 1.05);
+      worldRoot.add(stair);
     }
 
-    // Stadium and lower-right park.
+    // Waterfront amusement park and marina.
+    const amusementPad = roundedBox([46, 0.42, 47], "#d8cabe", 2);
+    amusementPad.position.set(67, 0.22, -75);
+    worldRoot.add(amusementPad);
+    addRollerCoaster(worldRoot);
+    addFerrisWheel(worldRoot, 67, -76);
+    const carousel = new THREE.Mesh(new THREE.ConeGeometry(6.5, 3.4, 24), material("#e6a492", 0.78));
+    carousel.position.set(79, 2.2, -58);
+    worldRoot.add(carousel);
+    const marina = roundedBox([34, 0.25, 48], "#79b8c8", 1.4);
+    marina.position.set(119, -0.02, -75);
+    worldRoot.add(marina);
+    [-88, -73, -58].forEach((z) => {
+      const dock = roundedBox([25, 0.24, 2.2], "#a78669", 0.2);
+      dock.position.set(119, 0.19, z);
+      worldRoot.add(dock);
+      [110, 119, 128].forEach((x, index) => {
+        const boat = roundedBox([3.3, 0.65, 1.5], ["#ed9989", "#f0d075", "#e8e3dc"][index], 0.46);
+        boat.position.set(x, 0.52, z + 3.7);
+        worldRoot.add(boat);
+      });
+    });
+
+    // Stadium and the lower-right green recreation park.
     const stadiumOuter = new THREE.Mesh(new THREE.TorusGeometry(18, 5.2, 20, 48), material("#ddd4ca", 0.82));
     stadiumOuter.rotation.x = Math.PI / 2;
     stadiumOuter.scale.y = 1.4;
@@ -520,48 +712,66 @@ export default function WorldPage() {
     const pitch = roundedBox([21, 0.2, 35], "#6f9366", 2.4);
     pitch.position.set(67, 0.3, -9);
     worldRoot.add(pitch);
+    const midfield = new THREE.Mesh(new THREE.RingGeometry(3.5, 3.7, 32), material("#dce7d6", 0.96));
+    midfield.rotation.x = -Math.PI / 2;
+    midfield.position.set(67, 0.44, -9);
+    worldRoot.add(midfield);
     const cityPark = roundedBox([45, 0.34, 44], "#91ad79", 3);
     cityPark.position.set(67, 0.16, 53);
     worldRoot.add(cityPark);
     const pond = new THREE.Mesh(new THREE.CircleGeometry(10, 36), material("#75b7c4", 0.3));
     pond.rotation.x = -Math.PI / 2;
     pond.scale.set(1.4, 0.9, 1);
-    pond.position.set(72, 0.36, 58);
+    pond.position.set(73, 0.36, 58);
     worldRoot.add(pond);
+    const pool = roundedBox([14, 0.25, 9], "#70b3c5", 2.6);
+    pool.position.set(51, 0.33, 42);
+    worldRoot.add(pool);
 
-    // Dense neighborhood, downtown, and lower commercial blocks.
-    const palettes = ["#decabe", "#c9d0c3", "#d8c0bd", "#c5ccd0", "#e0d7c5"];
+    // Old town, central skyline and the southern market blocks.
+    const palettes = ["#d0afa1", "#aebead", "#caa4a1", "#aab9c1", "#d1c39d", "#b7a79b"];
     const blockBuildings: Array<[number, number, number, number, number]> = [
-      [-78, -31, 13, 12, 7], [-78, -7, 13, 15, 6],
-      [-79, 48, 13, 16, 7], [-60, 49, 16, 15, 9], [-79, 68, 14, 10, 6], [-60, 69, 15, 11, 7],
-      [-17, -16, 12, 12, 15], [0, -16, 13, 13, 18], [18, -16, 12, 12, 15],
-      [-17, 3, 12, 12, 13], [0, 3, 13, 13, 17], [18, 3, 12, 12, 13],
-      [-16, 46, 14, 13, 7], [16, 46, 14, 13, 8],
+      [-80, -31, 13, 10, 7], [-79, -16, 13, 11, 6], [-80, 5, 14, 12, 8], [-48, 8, 11, 12, 7],
+      [-21, -17, 11, 11, 15], [0, -20, 12, 10, 19], [21, -17, 11, 11, 14], [-22, 4, 11, 11, 12], [22, 4, 11, 11, 13],
+      [-80, 38, 13, 12, 7], [-61, 38, 14, 12, 9], [-80, 58, 14, 12, 6], [-61, 59, 15, 12, 8], [-79, 73, 15, 8, 6],
+      [-20, 41, 12, 12, 7], [20, 41, 12, 12, 8], [-1, 59, 12, 10, 6],
+      [112, 8, 13, 15, 8], [119, 50, 12, 14, 7], [116, 69, 14, 10, 6],
     ];
     blockBuildings.forEach(([x, z, w, d, h], index) => addBuilding(worldRoot, colliders, x, z, w, d, h, palettes[index % palettes.length]));
     VENUES.forEach((venue) => addVenueBuilding(worldRoot, colliders, venue));
+    const oldTownCourt = roundedBox([16, 0.24, 12], "#79a174", 1);
+    oldTownCourt.position.set(-61, 0.2, 11);
+    worldRoot.add(oldTownCourt);
+    addFountain(worldRoot, 0, 4);
+    addFountain(worldRoot, 0, 42);
 
-    // Residential edge keeps the world visually complete without blocking roads.
-    [-122, 122].forEach((z) => {
-      [-118, -78, -18, 18, 78, 118].forEach((x, index) => {
-        if (Math.abs(x - ROAD_X[0]) < 10 || Math.abs(x - ROAD_X[3]) < 10) return;
-        addBuilding(worldRoot, colliders, x, z, 12, 9, 5 + (index % 2) * 2, palettes[index % palettes.length]);
+    // Building rows finish the island as a coherent city, without blocking roads.
+    [-123, 123].forEach((z, row) => {
+      [-77, -58, -18, 0, 18, 58, 77].forEach((x, index) => {
+        addBuilding(worldRoot, colliders, x, z, 12 + (index % 2) * 2, 9, 5 + ((index + row) % 3) * 2, palettes[(index + row) % palettes.length]);
       });
     });
-    [-122, 122].forEach((x) => {
-      [-76, -13, 51].forEach((z, index) => addBuilding(worldRoot, colliders, x, z, 11, 13, 5 + index, palettes[(index + 2) % palettes.length]));
+    [-123, 123].forEach((x, side) => {
+      [-34, -8, 44, 68, 104].forEach((z, index) => {
+        if (x < 0 && z < 25) return;
+        addBuilding(worldRoot, colliders, x, z, 11, 13, 5 + (index % 3), palettes[(index + side + 2) % palettes.length]);
+      });
+    });
+    [-74, -54, -18, 18, 54, 74].forEach((x, index) => {
+      addBuilding(worldRoot, colliders, x, 101, 13, 10, 5 + (index % 2) * 2, palettes[(index + 1) % palettes.length]);
     });
 
-    // Planned landscaping only—kept away from carriageways.
+    // Landscaping is placed only on parks, plazas and verges—not on roads.
     const treePoints: Array<[number, number, number]> = [
-      [46, 42, 1.2], [51, 64, 1.1], [82, 39, 1.15], [86, 68, 1.25], [54, 55, 1], [85, 50, 1],
-      [-119, -102, 1.1], [-120, -84, 1], [-115, 87, 1.2], [-78, 112, 1.1], [-15, 112, 1.15], [56, 112, 1.05],
-      [110, -112, 1.2], [116, 96, 1.15], [-50, 91, 1], [48, -111, 1], [-48, -111, 1],
+      [46, 34, 1.15], [49, 67, 1.05], [86, 35, 1.1], [86, 70, 1.2], [57, 69, 0.95], [86, 51, 1],
+      [-118, -81, 1], [-111, 87, 1.1], [-77, 91, 0.92], [-57, 91, 1.05], [-19, 91, 1], [19, 91, 1.05],
+      [54, 91, 1], [79, 91, 1.12], [110, -111, 1.1], [112, 91, 1.05], [-49, -113, 0.95], [47, -113, 1],
+      [-87, 13, 0.92], [-46, -31, 0.9], [-47, 13, 0.95], [-28, 31, 0.9], [28, 31, 0.9],
     ];
     treePoints.forEach(([x, z, scale]) => addTree(worldRoot, x, z, scale));
-    for (let index = 0; index < 16; index += 1) {
-      addTree(worldRoot, 46 + (index % 4) * 11, 36 + Math.floor(index / 4) * 10, 0.8 + (index % 3) * 0.08);
-    }
+    [[50, 49], [58, 35], [59, 69], [80, 38], [84, 61], [72, 37], [49, 59], [84, 72]].forEach(([x, z], index) => {
+      addTree(worldRoot, x, z, 0.82 + (index % 3) * 0.08);
+    });
 
     // Load supplied web-optimized 3D assets as detail passes.
     const loader = new GLTFLoader();
@@ -594,7 +804,8 @@ export default function WorldPage() {
     });
 
     const player = new THREE.Group();
-    player.position.set(0, 0.06, -34);
+    // A clear plaza spawn: never inside, behind, or touching a building collider.
+    player.position.set(0, 0.06, 32);
     scene.add(player);
     const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.72, 28), new THREE.MeshBasicMaterial({ color: "#17252b", transparent: true, opacity: 0.22, depthWrite: false }));
     shadow.rotation.x = -Math.PI / 2;
@@ -608,6 +819,15 @@ export default function WorldPage() {
     player.add(bike);
     let characterModel: THREE.Object3D | null = null;
     let mixer: THREE.AnimationMixer | null = null;
+    const characterActions = new Map<string, THREE.AnimationAction>();
+    let currentCharacterAction: THREE.AnimationAction | null = null;
+    const playCharacterAction = (name: string) => {
+      const nextAction = characterActions.get(name) ?? characterActions.get("idle");
+      if (!nextAction || nextAction === currentCharacterAction) return;
+      currentCharacterAction?.fadeOut(0.14);
+      nextAction.reset().fadeIn(0.14).play();
+      currentCharacterAction = nextAction;
+    };
     loader.load("/models/sixseven-superhero-hero-v6.glb", (gltf) => {
       const model = gltf.scene;
       const bounds = new THREE.Box3().setFromObject(model);
@@ -615,7 +835,8 @@ export default function WorldPage() {
       model.scale.setScalar(3.15 / Math.max(size.y, 1));
       const corrected = new THREE.Box3().setFromObject(model);
       model.position.y = -corrected.min.y;
-      model.rotation.y = Math.PI;
+      // The asset's native forward axis already matches the player group.
+      model.rotation.y = 0;
       model.traverse((object) => {
         if (object instanceof THREE.Mesh) {
           object.castShadow = true;
@@ -626,7 +847,8 @@ export default function WorldPage() {
       characterModel = model;
       if (gltf.animations.length) {
         mixer = new THREE.AnimationMixer(model);
-        mixer.clipAction(gltf.animations[0]).play();
+        gltf.animations.forEach((clip) => characterActions.set(clip.name.toLowerCase(), mixer!.clipAction(clip)));
+        playCharacterAction("idle");
       }
       setLoaded(true);
     }, undefined, () => setLoaded(true));
@@ -681,9 +903,15 @@ export default function WorldPage() {
       keys.add(event.code);
       if (!event.repeat && (event.code === "KeyE" || event.code === "Enter")) interactRef.current = true;
       if (!event.repeat && event.code === "Space") jumpRef.current = true;
-      if (!event.repeat && event.code === "KeyM" && !currentVenue) setMapOpen((value) => !value);
+      if (!event.repeat && event.code === "KeyM" && !currentVenue) {
+        const next = !mapOpenRef.current;
+        mapOpenRef.current = next;
+        touchInputRef.current = { x: 0, z: 0 };
+        setMapOpen(next);
+      }
       if (!event.repeat && event.code === "KeyI") setInventoryOpen((value) => !value);
       if (!event.repeat && event.code === "Escape") {
+        mapOpenRef.current = false;
         setMapOpen(false);
         setInventoryOpen(false);
         setShopOpen(false);
@@ -694,12 +922,12 @@ export default function WorldPage() {
     window.addEventListener("keydown", onKeyDown, { passive: false });
     window.addEventListener("keyup", onKeyUp);
 
-    let cameraYaw = 0;
-    let targetCameraYaw = 0;
+    let cameraYaw = Math.PI / 2;
+    let targetCameraYaw = Math.PI / 2;
     let dragging = false;
     let pointerX = 0;
     const onPointerDown = (event: PointerEvent) => {
-      if (event.button !== 0) return;
+      if (event.button !== 0 || mapOpenRef.current) return;
       dragging = true;
       pointerX = event.clientX;
       renderer.domElement.setPointerCapture(event.pointerId);
@@ -740,6 +968,32 @@ export default function WorldPage() {
       });
     };
 
+    teleportRef.current = (district: District) => {
+      if (currentVenue) return;
+      keys.clear();
+      touchInputRef.current = { x: 0, z: 0 };
+      interactRef.current = false;
+      jumpRef.current = false;
+      velocityY = 0;
+      grounded = true;
+
+      const candidates: Array<[number, number]> = [
+        district.spawn,
+        [district.spawn[0] + 4, district.spawn[1]],
+        [district.spawn[0] - 4, district.spawn[1]],
+        [district.spawn[0], district.spawn[1] + 4],
+        [district.spawn[0], district.spawn[1] - 4],
+      ];
+      const safe = candidates.find(([x, z]) => !collides(x, z)) ?? [0, 32];
+      player.position.set(safe[0], 0.06, safe[1]);
+      player.rotation.y = Math.PI;
+      camera.position.set(safe[0] + 15, 9, safe[1]);
+      cameraYaw = Math.PI / 2;
+      targetCameraYaw = Math.PI / 2;
+      setNearbyVenue(null);
+      setToast(`Arrived at ${district.name}.`);
+    };
+
     const animate = () => {
       frame = requestAnimationFrame(animate);
       const delta = Math.min(clock.getDelta(), 0.035);
@@ -749,8 +1003,9 @@ export default function WorldPage() {
       const touch = touchInputRef.current;
       const inputX = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0) + touch.x;
       const inputZ = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) + touch.z;
+      const isMoving = !mapOpenRef.current && (Math.abs(inputX) > 0.05 || Math.abs(inputZ) > 0.05);
       movement.set(0, 0, 0);
-      if (Math.abs(inputX) > 0.05 || Math.abs(inputZ) > 0.05) {
+      if (isMoving) {
         forward.set(-Math.sin(cameraYaw), 0, -Math.cos(cameraYaw));
         right.set(Math.cos(cameraYaw), 0, -Math.sin(cameraYaw));
         movement.addScaledVector(forward, inputZ).addScaledVector(right, inputX).normalize();
@@ -771,7 +1026,7 @@ export default function WorldPage() {
         player.rotation.y = Math.atan2(movement.x, movement.z);
       }
 
-      if (jumpRef.current && grounded) {
+      if (!mapOpenRef.current && jumpRef.current && grounded) {
         velocityY = 7.2;
         grounded = false;
       }
@@ -786,7 +1041,14 @@ export default function WorldPage() {
         }
       }
 
-      if (currentVenue) {
+      if (mapOpenRef.current || rideModeRef.current !== "walk") playCharacterAction("idle");
+      else if (!grounded) playCharacterAction(velocityY > 0.35 ? "jump" : "fall");
+      else if (isMoving) playCharacterAction(keys.has("ShiftLeft") || keys.has("ShiftRight") ? "run" : "walk");
+      else playCharacterAction("idle");
+
+      if (mapOpenRef.current) {
+        interactRef.current = false;
+      } else if (currentVenue) {
         const counterNearby = Math.hypot(player.position.x, player.position.z + 7.1) < 5.4;
         const exitNearby = Math.hypot(player.position.x, player.position.z - 12.5) < 4.2;
         setNearCounter((value) => (value === counterNearby ? value : counterNearby));
@@ -813,19 +1075,27 @@ export default function WorldPage() {
       }
       interactRef.current = false;
 
-      const portrait = mount.clientWidth < 720;
-      const cameraDistance = currentVenue ? (portrait ? 8.5 : 10.5) : portrait ? 13 : 17;
-      const cameraHeight = currentVenue ? (portrait ? 7.4 : 6.8) : portrait ? 8.8 : 8.2;
-      const offset = new THREE.Vector3(Math.sin(cameraYaw) * cameraDistance, cameraHeight, Math.cos(cameraYaw) * cameraDistance);
-      camera.position.lerp(player.position.clone().add(offset), 1 - Math.exp(-delta * 8));
-      camera.lookAt(player.position.x, player.position.y + 1.55, player.position.z);
-      renderer.render(scene, camera);
+      if (mapOpenRef.current && !currentVenue) {
+        const savedFog = scene.fog;
+        scene.fog = null;
+        renderer.render(scene, overviewCamera);
+        scene.fog = savedFog;
+      } else {
+        const portrait = mount.clientWidth < 720;
+        const cameraDistance = currentVenue ? (portrait ? 8.5 : 10.5) : portrait ? 13 : 17;
+        const cameraHeight = currentVenue ? (portrait ? 7.4 : 6.8) : portrait ? 8.8 : 8.2;
+        const offset = new THREE.Vector3(Math.sin(cameraYaw) * cameraDistance, cameraHeight, Math.cos(cameraYaw) * cameraDistance);
+        camera.position.lerp(player.position.clone().add(offset), 1 - Math.exp(-delta * 8));
+        camera.lookAt(player.position.x, player.position.y + 1.55, player.position.z);
+        renderer.render(scene, camera);
+      }
     };
     animate();
 
     const onResize = () => {
       camera.aspect = mount.clientWidth / mount.clientHeight;
       camera.updateProjectionMatrix();
+      syncOverviewCamera();
       renderer.setSize(mount.clientWidth, mount.clientHeight);
     };
     window.addEventListener("resize", onResize);
@@ -840,6 +1110,7 @@ export default function WorldPage() {
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
       renderer.domElement.removeEventListener("pointercancel", onPointerUp);
       renderer.dispose();
+      teleportRef.current = () => undefined;
       pmrem.dispose();
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh) {
@@ -879,19 +1150,19 @@ export default function WorldPage() {
         </div>
         <div className={styles.location}>
           <small>{activeVenue ? activeVenue.kind.toUpperCase() : "MASTER CITY"}</small>
-          <strong>{activeVenue?.name ?? "67VERSE CENTRAL"}</strong>
+          <strong>{activeVenue?.name ?? currentDistrict}</strong>
         </div>
         <nav className={styles.actions} aria-label="World actions">
-          <button type="button" aria-label="Open world map" onClick={() => setMapOpen(true)} disabled={Boolean(activeVenue)}><MapTrifold size={20} weight="bold" /><span>MAP</span></button>
+          <button type="button" aria-label="Open world map" onClick={openWorldMap} disabled={Boolean(activeVenue)}><MapTrifold size={20} weight="bold" /><span>MAP</span></button>
           <button type="button" aria-label="Open inventory" onClick={() => setInventoryOpen(true)}><ShoppingBag size={20} weight="bold" /><span>{inventory.length}</span></button>
           <button type="button" aria-label="Open wallet and inventory" className={styles.balance} onClick={() => setInventoryOpen(true)}><Wallet size={20} weight="bold" /><span>{credits.toLocaleString("en-US")} CR</span></button>
         </nav>
       </header>
 
-      <aside className={styles.modeCard}>
+      {!mapOpen && <aside className={styles.modeCard}>
         {rideMode === "bike" ? <Bicycle size={22} weight="bold" /> : <PersonSimpleRun size={22} weight="bold" />}
         <span><small>MOVEMENT</small><strong>{rideLabel}</strong></span>
-      </aside>
+      </aside>}
 
       {!loaded && <div className={styles.loading}><span /><strong>BUILDING 67VERSE WORLD</strong></div>}
       {toast && <div className={styles.toast}>{toast}</div>}
@@ -902,9 +1173,9 @@ export default function WorldPage() {
         </button>
       )}
 
-      <div className={styles.help}>{activeVenue ? "WASD TO WALK · E AT COUNTER OR EXIT · ESC TO CLOSE" : "WASD TO MOVE · DRAG TO ROTATE · SPACE TO JUMP · E TO CHANGE RIDE"}</div>
+      {!mapOpen && <div className={styles.help}>{activeVenue ? "WASD TO WALK · E AT COUNTER OR EXIT · ESC TO CLOSE" : "WASD TO MOVE · DRAG TO ROTATE · SPACE TO JUMP · E TO CHANGE RIDE"}</div>}
 
-      <section className={styles.mobileControls} aria-label="Mobile controls">
+      {!mapOpen && <section className={styles.mobileControls} aria-label="Mobile controls">
         <div className={styles.dpad}>
           <button type="button" className={styles.up} aria-label="Move forward" onPointerDown={() => mobileMove(0, 1)} onPointerUp={() => mobileMove(0, 0)} onPointerCancel={() => mobileMove(0, 0)}><CaretUp size={20} weight="bold" /></button>
           <button type="button" className={styles.left} aria-label="Move left" onPointerDown={() => mobileMove(-1, 0)} onPointerUp={() => mobileMove(0, 0)} onPointerCancel={() => mobileMove(0, 0)}><CaretLeft size={20} weight="bold" /></button>
@@ -916,15 +1187,40 @@ export default function WorldPage() {
           <button type="button" onClick={() => { jumpRef.current = true; }} aria-label="Jump"><ArrowUp size={22} weight="bold" /></button>
           <button type="button" className={styles.mobileInteract} onClick={handleInteract} aria-label="Interact">E</button>
         </div>
-      </section>
+      </section>}
 
       {mapOpen && (
-        <section className={styles.overlay} aria-label="67VERSE world map">
-          <div className={styles.mapPanel}>
-            <header><span><small>67VERSE WORLD</small><strong>MASTER CITY MAP</strong></span><button type="button" onClick={() => setMapOpen(false)} aria-label="Close map"><X size={22} /></button></header>
-            <div className={styles.mapImage}><img src="/maps/67verse-master-city.png" alt="Top-down 3D map of the full 67VERSE coastal city" /></div>
-            <footer><span><i /> YOU ARE ONLINE</span><p>Interiors open separately when you approach a building and press E.</p></footer>
+        <section className={styles.liveMap} aria-label="Live 3D map of 67VERSE">
+          <header className={styles.liveMapHeader}>
+            <span><small>LIVE THREE.JS WORLD</small><strong>67VERSE MASTER CITY</strong></span>
+            <button type="button" onClick={closeWorldMap} aria-label="Close map"><X size={22} weight="bold" /></button>
+          </header>
+          <div className={styles.mapPinStage} aria-label="Choose a district to travel">
+            {DISTRICTS.map((district) => {
+              const style = {
+                left: `${50 + (district.mapPosition[0] / 278) * 100}%`,
+                top: `${50 + (district.mapPosition[1] / 278) * 100}%`,
+                "--pin-accent": district.accent,
+              } as CSSProperties;
+              return (
+                <button
+                  type="button"
+                  key={district.id}
+                  className={`${styles.mapPin} ${currentDistrict === district.name ? styles.currentPin : ""}`}
+                  style={style}
+                  aria-label={`Travel to ${district.name}`}
+                  onClick={() => travelToDistrict(district)}
+                >
+                  <i><MapPin size={20} weight="fill" /></i>
+                  <span><small>{district.eyebrow}</small><strong>{district.name}</strong></span>
+                </button>
+              );
+            })}
           </div>
+          <footer className={styles.liveMapFooter}>
+            <span><i /> LIVE WORLD · ONLINE</span>
+            <strong><NavigationArrow size={15} weight="fill" /> SELECT A DISTRICT TO TRAVEL</strong>
+          </footer>
         </section>
       )}
 
