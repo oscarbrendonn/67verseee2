@@ -8,6 +8,7 @@ import { CaretDown } from "@phosphor-icons/react/CaretDown";
 import { CaretLeft } from "@phosphor-icons/react/CaretLeft";
 import { CaretRight } from "@phosphor-icons/react/CaretRight";
 import { CaretUp } from "@phosphor-icons/react/CaretUp";
+import { Clock } from "@phosphor-icons/react/Clock";
 import { Coffee } from "@phosphor-icons/react/Coffee";
 import { ForkKnife } from "@phosphor-icons/react/ForkKnife";
 import { GameController } from "@phosphor-icons/react/GameController";
@@ -18,6 +19,8 @@ import { NavigationArrow } from "@phosphor-icons/react/NavigationArrow";
 import { Package } from "@phosphor-icons/react/Package";
 import { PersonSimpleRun } from "@phosphor-icons/react/PersonSimpleRun";
 import { ShoppingBag } from "@phosphor-icons/react/ShoppingBag";
+import { ShieldCheck } from "@phosphor-icons/react/ShieldCheck";
+import { Sparkle } from "@phosphor-icons/react/Sparkle";
 import { Ticket } from "@phosphor-icons/react/Ticket";
 import { UserCircle } from "@phosphor-icons/react/UserCircle";
 import { Wallet } from "@phosphor-icons/react/Wallet";
@@ -59,6 +62,18 @@ type Venue = {
   position: [number, number];
   accent: string;
   items: StoreItem[];
+};
+
+type Attraction = {
+  id: string;
+  name: string;
+  eyebrow: string;
+  position: [number, number];
+  accent: string;
+  wait: string;
+  duration: string;
+  intensity: string;
+  description: string;
 };
 
 type OwnedItem = StoreItem & {
@@ -181,6 +196,42 @@ const DISTRICTS: District[] = [
   { id: "market-square", name: "Market Square", eyebrow: "SHOPS & CAFE", spawn: [0, 72], mapPosition: [0, 55], accent: "#c68a72" },
   { id: "green-park", name: "Green Park", eyebrow: "POOLS & TRAILS", spawn: [67, 75], mapPosition: [68, 55], accent: "#72a57f" },
   { id: "southside", name: "Southside", eyebrow: "RESIDENTIAL", spawn: [0, 103], mapPosition: [0, 116], accent: "#7697a2" },
+];
+
+const ATTRACTIONS: Attraction[] = [
+  {
+    id: "harbor-coaster",
+    name: "Harbor Loop",
+    eyebrow: "SIGNATURE COASTER",
+    position: [49, -84],
+    accent: "#ff8b78",
+    wait: "06 MIN",
+    duration: "02:40",
+    intensity: "HIGH",
+    description: "A fast waterfront circuit with elevated turns, clean drops and a full marina view.",
+  },
+  {
+    id: "skyline-wheel",
+    name: "Skyline 67",
+    eyebrow: "PANORAMIC WHEEL",
+    position: [67, -76],
+    accent: "#7fc7d5",
+    wait: "04 MIN",
+    duration: "06:00",
+    intensity: "CALM",
+    description: "A quiet panoramic ride above Master City, the skatepark and the full waterfront.",
+  },
+  {
+    id: "cloud-carousel",
+    name: "Cloud Carousel",
+    eyebrow: "CLASSIC RIDE",
+    position: [79, -58],
+    accent: "#e9b760",
+    wait: "02 MIN",
+    duration: "03:20",
+    intensity: "EASY",
+    description: "A softly lit city carousel designed as the relaxed meeting point of 67 Park.",
+  },
 ];
 
 const ROAD_X = [-96, -36, 36, 96];
@@ -678,6 +729,7 @@ export default function WorldPage() {
   const teleportRef = useRef<(district: District) => void>(() => undefined);
   const selectedHeroRef = useRef<HeroId>("gorilla");
   const heroSelectOpenRef = useRef(true);
+  const attractionOpenRef = useRef(false);
   const applyHeroRef = useRef<(heroId: HeroId) => void>(() => undefined);
 
   const [loaded, setLoaded] = useState(false);
@@ -694,6 +746,10 @@ export default function WorldPage() {
   const [assetConsent, setAssetConsent] = useState(true);
   const [activeVenue, setActiveVenue] = useState<Venue | null>(null);
   const [nearbyVenue, setNearbyVenue] = useState<Venue | null>(null);
+  const [nearbyAttraction, setNearbyAttraction] = useState<Attraction | null>(null);
+  const [activeAttraction, setActiveAttraction] = useState<Attraction | null>(null);
+  const [attractionOpen, setAttractionOpen] = useState(false);
+  const [reservedAttractionId, setReservedAttractionId] = useState<string | null>(null);
   const [nearCounter, setNearCounter] = useState(false);
   const [nearExit, setNearExit] = useState(false);
   const [credits, setCredits] = useState(7300);
@@ -713,7 +769,9 @@ export default function WorldPage() {
         : "EXPLORE INTERIOR"
     : nearbyVenue
       ? `ENTER ${nearbyVenue.name.toUpperCase()}`
-      : `SWITCH ${rideMode === "walk" ? "TO SKATE" : rideMode === "skate" ? "TO BIKE" : "TO WALK"}`;
+      : nearbyAttraction
+        ? `OPEN ${nearbyAttraction.name.toUpperCase()} RIDE PASS`
+        : `SWITCH ${rideMode === "walk" ? "TO SKATE" : rideMode === "skate" ? "TO BIKE" : "TO WALK"}`;
 
   const persistEconomy = useCallback((nextCredits: number, nextInventory: OwnedItem[]) => {
     setCredits(nextCredits);
@@ -759,6 +817,8 @@ export default function WorldPage() {
 
   const openWorldMap = useCallback(() => {
     touchInputRef.current = { x: 0, z: 0 };
+    attractionOpenRef.current = false;
+    setAttractionOpen(false);
     mapOpenRef.current = true;
     setMapOpen(true);
   }, []);
@@ -771,14 +831,29 @@ export default function WorldPage() {
   const openHeroSelector = useCallback(() => {
     mapOpenRef.current = false;
     heroSelectOpenRef.current = true;
+    attractionOpenRef.current = false;
     touchInputRef.current = { x: 0, z: 0 };
     setMapOpen(false);
+    setAttractionOpen(false);
     setInventoryOpen(false);
     setShopOpen(false);
     setCheckoutItem(null);
     setHeroChoice(selectedHeroRef.current);
     setHeroSelectOpen(true);
   }, []);
+
+  const closeAttractionPass = useCallback(() => {
+    attractionOpenRef.current = false;
+    setAttractionOpen(false);
+  }, []);
+
+  const activateAttractionPass = useCallback(() => {
+    if (!activeAttraction) return;
+    setReservedAttractionId(activeAttraction.id);
+    attractionOpenRef.current = false;
+    setAttractionOpen(false);
+    setToast(`${activeAttraction.name} ride pass activated.`);
+  }, [activeAttraction]);
 
   const confirmHero = useCallback(() => {
     selectedHeroRef.current = heroChoice;
@@ -800,7 +875,9 @@ export default function WorldPage() {
   const travelToDistrict = useCallback((district: District) => {
     teleportRef.current(district);
     mapOpenRef.current = false;
+    attractionOpenRef.current = false;
     setMapOpen(false);
+    setAttractionOpen(false);
     setCurrentDistrict(district.name);
   }, []);
 
@@ -821,6 +898,15 @@ export default function WorldPage() {
       setMobileBoosting(false);
     }
   }, [heroSelectOpen]);
+
+  useEffect(() => {
+    attractionOpenRef.current = attractionOpen;
+    if (attractionOpen) {
+      touchInputRef.current = { x: 0, z: 0 };
+      boostRef.current = false;
+      setMobileBoosting(false);
+    }
+  }, [attractionOpen]);
 
   useEffect(() => {
     try {
@@ -1283,6 +1369,7 @@ export default function WorldPage() {
       characterRideOffset = 0;
       if (characterModel) characterModel.position.y = characterBaseY;
       setNearbyVenue(null);
+      setNearbyAttraction(null);
       setActiveVenue(venue);
       setToast(`Entered ${venue.name}. Walk to the counter to browse.`);
     };
@@ -1306,6 +1393,7 @@ export default function WorldPage() {
       setNearExit(false);
       setShopOpen(false);
       setCheckoutItem(null);
+      setNearbyAttraction(null);
       setToast("Back in the city.");
     };
     enterVenueRef.current = enterVenue;
@@ -1315,6 +1403,13 @@ export default function WorldPage() {
     const onKeyDown = (event: KeyboardEvent) => {
       if (["KeyW", "KeyA", "KeyS", "KeyD", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(event.code)) event.preventDefault();
       if (heroSelectOpenRef.current) return;
+      if (attractionOpenRef.current) {
+        if (event.code === "Escape") {
+          attractionOpenRef.current = false;
+          setAttractionOpen(false);
+        }
+        return;
+      }
       keys.add(event.code);
       if (!event.repeat && (event.code === "KeyE" || event.code === "Enter")) interactRef.current = true;
       if (!event.repeat && event.code === "Space") jumpRef.current = true;
@@ -1331,6 +1426,8 @@ export default function WorldPage() {
         setInventoryOpen(false);
         setShopOpen(false);
         setCheckoutItem(null);
+        attractionOpenRef.current = false;
+        setAttractionOpen(false);
       }
     };
     const onKeyUp = (event: KeyboardEvent) => keys.delete(event.code);
@@ -1342,7 +1439,7 @@ export default function WorldPage() {
     let dragging = false;
     let pointerX = 0;
     const onPointerDown = (event: PointerEvent) => {
-      if (event.button !== 0 || mapOpenRef.current || heroSelectOpenRef.current) return;
+      if (event.button !== 0 || mapOpenRef.current || heroSelectOpenRef.current || attractionOpenRef.current) return;
       dragging = true;
       pointerX = event.clientX;
       renderer.domElement.setPointerCapture(event.pointerId);
@@ -1462,6 +1559,10 @@ export default function WorldPage() {
       cameraYaw = Math.PI / 2;
       targetCameraYaw = Math.PI / 2;
       setNearbyVenue(null);
+      setNearbyAttraction(null);
+      setActiveAttraction(null);
+      attractionOpenRef.current = false;
+      setAttractionOpen(false);
       setToast(`Arrived at ${district.name}.`);
     };
 
@@ -1479,7 +1580,7 @@ export default function WorldPage() {
       const inputX = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0) + touch.x;
       const inputZ = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) + touch.z;
       const isBoosting = keys.has("ShiftLeft") || keys.has("ShiftRight") || boostRef.current;
-      const isMoving = !mapOpenRef.current && !heroSelectOpenRef.current && (Math.abs(inputX) > 0.05 || Math.abs(inputZ) > 0.05);
+      const isMoving = !mapOpenRef.current && !heroSelectOpenRef.current && !attractionOpenRef.current && (Math.abs(inputX) > 0.05 || Math.abs(inputZ) > 0.05);
       const activeRide = rideModeRef.current;
       movement.set(0, 0, 0);
       if (isMoving) {
@@ -1635,7 +1736,7 @@ export default function WorldPage() {
         characterModel.position.y = characterBaseY + characterRideOffset + movementBob;
       }
 
-      if (mapOpenRef.current || heroSelectOpenRef.current) {
+      if (mapOpenRef.current || heroSelectOpenRef.current || attractionOpenRef.current) {
         interactRef.current = false;
       } else if (currentVenue) {
         const counterNearby = Math.hypot(player.position.x, player.position.z + 7.1) < 5.4;
@@ -1657,8 +1758,26 @@ export default function WorldPage() {
           }
         });
         setNearbyVenue((value) => (value?.id === closest?.id ? value : closest));
+        let closestAttraction: Attraction | null = null;
+        let attractionDistance = 13.5;
+        for (const attraction of ATTRACTIONS) {
+          const distance = Math.hypot(player.position.x - attraction.position[0], player.position.z - attraction.position[1]);
+          if (distance < attractionDistance) {
+            attractionDistance = distance;
+            closestAttraction = attraction;
+          }
+        }
+        setNearbyAttraction((value) => (value?.id === closestAttraction?.id ? value : closestAttraction));
         if (interactRef.current) {
           if (closest) enterVenue(closest);
+          else if (closestAttraction) {
+            keys.clear();
+            touchInputRef.current = { x: 0, z: 0 };
+            boostRef.current = false;
+            attractionOpenRef.current = true;
+            setActiveAttraction(closestAttraction);
+            setAttractionOpen(true);
+          }
           else cycleRide();
         }
       }
@@ -1720,7 +1839,7 @@ export default function WorldPage() {
   }, [toast]);
 
   const handleInteract = () => {
-    if (mapOpen || heroSelectOpen || inventoryOpen || checkoutItem) return;
+    if (mapOpen || heroSelectOpen || inventoryOpen || checkoutItem || attractionOpen) return;
     interactRef.current = true;
   };
 
@@ -1811,8 +1930,8 @@ export default function WorldPage() {
           <small><i /> ONLINE WORLD</small>
         </div>
         <div className={styles.location}>
-          <small>{activeVenue ? activeVenue.kind.toUpperCase() : "MASTER CITY"}</small>
-          <strong>{activeVenue?.name ?? currentDistrict}</strong>
+          <small>{activeVenue ? activeVenue.kind.toUpperCase() : nearbyAttraction ? "67 PARK · WATERFRONT" : "MASTER CITY"}</small>
+          <strong>{activeVenue?.name ?? nearbyAttraction?.name ?? currentDistrict}</strong>
         </div>
         <nav className={styles.actions} aria-label="World actions">
           <button type="button" className={styles.heroAction} aria-label={`Change hero. Current hero ${activeHero.name}`} onClick={openHeroSelector}><UserCircle size={21} weight="fill" /><span>{activeHero.name}</span></button>
@@ -1822,21 +1941,40 @@ export default function WorldPage() {
         </nav>
       </header>
 
-      {!mapOpen && !heroSelectOpen && <aside className={styles.modeCard}>
+      {!mapOpen && !heroSelectOpen && !attractionOpen && <aside className={styles.modeCard}>
         {rideMode === "bike" ? <Bicycle size={22} weight="bold" /> : <PersonSimpleRun size={22} weight="bold" />}
         <span><small>MOVEMENT</small><strong>{rideLabel}</strong></span>
       </aside>}
 
+      {nearbyAttraction && !mapOpen && !heroSelectOpen && !attractionOpen && !activeVenue && (
+        <aside className={styles.attractionBeacon} style={{ "--ride-accent": nearbyAttraction.accent } as CSSProperties}>
+          <div className={styles.attractionBeaconHead}>
+            <span><Sparkle size={15} weight="fill" /></span>
+            <small>67 PARK · LIVE ATTRACTION</small>
+            <em><i /> OPEN</em>
+          </div>
+          <div className={styles.attractionBeaconTitle}>
+            <span><small>{nearbyAttraction.eyebrow}</small><strong>{nearbyAttraction.name}</strong></span>
+            <b>{reservedAttractionId === nearbyAttraction.id ? "PASS ACTIVE" : "PRESS E"}</b>
+          </div>
+          <footer>
+            <span><Clock size={14} weight="bold" /><small>WAIT</small><strong>{nearbyAttraction.wait}</strong></span>
+            <span><Ticket size={14} weight="bold" /><small>RIDE</small><strong>{nearbyAttraction.duration}</strong></span>
+            <span><ShieldCheck size={14} weight="bold" /><small>LEVEL</small><strong>{nearbyAttraction.intensity}</strong></span>
+          </footer>
+        </aside>
+      )}
+
       {!loaded && <div className={styles.loading}><span /><strong>BUILDING 67VERSE WORLD</strong></div>}
       {toast && <div className={styles.toast}>{toast}</div>}
 
-      {!mapOpen && !heroSelectOpen && !inventoryOpen && !checkoutItem && !shopOpen && (
-        <button type="button" className={`${styles.interaction} ${(nearbyVenue || nearCounter || nearExit) ? styles.ready : ""}`} onClick={handleInteract}>
+      {!mapOpen && !heroSelectOpen && !inventoryOpen && !checkoutItem && !shopOpen && !attractionOpen && (
+        <button type="button" className={`${styles.interaction} ${(nearbyVenue || nearbyAttraction || nearCounter || nearExit) ? styles.ready : ""}`} onClick={handleInteract}>
           <kbd>E</kbd><span><small>INTERACT</small><strong>{currentPrompt}</strong></span>
         </button>
       )}
 
-      {!mapOpen && !heroSelectOpen && (
+      {!mapOpen && !heroSelectOpen && !attractionOpen && (
         <div className={styles.help}>
           {activeVenue
             ? "WASD TO WALK · E AT COUNTER OR EXIT · ESC TO CLOSE"
@@ -1846,7 +1984,7 @@ export default function WorldPage() {
         </div>
       )}
 
-      {!mapOpen && !heroSelectOpen && <section className={styles.mobileControls} aria-label="Mobile controls">
+      {!mapOpen && !heroSelectOpen && !attractionOpen && <section className={styles.mobileControls} aria-label="Mobile controls">
         <div className={styles.dpad}>
           <button type="button" className={styles.up} aria-label="Move forward" onPointerDown={() => mobileMove(0, 1)} onPointerUp={() => mobileMove(0, 0)} onPointerCancel={() => mobileMove(0, 0)}><CaretUp size={20} weight="bold" /></button>
           <button type="button" className={styles.left} aria-label="Move left" onPointerDown={() => mobileMove(-1, 0)} onPointerUp={() => mobileMove(0, 0)} onPointerCancel={() => mobileMove(0, 0)}><CaretLeft size={20} weight="bold" /></button>
@@ -1871,6 +2009,52 @@ export default function WorldPage() {
           <button type="button" className={styles.mobileInteract} onClick={handleInteract} aria-label="Interact">E</button>
         </div>
       </section>}
+
+      {attractionOpen && activeAttraction && (
+        <section
+          className={styles.attractionOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${activeAttraction.name} attraction pass`}
+          style={{ "--ride-accent": activeAttraction.accent } as CSSProperties}
+        >
+          <div className={styles.attractionPanel}>
+            <div className={styles.attractionHero}>
+              <div className={styles.attractionHeroBrand}><b>67</b><span>PARK</span><em>WATERFRONT</em></div>
+              <div className={styles.attractionOrbit} aria-hidden="true"><i /><i /><i /><b>67</b></div>
+              <div className={styles.attractionTicketNumber}><small>ATTRACTION</small><strong>#{String(ATTRACTIONS.findIndex((ride) => ride.id === activeAttraction.id) + 1).padStart(2, "0")}</strong></div>
+            </div>
+            <div className={styles.attractionContent}>
+              <header>
+                <span><i /> NOW OPERATING</span>
+                <button type="button" onClick={closeAttractionPass} aria-label="Close attraction pass"><X size={22} weight="bold" /></button>
+              </header>
+              <div className={styles.attractionTitle}>
+                <small>{activeAttraction.eyebrow}</small>
+                <h2>{activeAttraction.name}</h2>
+                <p>{activeAttraction.description}</p>
+              </div>
+              <div className={styles.attractionMetrics}>
+                <article><Clock size={19} weight="duotone" /><span><small>LIVE WAIT</small><strong>{activeAttraction.wait}</strong></span></article>
+                <article><Ticket size={19} weight="duotone" /><span><small>RIDE TIME</small><strong>{activeAttraction.duration}</strong></span></article>
+                <article><ShieldCheck size={19} weight="duotone" /><span><small>INTENSITY</small><strong>{activeAttraction.intensity}</strong></span></article>
+              </div>
+              <div className={styles.attractionPass}>
+                <span><Ticket size={25} weight="fill" /></span>
+                <p><small>67VERSE CITY PASS</small><strong>{reservedAttractionId === activeAttraction.id ? "RIDE PASS ACTIVE" : "ACCESS INCLUDED"}</strong></p>
+                <em>{reservedAttractionId === activeAttraction.id ? "READY" : "FREE"}</em>
+              </div>
+              <div className={styles.attractionActions}>
+                <button type="button" className={styles.attractionPrimary} onClick={activateAttractionPass} disabled={reservedAttractionId === activeAttraction.id}>
+                  {reservedAttractionId === activeAttraction.id ? "PASS ALREADY ACTIVE" : "ACTIVATE RIDE PASS"}
+                </button>
+                <button type="button" className={styles.attractionSecondary} onClick={closeAttractionPass}>BACK TO PARK</button>
+              </div>
+              <small className={styles.attractionFinePrint}>DIGITAL QUEUE · NO PURCHASE REQUIRED · LIVE SESSION 01</small>
+            </div>
+          </div>
+        </section>
+      )}
 
       {mapOpen && (
         <section className={styles.liveMap} aria-label="Live 3D map of 67VERSE">
