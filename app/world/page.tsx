@@ -518,6 +518,7 @@ export default function WorldPage() {
   const mountRef = useRef<HTMLDivElement>(null);
   const interactRef = useRef(false);
   const jumpRef = useRef(false);
+  const boostRef = useRef(false);
   const rideModeRef = useRef<RideMode>("walk");
   const touchInputRef = useRef({ x: 0, z: 0 });
   const enterVenueRef = useRef<(venue: Venue) => void>(() => undefined);
@@ -533,6 +534,7 @@ export default function WorldPage() {
   const [heroChoice, setHeroChoice] = useState<HeroId>("gorilla");
   const [heroSelectOpen, setHeroSelectOpen] = useState(true);
   const [rideMode, setRideMode] = useState<RideMode>("walk");
+  const [mobileBoosting, setMobileBoosting] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
   const [inventoryOpen, setInventoryOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
@@ -653,12 +655,20 @@ export default function WorldPage() {
 
   useEffect(() => {
     mapOpenRef.current = mapOpen;
-    if (mapOpen) touchInputRef.current = { x: 0, z: 0 };
+    if (mapOpen) {
+      touchInputRef.current = { x: 0, z: 0 };
+      boostRef.current = false;
+      setMobileBoosting(false);
+    }
   }, [mapOpen]);
 
   useEffect(() => {
     heroSelectOpenRef.current = heroSelectOpen;
-    if (heroSelectOpen) touchInputRef.current = { x: 0, z: 0 };
+    if (heroSelectOpen) {
+      touchInputRef.current = { x: 0, z: 0 };
+      boostRef.current = false;
+      setMobileBoosting(false);
+    }
   }, [heroSelectOpen]);
 
   useEffect(() => {
@@ -1226,6 +1236,7 @@ export default function WorldPage() {
       const touch = touchInputRef.current;
       const inputX = (keys.has("KeyD") || keys.has("ArrowRight") ? 1 : 0) - (keys.has("KeyA") || keys.has("ArrowLeft") ? 1 : 0) + touch.x;
       const inputZ = (keys.has("KeyW") || keys.has("ArrowUp") ? 1 : 0) - (keys.has("KeyS") || keys.has("ArrowDown") ? 1 : 0) + touch.z;
+      const isBoosting = keys.has("ShiftLeft") || keys.has("ShiftRight") || boostRef.current;
       const isMoving = !mapOpenRef.current && !heroSelectOpenRef.current && (Math.abs(inputX) > 0.05 || Math.abs(inputZ) > 0.05);
       movement.set(0, 0, 0);
       if (isMoving) {
@@ -1233,7 +1244,13 @@ export default function WorldPage() {
         right.set(Math.cos(cameraYaw), 0, -Math.sin(cameraYaw));
         movement.addScaledVector(forward, inputZ).addScaledVector(right, inputX).normalize();
         const activeRide = rideModeRef.current;
-        const speed = currentVenue ? 5.8 : activeRide === "walk" ? 6.4 : activeRide === "skate" ? (keys.has("ShiftLeft") || keys.has("ShiftRight") ? 14.5 : 10.5) : 12.5;
+        const speed = currentVenue
+          ? (isBoosting ? 8.1 : 5.8)
+          : activeRide === "walk"
+            ? (isBoosting ? 9.6 : 6.4)
+            : activeRide === "skate"
+              ? (isBoosting ? 14.5 : 10.5)
+              : (isBoosting ? 16.2 : 12.5);
         desiredPosition.copy(player.position).addScaledVector(movement, speed * delta);
         if (currentVenue) {
           desiredPosition.x = THREE.MathUtils.clamp(desiredPosition.x, -16.5, 16.5);
@@ -1266,13 +1283,13 @@ export default function WorldPage() {
 
       if (mapOpenRef.current || rideModeRef.current !== "walk") playCharacterAction("idle");
       else if (!grounded) playCharacterAction(velocityY > 0.35 ? "jump" : "fall");
-      else if (isMoving) playCharacterAction(keys.has("ShiftLeft") || keys.has("ShiftRight") ? "run" : "walk");
+      else if (isMoving) playCharacterAction(isBoosting ? "run" : "walk");
       else playCharacterAction("idle");
 
       if (selectedHeroRef.current === "gorilla" && gorillaRig && characterModel) {
         const elapsed = elapsedTime;
         const walking = rideModeRef.current === "walk" && isMoving;
-        const stridePhase = elapsed * (keys.has("ShiftLeft") || keys.has("ShiftRight") ? 10.5 : 7.2);
+        const stridePhase = elapsed * (isBoosting ? 10.5 : 7.2);
         const stride = walking && grounded ? Math.sin(stridePhase) : 0;
         const riding = rideModeRef.current !== "walk";
         const armBase = grounded ? (riding ? 0.88 : 1.08) : 0.42;
@@ -1379,6 +1396,11 @@ export default function WorldPage() {
 
   const mobileMove = (x: number, z: number) => {
     touchInputRef.current = { x, z };
+  };
+
+  const setMobileBoost = (active: boolean) => {
+    boostRef.current = active;
+    setMobileBoosting(active);
   };
 
   const activeItems = useMemo(() => activeVenue?.items ?? [], [activeVenue]);
@@ -1495,7 +1517,19 @@ export default function WorldPage() {
           <i />
         </div>
         <div className={styles.mobileActions}>
-          <button type="button" onClick={() => { jumpRef.current = true; }} aria-label="Jump"><ArrowUp size={22} weight="bold" /></button>
+          <div className={styles.mobileActionStack}>
+            <button
+              type="button"
+              className={mobileBoosting ? styles.mobileBoostActive : ""}
+              onPointerDown={() => setMobileBoost(true)}
+              onPointerUp={() => setMobileBoost(false)}
+              onPointerCancel={() => setMobileBoost(false)}
+              onLostPointerCapture={() => setMobileBoost(false)}
+              aria-label="Hold to sprint or boost"
+              aria-pressed={mobileBoosting}
+            ><PersonSimpleRun size={23} weight="fill" /></button>
+            <button type="button" onClick={() => { jumpRef.current = true; }} aria-label="Jump"><ArrowUp size={22} weight="bold" /></button>
+          </div>
           <button type="button" className={styles.mobileInteract} onClick={handleInteract} aria-label="Interact">E</button>
         </div>
       </section>}

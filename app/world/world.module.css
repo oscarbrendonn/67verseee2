@@ -1655,21 +1655,39 @@
   .mobileActions {
     display: flex;
     align-items: flex-end;
-    gap: 10px;
+    gap: 9px;
     pointer-events: auto;
   }
 
+  .mobileActionStack {
+    display: grid;
+    gap: 8px;
+  }
+
   .mobileActions button {
-    width: 55px;
-    height: 55px;
+    width: 48px;
+    height: 48px;
     display: grid;
     place-items: center;
     border: 1px solid rgba(255, 255, 255, 0.7);
-    border-radius: 18px;
+    border-radius: 15px;
     color: var(--ink);
     background: rgba(251, 250, 247, 0.94);
     box-shadow: 0 16px 36px rgba(8, 17, 26, 0.18);
     font: 840 15px/1 var(--font-geist-mono);
+    touch-action: none;
+    transition: transform 100ms ease, color 100ms ease, background 100ms ease, box-shadow 100ms ease;
+  }
+
+  .mobileActions button:active {
+    transform: scale(0.94);
+  }
+
+  .mobileActions .mobileBoostActive {
+    color: #fff;
+    background: linear-gradient(145deg, #44bdc2, #247f89);
+    box-shadow: 0 0 0 4px rgba(68, 189, 194, 0.2), 0 14px 34px rgba(23, 91, 98, 0.34);
+    transform: scale(0.94);
   }
 
   .mobileActions .mobileInteract {
