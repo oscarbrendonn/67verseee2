@@ -189,3 +189,29 @@ No remaining actionable P0, P1, or P2 issue was found for the integrated city-ro
 ## Final result
 
 passed
+
+## Swimming, connected bridge, and compact skateboard pass
+
+### Source and visual evidence
+
+- User reference: `/tmp/codex-remote-attachments/019fbafb-ac9c-7883-b039-7e39958a743b/484BECFD-9A21-4DF2-85E5-0E33BCFB609A/1-Fotoğraf-1.jpg` (`588 × 1280`, with the app-owned viewport cropped to `588 × 1046`).
+- Required side-by-side comparison: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/water-bridge-comparison.jpg`.
+- Live connected-bridge state: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/water-bridge-mobile.png`.
+- Live swimming state: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/swimming-mobile.png`.
+- Live compact-skateboard state: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/skateboard-scale-mobile.png`.
+
+### Final interaction findings
+
+- The Green Park bridge now spans `21 × 3.5` world units and overlaps both banks by approximately `0.9` units, eliminating the visible water gap at either abutment. The park-to-deck rise is `0.28`, below the walk step limit of `0.34`.
+- The walkable bridge surface exactly follows the deck footprint. Both ends remain open, both side rails are physical, and the complete deck lane is excluded from the pond swimming volume.
+- Walking onto the bridge produced `data-activity="free"` at `y=0.67`; pushing sideways was stopped by the rail without entering swimming mode.
+- Pond, pool, and marina water now start a dedicated swimming activity. Water entry stows skate/bike, exposes the SWIM HUD, hides the ground shadow, applies a visible upper-body swim pose and buoyancy, and changes the mobile actions to swim boost and kick.
+- The first live pass exposed two P1 defects: the decorative terrain beneath the water hid too much of the swimmer, and the grounded step-height rule pinned planar movement at the shoreline. The swimmer depth was raised to `0.24` below the waterline and swimming now bypasses only that terrain step check while retaining all authored blockers.
+- After the correction, joystick movement changed the swimmer from `z=63.17` to `z=60.19` while retaining `data-activity="swimming"`, `data-ride-mode="swim"`, and `data-swim-zone="green-park-pond"`. Leaving the water returned to `data-activity="free"` on a dry authored support surface.
+- The skateboard was reduced to a `0.78 × 0.28 × 0.07` compact deck, with a `0.51` wheelbase, smaller wheels, and a `0.16` rider offset. It remains the shared live board used by every hero and shop display; ollie, boost, grinding, and steering code were not changed.
+- The Gorilla bounds calculation now ignores meshes below hidden authored prop parents, so the removed hat and flower cannot distort future character-to-item fitting.
+- The final `588 × 1046` mobile run used the visible PUBG-style analog joystick and semantic Interact control. Browser warning/error logs were empty.
+
+## Final result
+
+passed

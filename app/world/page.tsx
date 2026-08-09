@@ -17,6 +17,7 @@ import { MapPin } from "@phosphor-icons/react/MapPin";
 import { NavigationArrow } from "@phosphor-icons/react/NavigationArrow";
 import { Package } from "@phosphor-icons/react/Package";
 import { PersonSimpleRun } from "@phosphor-icons/react/PersonSimpleRun";
+import { PersonSimpleSwim } from "@phosphor-icons/react/PersonSimpleSwim";
 import { ShoppingBag } from "@phosphor-icons/react/ShoppingBag";
 import { ShieldCheck } from "@phosphor-icons/react/ShieldCheck";
 import { Sparkle } from "@phosphor-icons/react/Sparkle";
@@ -31,7 +32,7 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import styles from "./world.module.css";
 
 type RideMode = "walk" | "skate" | "bike";
-type PlayerActivity = "free" | "seated" | "riding" | "mounted";
+type PlayerActivity = "free" | "seated" | "riding" | "mounted" | "swimming";
 type HeroId =
   | "gorilla"
   | "friend-67"
@@ -123,6 +124,13 @@ type SeatSpot = {
 };
 
 type NearbySeat = Pick<SeatSpot, "id" | "label">;
+
+type SwimZone = {
+  id: string;
+  label: string;
+  surfaceY: number;
+  contains: (x: number, z: number) => boolean;
+};
 
 type PlaygroundPig = {
   id: string;
@@ -3008,16 +3016,21 @@ function addVenueBuilding(parent: THREE.Group, colliders: Collider[], venue: Ven
   );
 }
 
+const SKATEBOARD_RIDER_OFFSET = 0.16;
+
 function makeSkateboard() {
   const board = new THREE.Group();
-  const deck = roundedBox([1.9, 0.14, 0.56], "#dc7d6e", 0.18);
-  deck.position.y = 0.23;
+  // Compact street-board proportions keep the deck underneath the short,
+  // broad Gorilla body instead of reading as a long surfboard. The same model
+  // is reused by the shop displays and every playable hero.
+  const deck = roundedBox([0.78, 0.07, 0.28], "#dc7d6e", 0.1);
+  deck.position.y = 0.12;
   board.add(deck);
-  [-0.66, 0.66].forEach((x) => {
-    [-0.36, 0.36].forEach((z) => {
-      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.12, 12), material("#f0d075", 0.55));
+  [-0.255, 0.255].forEach((x) => {
+    [-0.15, 0.15].forEach((z) => {
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.0525, 0.0525, 0.07, 12), material("#f0d075", 0.55));
       wheel.rotation.x = Math.PI / 2;
-      wheel.position.set(x, 0.09, z);
+      wheel.position.set(x, 0.0525, z);
       board.add(wheel);
     });
   });
@@ -4207,6 +4220,15 @@ function getVisibleCharacterBounds(model: THREE.Object3D) {
   const bounds = new THREE.Box3().makeEmpty();
   model.traverse((object) => {
     if (!(object instanceof THREE.Mesh) || !object.visible) return;
+    // `traverse` still visits children of a hidden authored prop. Exclude a
+    // mesh whenever any ancestor is hidden, otherwise the removed Gorilla hat
+    // and flower keep inflating the fit bounds and shrink the visible body.
+    let ancestor: THREE.Object3D | null = object.parent;
+    while (ancestor) {
+      if (!ancestor.visible) return;
+      if (ancestor === model) break;
+      ancestor = ancestor.parent;
+    }
     bounds.union(new THREE.Box3().setFromObject(object, true));
   });
   return bounds.isEmpty() ? new THREE.Box3().setFromObject(model, true) : bounds;
@@ -4614,7 +4636,7 @@ export default function WorldPage() {
     setDraftLook((look) => ({ ...look, backpack: WARDROBE.backpacks[wrap(index, WARDROBE.backpacks.length)].id }));
   };
 
-  const rideLabel = playerActivity === "mounted" ? "PIG RIDE" : rideMode === "walk" ? "WALK" : rideMode === "skate" ? "SKATE" : "BIKE";
+  const rideLabel = playerActivity === "swimming" ? "SWIM" : playerActivity === "mounted" ? "PIG RIDE" : rideMode === "walk" ? "WALK" : rideMode === "skate" ? "SKATE" : "BIKE";
   const venueServicePrompt = activeVenue?.kind === "cafe"
     ? "ORDER COFFEE"
     : activeVenue?.kind === "market"
@@ -4630,6 +4652,8 @@ export default function WorldPage() {
               : "BROWSE PRODUCTS";
   const currentPrompt = playerActivity === "mounted"
     ? "GET OFF PIG"
+    : playerActivity === "swimming"
+      ? "SWIMMING"
     : playerActivity === "riding"
     ? "LEAVE ATTRACTION"
     : playerActivity === "seated"
@@ -4920,6 +4944,20 @@ export default function WorldPage() {
     const worldRoot = new THREE.Group();
     const colliders: Collider[] = [];
     const worldBlockers: Array<(x: number, z: number) => boolean> = [];
+    const swimZones: SwimZone[] = [];
+    const insideRoundedRectangle = (
+      x: number,
+      z: number,
+      centerX: number,
+      centerZ: number,
+      halfWidth: number,
+      halfDepth: number,
+      radius: number,
+    ) => {
+      const cornerX = Math.max(Math.abs(x - centerX) - (halfWidth - radius), 0);
+      const cornerZ = Math.max(Math.abs(z - centerZ) - (halfDepth - radius), 0);
+      return cornerX * cornerX + cornerZ * cornerZ <= radius * radius;
+    };
     const blockCircle = (centerX: number, centerZ: number, radius: number) => {
       worldBlockers.push((x, z) => Math.hypot(x - centerX, z - centerZ) < radius);
     };
@@ -5068,7 +5106,17 @@ export default function WorldPage() {
     const marina = roundedSlab([33, 0.25, 44.5], waterMaterial("#89c6d9"), 1.4);
     marina.position.set(120.5, -0.02, -75.5);
     worldRoot.add(marina);
-    worldBlockers.push((x, z) => x > 104 && x < 137 && z > -97.9 && z < -53.1);
+    const marinaDockRows = [-91.5, -75.5, -59.5];
+    swimZones.push({
+      id: "waterfront-marina",
+      label: "WATERFRONT MARINA",
+      surfaceY: 0.105,
+      contains: (x, z) => (
+        insideRoundedRectangle(x, z, 120.5, -75.5, 16.5, 22.25, 1.4)
+        && x > 107.55
+        && !marinaDockRows.some((dockZ) => x >= 107.85 && x <= 133.15 && Math.abs(z - dockZ) <= 1.16)
+      ),
+    });
     const marinaQuay = roundedSlab([3.6, 0.3, 43.6], "#c4a68a", 0.42);
     marinaQuay.position.set(105.85, 0.18, -75.5);
     worldRoot.add(marinaQuay);
@@ -5080,9 +5128,10 @@ export default function WorldPage() {
     });
     addMarinaUmbrella(worldRoot, 106.1, -84.5, "#ef9b8e");
     addMarinaUmbrella(worldRoot, 106.1, -65.3, "#e9c972");
-    [-91.5, -75.5, -59.5].forEach((z, rowIndex) => {
+    marinaDockRows.forEach((z, rowIndex) => {
       addDioramaDock(worldRoot, 120.5, z, 25);
       [110, 119, 128].forEach((x, index) => {
+        blockCircle(x + 1.5, z + (rowIndex === 2 ? -3.7 : 3.7), index === 2 ? 1.7 : 1.35);
         addDioramaBoat(
           worldRoot,
           x + 1.5,
@@ -5137,20 +5186,34 @@ export default function WorldPage() {
     const cityPark = roundedSlab([45, 0.34, 44], "#adc493", 4.4);
     cityPark.position.set(67, 0.16, 53);
     worldRoot.add(cityPark);
+    const pondCenterX = 73;
+    const pondCenterZ = 58;
+    const pondBridgeHalfWidth = 1.75;
+    const pondBridgeHalfLength = 10.5;
+    const pondBridgeRailOffset = 1.5;
+    const pondBridgeRailHalfLength = 10.05;
+    const pondBridgeDeckTop = 0.61;
     const pondRim = new THREE.Mesh(new THREE.RingGeometry(9.9, 10.65, 48), material("#e8ddd5", 0.82));
     pondRim.rotation.x = -Math.PI / 2;
     pondRim.scale.set(1.4, 0.9, 1);
-    pondRim.position.set(73, 0.355, 58);
+    pondRim.position.set(pondCenterX, 0.355, pondCenterZ);
     pondRim.receiveShadow = true;
     worldRoot.add(pondRim);
     const pond = new THREE.Mesh(new THREE.CircleGeometry(10, 36), waterMaterial("#8ac9da"));
     pond.rotation.x = -Math.PI / 2;
     pond.scale.set(1.4, 0.9, 1);
-    pond.position.set(73, 0.36, 58);
+    pond.position.set(pondCenterX, 0.36, pondCenterZ);
     worldRoot.add(pond);
-    worldBlockers.push((x, z) => {
-      const overBridge = Math.abs(x - 73) < 1.8 && Math.abs(z - 58) < 8.4;
-      return !overBridge && ((x - 73) / 14.7) ** 2 + ((z - 58) / 9.7) ** 2 < 1;
+    swimZones.push({
+      id: "green-park-pond",
+      label: "GREEN PARK POND",
+      surfaceY: 0.36,
+      contains: (x, z) => {
+        const dx = Math.abs(x - pondCenterX);
+        const dz = Math.abs(z - pondCenterZ);
+        const onBridgeLane = dx <= pondBridgeHalfWidth && dz <= pondBridgeHalfLength + 0.2;
+        return !onBridgeLane && ((x - pondCenterX) / 14.7) ** 2 + ((z - pondCenterZ) / 9.7) ** 2 < 0.965;
+      },
     });
     const poolRim = roundedSlab([14.9, 0.2, 9.9], "#e8ddd5", 2.95);
     poolRim.position.set(51, 0.3, 42);
@@ -5158,7 +5221,12 @@ export default function WorldPage() {
     const pool = roundedSlab([14, 0.25, 9], waterMaterial("#86c7da"), 2.6);
     pool.position.set(51, 0.33, 42);
     worldRoot.add(pool);
-    blockBox(51, 42, 14, 9);
+    swimZones.push({
+      id: "green-park-pool",
+      label: "GREEN PARK POOL",
+      surfaceY: 0.455,
+      contains: (x, z) => insideRoundedRectangle(x, z, 51, 42, 6.85, 4.35, 2.5),
+    });
     const playgroundPigs = addParkPlayground(worldRoot, 52, 67);
     worldBlockers.push((x, z) => playgroundPigs.some((pig) => {
       if (pig === activePigMount) return false;
@@ -5166,18 +5234,33 @@ export default function WorldPage() {
       pig.root.getWorldPosition(pigBlockerPosition);
       return Math.hypot(x - pigBlockerPosition.x, z - pigBlockerPosition.z) < pig.colliderRadius;
     }));
-    const pondBridge = roundedSlab([3.1, 0.28, 16], "#c7a987", 0.72);
-    pondBridge.position.set(73, 0.47, 58);
+    // The deck overlaps both pond banks so its rounded ends read as real
+    // abutments instead of floating islands with a strip of water in front.
+    // Its 28 cm rise remains a walkable step from the surrounding park pad.
+    const pondBridge = roundedSlab(
+      [pondBridgeHalfWidth * 2, 0.28, pondBridgeHalfLength * 2],
+      "#c7a987",
+      0.72,
+    );
+    pondBridge.position.set(pondCenterX, pondBridgeDeckTop - 0.14, pondCenterZ);
     worldRoot.add(pondBridge);
-    [-1.34, 1.34].forEach((offsetX) => {
-      const rail = roundedBox([0.12, 0.14, 15.3], "#b5967b", 0.05);
-      rail.position.set(73 + offsetX, 1.18, 58);
+    [-pondBridgeRailOffset, pondBridgeRailOffset].forEach((offsetX) => {
+      const rail = roundedBox([0.12, 0.14, pondBridgeRailHalfLength * 2], "#b5967b", 0.05);
+      rail.position.set(pondCenterX + offsetX, 1.18, pondCenterZ);
       worldRoot.add(rail);
-      [-6.8, -3.4, 0, 3.4, 6.8].forEach((offsetZ) => {
+      [-9.4, -5.65, -1.9, 1.9, 5.65, 9.4].forEach((offsetZ) => {
         const post = roundedBox([0.14, 1.08, 0.14], "#b5967b", 0.05);
-        post.position.set(73 + offsetX, 0.82, 58 + offsetZ);
+        post.position.set(pondCenterX + offsetX, 0.82, pondCenterZ + offsetZ);
         worldRoot.add(post);
       });
+    });
+    // Rails are physical boundaries. The end openings remain clear for a
+    // straight approach from either bank, while the sides cannot be crossed.
+    worldBlockers.push((x, z) => {
+      const dx = Math.abs(x - pondCenterX);
+      const dz = Math.abs(z - pondCenterZ);
+      return dz <= pondBridgeRailHalfLength
+        && Math.abs(dx - pondBridgeRailOffset) <= 0.16;
     });
 
     // Old town, central skyline and the southern market blocks.
@@ -5385,7 +5468,7 @@ export default function WorldPage() {
         model.scale.setScalar(hero.height / Math.max(size.y, 1));
         const corrected = getVisibleCharacterBounds(model);
         characterBaseY = -corrected.min.y;
-        characterRideOffset = rideModeRef.current === "skate" ? 0.25 : rideModeRef.current === "bike" ? 0.78 : 0;
+        characterRideOffset = rideModeRef.current === "skate" ? SKATEBOARD_RIDER_OFFSET : rideModeRef.current === "bike" ? 0.78 : 0;
         model.position.y = characterBaseY + characterRideOffset;
         model.rotation.y = 0;
         applyCharacterLook(model, heroId, look);
@@ -5409,7 +5492,7 @@ export default function WorldPage() {
             const action = mixer!.clipAction(clip);
             const normalizedName = clip.name.toLowerCase();
             characterActions.set(normalizedName, action);
-            (["idle", "walk", "run", "jump", "fall"] as const).forEach((alias) => {
+            (["idle", "walk", "run", "jump", "fall", "swim"] as const).forEach((alias) => {
               if (normalizedName.includes(alias) && !characterActions.has(alias)) characterActions.set(alias, action);
             });
           });
@@ -5538,13 +5621,13 @@ export default function WorldPage() {
       keys.add(event.code);
       if (!event.repeat && (event.code === "KeyE" || event.code === "Enter")) interactRef.current = true;
       if (!event.repeat && event.code === "Space") jumpRef.current = true;
-      if (!event.repeat && event.code === "KeyM" && !currentVenue && !activeSeatSpot && !activeAttractionRide && !activePigMount) {
+      if (!event.repeat && event.code === "KeyM" && !currentVenue && !activeSeatSpot && !activeAttractionRide && !activePigMount && !activeSwimZone) {
         const next = !mapOpenRef.current;
         mapOpenRef.current = next;
         touchInputRef.current = { x: 0, z: 0 };
         setMapOpen(next);
       }
-      if (!event.repeat && event.code === "KeyI" && !activeSeatSpot && !activeAttractionRide && !activePigMount) setInventoryOpen((value) => !value);
+      if (!event.repeat && event.code === "KeyI" && !activeSeatSpot && !activeAttractionRide && !activePigMount && !activeSwimZone) setInventoryOpen((value) => !value);
       if (!event.repeat && event.code === "Escape") {
         mapOpenRef.current = false;
         setMapOpen(false);
@@ -5615,6 +5698,12 @@ export default function WorldPage() {
     let activeGrind: { rail: (typeof grindRails)[number]; progress: number; direction: 1 | -1; speed: number } | null = null;
     let activeSeatSpot: SeatSpot | null = null;
     let activeAttractionRide: { rig: AttractionRig; attraction: Attraction; startedAt: number } | null = null;
+    let activeSwimZone: SwimZone | null = null;
+    let swimKickEnergy = 0;
+    // The park water is layered over a shallow diorama ground slab. Keeping
+    // the avatar only slightly below the waterline leaves the torso visible
+    // while that slab naturally masks the legs like an authored water volume.
+    const swimBodySubmerge = 0.24;
     const forward = new THREE.Vector3();
     const right = new THREE.Vector3();
     const movement = new THREE.Vector3();
@@ -5644,6 +5733,7 @@ export default function WorldPage() {
     const intersects = (items: Collider[], x: number, z: number) => items.some((collider) => x > collider.minX && x < collider.maxX && z > collider.minZ && z < collider.maxZ);
     const collides = (x: number, z: number) => intersects(colliders, x, z) || worldBlockers.some((test) => test(x, z));
     const collidesInterior = (x: number, z: number) => intersects(interiorColliders, x, z);
+    const swimZoneAt = (x: number, z: number) => swimZones.find((zone) => zone.contains(x, z)) ?? null;
     worldRoot.updateMatrixWorld(true);
     const skateSurfaceAt = (x: number, z: number) => {
       const insideSkatepark = x >= -30.5 && x <= 30.5 && z >= -101 && z <= -49.5;
@@ -5685,7 +5775,12 @@ export default function WorldPage() {
       if (Math.abs(x - 67) <= 8.5 && Math.abs(z + 11.5) <= 14) height = Math.max(height, 0.455);
       if (Math.abs(x - 67) <= 22.5 && Math.abs(z - 53) <= 22) height = Math.max(height, 0.385);
       if (Math.hypot(x - 52, z - 67) <= 6.8) height = Math.max(height, 0.435);
-      if (Math.abs(x - 73) <= 1.55 && Math.abs(z - 58) <= 8) height = Math.max(height, 0.665);
+      if (
+        Math.abs(x - pondCenterX) <= pondBridgeHalfWidth
+        && Math.abs(z - pondCenterZ) <= pondBridgeHalfLength
+      ) height = Math.max(height, pondBridgeDeckTop + 0.055);
+      if (x >= 104.05 && x <= 107.7 && z >= -97.3 && z <= -53.7) height = Math.max(height, 0.385);
+      if (x >= 107.85 && x <= 133.15 && marinaDockRows.some((dockZ) => Math.abs(z - dockZ) <= 1.16)) height = Math.max(height, 0.365);
       if (x >= -136.5 && x <= -101.5 && z >= -135 && z <= -113.5) height = Math.max(height, 0.395);
       if (x >= 44 && x <= 90 && z >= -98.5 && z <= -51.5) height = Math.max(height, 0.485);
 
@@ -5720,6 +5815,36 @@ export default function WorldPage() {
       planarVelocity.set(0, 0, 0);
       velocityY = 0;
       grounded = true;
+    };
+    const startSwimming = (zone: SwimZone) => {
+      if (activeSwimZone?.id === zone.id || currentVenue || activeSeatSpot || activeAttractionRide || activePigMount) return;
+      forceWalkMode();
+      activeSwimZone = zone;
+      swimKickEnergy = 0;
+      grounded = false;
+      shadow.visible = false;
+      player.position.y = zone.surfaceY - swimBodySubmerge;
+      setPlayerActivity("swimming");
+      setNearbyVenue(null);
+      setNearbyAttraction(null);
+      setNearbySeat(null);
+      setNearbyPig(null);
+      setToast(`Swimming in ${zone.label}. Use WASD or the joystick; hold boost to swim faster.`);
+    };
+    const stopSwimming = (surfaceHeight: number) => {
+      if (!activeSwimZone) return;
+      activeSwimZone = null;
+      swimKickEnergy = 0;
+      player.position.y = surfaceHeight;
+      velocityY = 0;
+      grounded = true;
+      shadow.visible = true;
+      if (characterModel) {
+        characterModel.position.y = characterBaseY;
+        characterModel.rotation.x = 0;
+      }
+      setPlayerActivity("free");
+      setToast("Back on dry ground.");
     };
     const standUp = () => {
       if (!activeSeatSpot) return;
@@ -5894,7 +6019,7 @@ export default function WorldPage() {
         rideModeRef.current = next;
         skateboard.visible = next === "skate";
         bike.visible = next === "bike";
-        characterRideOffset = next === "skate" ? 0.25 : next === "bike" ? 0.78 : 0;
+        characterRideOffset = next === "skate" ? SKATEBOARD_RIDER_OFFSET : next === "bike" ? 0.78 : 0;
         if (characterModel) characterModel.position.y = characterBaseY + characterRideOffset;
         setToast(next === "walk" ? "Walking mode." : next === "skate" ? "Skateboard equipped." : "Bike equipped.");
         return next;
@@ -5909,6 +6034,10 @@ export default function WorldPage() {
       jumpRef.current = false;
       velocityY = 0;
       grounded = true;
+      activeSwimZone = null;
+      swimKickEnergy = 0;
+      shadow.visible = true;
+      setPlayerActivity("free");
       activeGrind = null;
       planarVelocity.set(0, 0, 0);
       grindCooldown = 0;
@@ -5966,6 +6095,7 @@ export default function WorldPage() {
       }
       elapsedTime += delta;
       grindCooldown = Math.max(0, grindCooldown - delta);
+      swimKickEnergy = THREE.MathUtils.damp(swimKickEnergy, 0, 3.4, delta);
       mixer?.update(delta);
       attractionRigs.forEach((rig) => rig.update(elapsedTime));
       const interiorLights = interiorRoot?.userData.animatedLights as THREE.Mesh[] | undefined;
@@ -6027,6 +6157,8 @@ export default function WorldPage() {
 
       const maximumSpeed = activePigMount
         ? (isBoosting ? 7.2 : 5.2)
+        : activeSwimZone
+          ? (isBoosting ? 7.1 : 4.8) + swimKickEnergy * 1.15
         : currentVenue
         ? (isBoosting ? 8.1 : 5.8)
         : activeRide === "walk"
@@ -6039,6 +6171,8 @@ export default function WorldPage() {
         const reversing = planarVelocity.lengthSq() > 0.04 && planarVelocity.dot(targetVelocity) < 0;
         const acceleration = activePigMount
           ? (reversing ? 11 : isBoosting ? 7.2 : 8.5)
+          : activeSwimZone
+            ? (reversing ? 8.5 : isBoosting ? 6.2 : 7.4)
           : currentVenue || activeRide === "walk"
           ? 14
           : activeRide === "skate"
@@ -6047,7 +6181,13 @@ export default function WorldPage() {
         planarVelocity.x = THREE.MathUtils.damp(planarVelocity.x, targetVelocity.x, acceleration, delta);
         planarVelocity.z = THREE.MathUtils.damp(planarVelocity.z, targetVelocity.z, acceleration, delta);
       } else {
-        const drag = controlsBlocked || currentVenue || activeRide === "walk" ? 14 : activeRide === "skate" ? 0.9 : 0.65;
+        const drag = controlsBlocked || currentVenue
+          ? 14
+          : activeSwimZone
+            ? 4.8
+            : activeRide === "walk"
+              ? 14
+              : activeRide === "skate" ? 0.9 : 0.65;
         planarVelocity.x = THREE.MathUtils.damp(planarVelocity.x, 0, drag, delta);
         planarVelocity.z = THREE.MathUtils.damp(planarVelocity.z, 0, drag, delta);
       }
@@ -6105,6 +6245,7 @@ export default function WorldPage() {
           const maxStep = activePigMount ? 0.42 : activeRide === "walk" ? 0.34 : 0.62;
           const canMoveTo = (x: number, z: number) => {
             if (collides(x, z)) return false;
+            if (activePigMount && swimZoneAt(x, z)) return false;
             if (activePigMount) {
               for (let sample = 0; sample < 8; sample += 1) {
                 const angle = sample / 8 * Math.PI * 2;
@@ -6114,6 +6255,12 @@ export default function WorldPage() {
                 )) return false;
               }
             }
+            // Swimming is planar movement inside a water volume. Do not run
+            // the normal grounded step-height check against the decorative
+            // terrain beneath the water; it would pin the swimmer at the
+            // shoreline. Leaving a swim zone is handled immediately after the
+            // move and snaps the player onto the authored land/deck surface.
+            if (activeSwimZone) return true;
             const currentSurface = skateSurfaceAt(player.position.x, player.position.z);
             const nextSurface = skateSurfaceAt(x, z);
             if (grounded) return nextSurface - currentSurface <= maxStep;
@@ -6127,6 +6274,12 @@ export default function WorldPage() {
         if (planarVelocity.lengthSq() > 0.01) player.rotation.y = Math.atan2(planarVelocity.x, planarVelocity.z);
       }
 
+      if (!currentVenue && !activeSeatSpot && !activeAttractionRide && !activePigMount && !grindingThisFrame) {
+        const nextSwimZone = swimZoneAt(player.position.x, player.position.z);
+        if (nextSwimZone && activeSwimZone?.id !== nextSwimZone.id) startSwimming(nextSwimZone);
+        else if (!nextSwimZone && activeSwimZone) stopSwimming(skateSurfaceAt(player.position.x, player.position.z));
+      }
+
       const groundAfterMove = currentVenue ? 0.06 : skateSurfaceAt(player.position.x, player.position.z);
       if (grounded && groundAfterMove > groundBeforeMove + 0.002) {
         const riseSpeed = (groundAfterMove - groundBeforeMove) / Math.max(delta, 0.001);
@@ -6135,7 +6288,7 @@ export default function WorldPage() {
         lastSurfaceRise = THREE.MathUtils.damp(lastSurfaceRise, 0, 4.5, delta);
       }
 
-      if (!grindingThisFrame && !activeGrind && grindCooldown <= 0 && !currentVenue && activeRide === "skate" && hasPlanarMotion) {
+      if (!grindingThisFrame && !activeGrind && grindCooldown <= 0 && !currentVenue && !activeSwimZone && activeRide === "skate" && hasPlanarMotion) {
         const candidate = closestGrindRail();
         if (candidate) {
           grindDirection.subVectors(candidate.rail.end, candidate.rail.start).normalize();
@@ -6159,6 +6312,15 @@ export default function WorldPage() {
 
       if (grindingThisFrame) {
         jumpRef.current = false;
+      } else if (activeSwimZone) {
+        if (!mapOpenRef.current && !heroSelectOpenRef.current && jumpRef.current) swimKickEnergy = 1;
+        jumpRef.current = false;
+        const floatHeight = activeSwimZone.surfaceY - swimBodySubmerge
+          + Math.sin(elapsedTime * 2.65) * 0.045
+          + swimKickEnergy * 0.075;
+        player.position.y = THREE.MathUtils.damp(player.position.y, floatHeight, 8.5, delta);
+        velocityY = 0;
+        grounded = false;
       } else {
         if (!mapOpenRef.current && !heroSelectOpenRef.current && jumpRef.current && grounded) {
           velocityY = activePigMount ? 5.2 : activeRide === "bike" ? 6.4 : 7.2;
@@ -6209,6 +6371,7 @@ export default function WorldPage() {
       }
 
       if (activeAttractionRide || activeSeatSpot || activePigMount) playCharacterAction("sit");
+      else if (activeSwimZone) playCharacterAction("swim");
       else if (mapOpenRef.current || rideModeRef.current !== "walk") playCharacterAction("idle");
       else if (!grounded) playCharacterAction(velocityY > 0.35 ? "jump" : "fall");
       else if (hasPlanarMotion) playCharacterAction(isBoosting ? "run" : "walk");
@@ -6216,29 +6379,39 @@ export default function WorldPage() {
 
       if (gorillaRig && characterModel) {
         const elapsed = elapsedTime;
+        const swimming = Boolean(activeSwimZone);
         const sitting = Boolean(activeSeatSpot || activeAttractionRide || activePigMount);
-        const walking = !sitting && rideModeRef.current === "walk" && hasPlanarMotion;
+        const walking = !sitting && !swimming && rideModeRef.current === "walk" && hasPlanarMotion;
         const stridePhase = elapsed * (isBoosting ? 10.5 : 7.2);
         const stride = walking && grounded ? Math.sin(stridePhase) : 0;
-        const riding = !sitting && rideModeRef.current !== "walk";
-        const armBase = sitting ? 0.48 : grounded ? (riding ? 0.88 : 1.08) : 0.42;
-        const armStride = grounded && walking ? stride * 0.46 : 0;
-        const legStride = sitting ? 1.16 : grounded && walking ? stride * 0.34 : grounded && riding ? 0.12 : -0.22;
+        const swimPhase = elapsed * (hasPlanarMotion ? (isBoosting ? 7.2 : 5.3) : 2.2);
+        const swimStroke = Math.sin(swimPhase);
+        const riding = !sitting && !swimming && rideModeRef.current !== "walk";
+        const armBase = swimming ? 0.82 : sitting ? 0.48 : grounded ? (riding ? 0.88 : 1.08) : 0.42;
+        const armStride = swimming ? swimStroke * 0.82 : grounded && walking ? stride * 0.46 : 0;
+        const legStride = swimming
+          ? -0.18 + Math.sin(swimPhase + Math.PI / 2) * 0.42
+          : sitting ? 1.16 : grounded && walking ? stride * 0.34 : grounded && riding ? 0.12 : -0.22;
         poseGorillaJoint(gorillaRig.shoulderL, armBase - armStride, 0, 0, 13, delta);
         poseGorillaJoint(gorillaRig.shoulderR, armBase + armStride, 0, 0, 13, delta);
         poseGorillaJoint(gorillaRig.thighL, legStride, 0, 0, 14, delta);
-        poseGorillaJoint(gorillaRig.thighR, -legStride, 0, 0, 14, delta);
-        poseGorillaJoint(gorillaRig.spine, sitting ? -0.18 : 0, 0, walking ? stride * 0.025 : Math.sin(elapsed * 1.7) * 0.009, 9, delta);
-        poseGorillaJoint(gorillaRig.head, 0, 0, walking ? -stride * 0.018 : Math.sin(elapsed * 1.25) * 0.012, 9, delta);
-        const movementBob = sitting ? 0 : walking && grounded ? Math.abs(Math.sin(stridePhase)) * 0.045 : grounded ? Math.sin(elapsed * 1.8) * 0.014 : 0;
-        const mountedOffset = activePigMount ? activePigMount.riderOffset : sitting ? -0.12 : characterRideOffset;
+        poseGorillaJoint(gorillaRig.thighR, swimming ? -0.18 - Math.sin(swimPhase + Math.PI / 2) * 0.42 : -legStride, 0, 0, 14, delta);
+        poseGorillaJoint(gorillaRig.spine, swimming ? -0.3 : sitting ? -0.18 : 0, 0, walking ? stride * 0.025 : Math.sin(elapsed * 1.7) * 0.009, 9, delta);
+        poseGorillaJoint(gorillaRig.head, swimming ? 0.18 : 0, 0, walking ? -stride * 0.018 : Math.sin(elapsed * 1.25) * 0.012, 9, delta);
+        const movementBob = swimming ? Math.sin(swimPhase * 2) * 0.025 : sitting ? 0 : walking && grounded ? Math.abs(Math.sin(stridePhase)) * 0.045 : grounded ? Math.sin(elapsed * 1.8) * 0.014 : 0;
+        const mountedOffset = swimming ? 0 : activePigMount ? activePigMount.riderOffset : sitting ? -0.12 : characterRideOffset;
+        characterModel.rotation.x = THREE.MathUtils.damp(characterModel.rotation.x, swimming ? -0.34 : 0, 8, delta);
         characterModel.position.y = characterBaseY + mountedOffset + movementBob;
+      } else if (characterModel) {
+        characterModel.rotation.x = THREE.MathUtils.damp(characterModel.rotation.x, activeSwimZone ? -0.28 : 0, 8, delta);
       }
 
       if (mapOpenRef.current || heroSelectOpenRef.current || attractionOpenRef.current || inventoryOpenRef.current || shopOpenRef.current || checkoutOpenRef.current) {
         interactRef.current = false;
       } else if (activePigMount) {
         if (interactRef.current) dismountPig();
+      } else if (activeSwimZone) {
+        interactRef.current = false;
       } else if (activeAttractionRide) {
         if (interactRef.current) finishAttractionRide(true);
       } else if (activeSeatSpot) {
@@ -6411,10 +6584,11 @@ export default function WorldPage() {
       mount.dataset.playerZ = player.position.z.toFixed(2);
       mount.dataset.playerYaw = player.rotation.y.toFixed(3);
       mount.dataset.speedKmh = (planarVelocity.length() * 3.6).toFixed(1);
-      mount.dataset.rideMode = activePigMount ? "pig" : rideModeRef.current;
+      mount.dataset.rideMode = activePigMount ? "pig" : activeSwimZone ? "swim" : rideModeRef.current;
       mount.dataset.mountedPig = activePigMount?.id ?? "";
+      mount.dataset.swimZone = activeSwimZone?.id ?? "";
       if (activePigMount) mount.dataset.nearbyPig = "";
-      mount.dataset.activity = activePigMount ? "mounted" : activeAttractionRide ? "riding" : activeSeatSpot ? "seated" : currentVenue ? "interior" : "free";
+      mount.dataset.activity = activePigMount ? "mounted" : activeSwimZone ? "swimming" : activeAttractionRide ? "riding" : activeSeatSpot ? "seated" : currentVenue ? "interior" : "free";
     };
     animate();
 
@@ -6650,10 +6824,10 @@ export default function WorldPage() {
         </nav>
       </header>
 
-      {!mapOpen && !heroSelectOpen && !attractionOpen && (playerActivity === "free" || playerActivity === "mounted") && <aside className={styles.modeCard}>
-        {playerActivity === "mounted" ? <Horse size={22} weight="fill" /> : rideMode === "bike" ? <Bicycle size={22} weight="bold" /> : <PersonSimpleRun size={22} weight="bold" />}
+      {!mapOpen && !heroSelectOpen && !attractionOpen && (playerActivity === "free" || playerActivity === "mounted" || playerActivity === "swimming") && <aside className={styles.modeCard}>
+        {playerActivity === "swimming" ? <PersonSimpleSwim size={22} weight="fill" /> : playerActivity === "mounted" ? <Horse size={22} weight="fill" /> : rideMode === "bike" ? <Bicycle size={22} weight="bold" /> : <PersonSimpleRun size={22} weight="bold" />}
         <span><small>MOVEMENT</small><strong>{rideLabel}</strong></span>
-        {(playerActivity === "mounted" || rideMode !== "walk") && <em><b>{speedometer}</b><small>KM/H</small></em>}
+        {(playerActivity === "mounted" || playerActivity === "swimming" || rideMode !== "walk") && <em><b>{speedometer}</b><small>KM/H</small></em>}
       </aside>}
 
       {nearbyAttraction && !mapOpen && !heroSelectOpen && !attractionOpen && !activeVenue && (
@@ -6678,7 +6852,7 @@ export default function WorldPage() {
       {!loaded && <div className={styles.loading}><span /><strong>BUILDING 67VERSE WORLD</strong></div>}
       {toast && <div className={styles.toast}>{toast}</div>}
 
-      {!mapOpen && !heroSelectOpen && !inventoryOpen && !checkoutItem && !shopOpen && !attractionOpen && (
+      {!mapOpen && !heroSelectOpen && !inventoryOpen && !checkoutItem && !shopOpen && !attractionOpen && playerActivity !== "swimming" && (
         <button type="button" className={`${styles.interaction} ${(nearbyVenue || nearbyAttraction || nearbySeat || nearbyPig || nearbyProduct || nearCounter || nearExit || playerActivity !== "free") ? styles.ready : ""}`} onClick={handleInteract}>
           <kbd>E</kbd><span><small>INTERACT</small><strong>{currentPrompt}</strong></span>
         </button>
@@ -6688,6 +6862,8 @@ export default function WorldPage() {
         <div className={styles.help}>
           {playerActivity === "mounted"
             ? "PIG RIDE · WASD OR JOYSTICK TO STEER · SHIFT TO BOOST · SPACE TO HOP · E TO GET OFF"
+            : playerActivity === "swimming"
+              ? "SWIMMING · WASD OR JOYSTICK TO STEER · HOLD BOOST TO SWIM FASTER · SPACE TO KICK"
             : playerActivity === "riding"
             ? "RIDE IN PROGRESS · E TO EXIT SAFELY"
             : playerActivity === "seated"
@@ -6726,12 +6902,12 @@ export default function WorldPage() {
               onPointerUp={() => setMobileBoost(false)}
               onPointerCancel={() => setMobileBoost(false)}
               onLostPointerCapture={() => setMobileBoost(false)}
-              aria-label="Hold to sprint or boost"
+              aria-label={playerActivity === "swimming" ? "Hold to swim faster" : "Hold to sprint or boost"}
               aria-pressed={mobileBoosting}
-            ><PersonSimpleRun size={23} weight="fill" /></button>
-            <button type="button" onClick={() => { jumpRef.current = true; }} aria-label="Jump"><ArrowUp size={22} weight="bold" /></button>
+            >{playerActivity === "swimming" ? <PersonSimpleSwim size={23} weight="fill" /> : <PersonSimpleRun size={23} weight="fill" />}</button>
+            <button type="button" onClick={() => { jumpRef.current = true; }} aria-label={playerActivity === "swimming" ? "Swim kick" : "Jump"}><ArrowUp size={22} weight="bold" /></button>
           </div>
-          <button type="button" className={styles.mobileInteract} onClick={handleInteract} aria-label="Interact">E</button>
+          <button type="button" className={styles.mobileInteract} onClick={handleInteract} aria-label="Interact" disabled={playerActivity === "swimming"}>E</button>
         </div>
       </section>}
 
