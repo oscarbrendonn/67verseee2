@@ -137,6 +137,36 @@
 
 passed
 
+## Sparse crossings and soft-pastel palm pass
+
+### Source and visual evidence
+
+- User reference: `/tmp/codex-remote-attachments/019fbafb-ac9c-7883-b039-7e39958a743b/11875CC0-B756-4417-8256-0D767D7E5F5B/1-Fotoğraf-1.jpg` (`588 × 1280`, app-owned viewport cropped to `588 × 1046`).
+- App-only source crop: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/source-palm-crosswalk-mobile.png`.
+- Live mobile palm view: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/street-palm-mobile.png`.
+- Live mobile city overview: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/street-markings-overview.png`.
+- Required combined comparison input: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/street-palm-comparison.png`.
+- Browser viewport and state: `588 × 1046`; Gorilla 67 entered the live world, traveled to Waterfront, walked to the coastal palm, rotated the gameplay camera for a close model inspection, then opened the live Three.js city map for the complete road-marking audit.
+
+### Comparison history and fixes
+
+- **P1 crossing clutter:** each of the 16 intersections previously rendered four complete zebra sets with seven bright bars per set plus four stop lines. The supplied street view showed this as a dense, repeated white grid.
+- **Fix:** every junction now has one explicitly planned pedestrian crossing directed toward an active parcel. Each crossing uses five wider warm-grey bars and one paired stop line. Zebra meshes drop from `448` to `80` (approximately `82%`), and stop lines drop from `64` to `16` (`75%`) without changing road, sidewalk, vehicle, spawn, or collision geometry.
+- **P1 palm style mismatch:** the imported realistic coconut-palm GLB produced a pale, thin trunk and high-detail fronds that did not belong to the rounded 67VERSE diorama language.
+- **Fix:** removed the live Meshy palm load and replaced it with authored Three.js palms using warm clay rounded trunk segments, compact mint/olive molded leaves, matte materials, soft shadows, three deterministic variations, and a smaller silhouette. The four landscaped placements remain unchanged.
+
+### Final findings
+
+- The live city overview shows one small crossing per junction rather than four competing zebra blocks, making streets and parcels readable at mobile scale.
+- The close waterfront view confirms that the former white photoreal palm is absent. Its replacement uses the same rounded construction, muted palette, and soft-shadow treatment as the city trees, boats, shops, and attractions.
+- The palm remains clear of asphalt and neighboring buildings. Road generation, sidewalk support heights, parked-car blockers, district travel, movement, and the mobile joystick are unchanged.
+- The implementation remains live Three.js geometry; neither reference screenshot is embedded into the product.
+- Final browser warning/error logs are empty.
+
+## Final result
+
+passed
+
 No remaining actionable P0, P1, or P2 issue was found for the integrated city-road, tall-building, venue-interior, master-skatepark, mobile-control, or tested interaction scope.
 
 ## Soft-pastel diorama model-quality pass

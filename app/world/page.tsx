@@ -400,8 +400,40 @@ const ATTRACTIONS: Attraction[] = [
   },
 ];
 
-const ROAD_X = [-96, -36, 36, 96];
-const ROAD_Z = [-106, -45, 22, 82];
+const ROAD_X = [-96, -36, 36, 96] as const;
+const ROAD_Z = [-106, -45, 22, 82] as const;
+type RoadX = (typeof ROAD_X)[number];
+type RoadZ = (typeof ROAD_Z)[number];
+type IntersectionCrossingSide = "north" | "east" | "south" | "west";
+type IntersectionKey = `${RoadX},${RoadZ}`;
+
+// One deliberately placed crossing per junction keeps the city readable at
+// street level and from the bird's-eye map. The sides alternate toward active
+// parcels instead of repeating four zebra patterns around every intersection.
+// `satisfies` makes additions to either road axis fail type-checking until the
+// new junction has been explicitly audited here.
+const INTERSECTION_CROSSING_PLAN = {
+  "-96,-106": "east",
+  "-36,-106": "south",
+  "36,-106": "south",
+  "96,-106": "west",
+  "-96,-45": "east",
+  "-36,-45": "north",
+  "36,-45": "south",
+  "96,-45": "west",
+  "-96,22": "east",
+  "-36,22": "east",
+  "36,22": "west",
+  "96,22": "west",
+  "-96,82": "east",
+  "-36,82": "north",
+  "36,82": "north",
+  "96,82": "west",
+} satisfies Record<IntersectionKey, IntersectionCrossingSide>;
+
+function intersectionKey(x: RoadX, z: RoadZ): IntersectionKey {
+  return `${x},${z}`;
+}
 const HORIZONTAL_ROAD_SEGMENTS: Array<[number, number]> = [
   [-135, -101],
   [-91, -41],
@@ -569,16 +601,32 @@ function roundedSlab(
 const TREE_TRUNK_GEOMETRY = new THREE.CylinderGeometry(0.15, 0.31, 1.9, 12);
 const TREE_BRANCH_GEOMETRY = new THREE.CylinderGeometry(0.08, 0.13, 0.92, 8);
 const TREE_CROWN_GEOMETRY = new THREE.SphereGeometry(0.78, 14, 10);
+const PALM_TRUNK_SEGMENT_GEOMETRY = new THREE.CapsuleGeometry(0.24, 0.44, 4, 10);
+const PALM_FROND_GEOMETRY = new THREE.SphereGeometry(0.72, 14, 9);
+const PALM_HEART_GEOMETRY = new THREE.SphereGeometry(0.48, 14, 10);
 const TREE_TRUNK_MATERIAL = material("#96765f", 0.8);
 const TREE_CROWN_MATERIALS = [
   material("#7f936d", 0.76),
   material("#8da079", 0.75),
   material("#9aaa84", 0.74),
 ];
+const PALM_TRUNK_MATERIALS = [
+  material("#c89e7b", 0.82),
+  material("#d4ad87", 0.8),
+  material("#bc8e6e", 0.84),
+];
+const PALM_FROND_MATERIALS = [
+  material("#819b78", 0.8),
+  material("#91aa84", 0.78),
+  material("#9caf8c", 0.8),
+];
 const BUILDING_WINDOW_GEOMETRY = new RoundedBoxGeometry(1.02, 0.9, 0.12, 2, 0.1);
 SHARED_GEOMETRIES.add(TREE_TRUNK_GEOMETRY);
 SHARED_GEOMETRIES.add(TREE_BRANCH_GEOMETRY);
 SHARED_GEOMETRIES.add(TREE_CROWN_GEOMETRY);
+SHARED_GEOMETRIES.add(PALM_TRUNK_SEGMENT_GEOMETRY);
+SHARED_GEOMETRIES.add(PALM_FROND_GEOMETRY);
+SHARED_GEOMETRIES.add(PALM_HEART_GEOMETRY);
 SHARED_GEOMETRIES.add(BUILDING_WINDOW_GEOMETRY);
 const BUILDING_STOREFRONT_MATERIAL = new THREE.MeshStandardMaterial({
   color: "#58757b",
@@ -754,6 +802,78 @@ function addTree(parent: THREE.Group, x: number, z: number, scale = 1) {
   tree.scale.setScalar(scale);
   tree.position.set(x, 0, z);
   parent.add(tree);
+}
+
+function addPalmTree(parent: THREE.Group, x: number, z: number, scale = 1, rotation = 0) {
+  const palm = new THREE.Group();
+  const variant = Math.abs(Math.round(x * 7 + z * 11)) % 3;
+  const leanX = variant === 1 ? 0.2 : variant === 2 ? -0.16 : 0.1;
+  const leanZ = variant === 2 ? 0.13 : -0.08;
+
+  // Overlapping rounded segments give the trunk the molded, toy-like taper of
+  // the rest of the city instead of the pale photoreal Meshy silhouette.
+  for (let index = 0; index < 7; index += 1) {
+    const progress = index / 6;
+    const segment = new THREE.Mesh(
+      PALM_TRUNK_SEGMENT_GEOMETRY,
+      PALM_TRUNK_MATERIALS[(index + variant) % PALM_TRUNK_MATERIALS.length],
+    );
+    const radialScale = THREE.MathUtils.lerp(1.12, 0.8, progress);
+    segment.scale.set(radialScale, 0.86, radialScale);
+    segment.position.set(
+      leanX * progress * progress,
+      0.42 + index * 0.56,
+      leanZ * progress * progress,
+    );
+    segment.rotation.z = -leanX * progress * 0.1;
+    segment.rotation.x = leanZ * progress * 0.1;
+    segment.castShadow = true;
+    segment.receiveShadow = true;
+    palm.add(segment);
+  }
+
+  const crown = new THREE.Group();
+  crown.position.set(leanX, 4.02, leanZ);
+  for (let index = 0; index < 8; index += 1) {
+    const frond = new THREE.Group();
+    frond.rotation.y = (index / 8) * Math.PI * 2 + variant * 0.1;
+
+    const innerLeaf = new THREE.Mesh(
+      PALM_FROND_GEOMETRY,
+      PALM_FROND_MATERIALS[(index + variant) % PALM_FROND_MATERIALS.length],
+    );
+    innerLeaf.position.set(0.46, 0.01 + (index % 2) * 0.035, 0);
+    innerLeaf.scale.set(0.82, 0.24, 0.43);
+    innerLeaf.rotation.z = -0.05;
+    innerLeaf.castShadow = true;
+    innerLeaf.receiveShadow = true;
+
+    const outerLeaf = new THREE.Mesh(
+      PALM_FROND_GEOMETRY,
+      PALM_FROND_MATERIALS[(index + variant + 1) % PALM_FROND_MATERIALS.length],
+    );
+    outerLeaf.position.set(1.01, -0.13 - (index % 3) * 0.025, 0);
+    outerLeaf.scale.set(0.7, 0.2, 0.36);
+    outerLeaf.rotation.z = -0.18;
+    outerLeaf.castShadow = true;
+    outerLeaf.receiveShadow = true;
+    frond.add(innerLeaf, outerLeaf);
+    crown.add(frond);
+  }
+
+  const heart = new THREE.Mesh(PALM_HEART_GEOMETRY, PALM_FROND_MATERIALS[(variant + 1) % PALM_FROND_MATERIALS.length]);
+  heart.scale.set(0.76, 0.56, 0.76);
+  heart.position.y = 0.06;
+  heart.castShadow = true;
+  heart.receiveShadow = true;
+  crown.add(heart);
+  palm.add(crown);
+
+  palm.position.set(x, 0, z);
+  palm.rotation.y = rotation;
+  palm.scale.setScalar(scale);
+  parent.add(palm);
+  return palm;
 }
 
 function addBench(parent: THREE.Group, x: number, z: number, rotation = 0) {
@@ -1167,6 +1287,7 @@ function addBuilding(
 const ROAD_ASPHALT_MATERIAL = material("#8d8788", 0.84, 0.01);
 const ROAD_GUTTER_MATERIAL = material("#787476", 0.88, 0.01);
 const ROAD_MARKING_MATERIAL = material("#f4eee7", 0.84, 0.01);
+const ROAD_CROSSWALK_MATERIAL = material("#ddd5cf", 0.88, 0.01);
 const ROAD_UTILITY_MATERIAL = material("#666467", 0.7, 0.06);
 const SIDEWALK_MATERIAL = material("#e3dad4", 0.82, 0.01);
 const CURB_MATERIAL = material("#cbbdb4", 0.84, 0.01);
@@ -1399,26 +1520,44 @@ function addSidewalkBlock(
   if (!omitEast) parent.add(eastCurb);
 }
 
-function addIntersection(parent: THREE.Group, x: number, z: number) {
+function addIntersection(
+  parent: THREE.Group,
+  x: number,
+  z: number,
+  crossingSide: IntersectionCrossingSide,
+) {
   const intersection = new THREE.Mesh(new THREE.BoxGeometry(10, 0.14, 10), ROAD_ASPHALT_MATERIAL);
   intersection.position.set(x, 0.04, z);
   intersection.receiveShadow = true;
   parent.add(intersection);
 
-  // Four complete zebra crossings and four stop lines form one coherent,
-  // readable junction. Markings start outside the square junction so they do
-  // not stack over its asphalt or each other.
-  for (let index = -3; index <= 3; index += 1) {
-    const spread = index * 1.12;
-    [-1, 1].forEach((side) => {
-      addStreetMarking(parent, x + spread, z + side * 6.15, 0.7, 2.15);
-      addStreetMarking(parent, x + side * 6.15, z + spread, 2.15, 0.7);
-    });
+  // A single protected crossing uses five broad, warm-grey bars instead of
+  // four sets of seven bright bars. It remains legible without turning every
+  // junction into a high-contrast grid, and the paired stop line sits wholly
+  // outside both the crossing and intersection slab.
+  const crossingOffset = 6.05;
+  const stopLineOffset = 7.62;
+  const sideSign = crossingSide === "north" || crossingSide === "west" ? -1 : 1;
+  const crossingRunsEastWest = crossingSide === "north" || crossingSide === "south";
+  for (let index = -2; index <= 2; index += 1) {
+    const spread = index * 1.34;
+    addStreetMarking(
+      parent,
+      x + (crossingRunsEastWest ? spread : sideSign * crossingOffset),
+      z + (crossingRunsEastWest ? sideSign * crossingOffset : spread),
+      crossingRunsEastWest ? 0.82 : 1.82,
+      crossingRunsEastWest ? 1.82 : 0.82,
+      ROAD_CROSSWALK_MATERIAL,
+    );
   }
-  [-1, 1].forEach((side) => {
-    addStreetMarking(parent, x, z + side * 8.0, 7.6, 0.14);
-    addStreetMarking(parent, x + side * 8.0, z, 0.14, 7.6);
-  });
+  addStreetMarking(
+    parent,
+    x + (crossingRunsEastWest ? 0 : sideSign * stopLineOffset),
+    z + (crossingRunsEastWest ? sideSign * stopLineOffset : 0),
+    crossingRunsEastWest ? 6.35 : 0.13,
+    crossingRunsEastWest ? 0.13 : 6.35,
+    ROAD_CROSSWALK_MATERIAL,
+  );
 
   // Compact drains at opposite corners add a believable gutter detail without
   // introducing dozens of individual grate bars.
@@ -5016,7 +5155,9 @@ export default function WorldPage() {
     ROAD_X.forEach((x) => {
       VERTICAL_ROAD_SEGMENTS.forEach(([from, to]) => addRoad(worldRoot, x, (from + to) / 2, 10, to - from));
     });
-    ROAD_X.forEach((x) => ROAD_Z.forEach((z) => addIntersection(worldRoot, x, z)));
+    ROAD_X.forEach((x) => ROAD_Z.forEach((z) => {
+      addIntersection(worldRoot, x, z, INTERSECTION_CROSSING_PLAN[intersectionKey(x, z)]);
+    }));
 
     // Each parcel owns one non-overlapping pavement perimeter. This produces
     // clean raised sidewalks and coherent corners instead of bars crossing the
@@ -5348,18 +5489,14 @@ export default function WorldPage() {
 
     // Load supplied web-optimized 3D assets as detail passes.
     const loader = new GLTFLoader();
-    loader.load("/models/meshy/coconut-palm-tree.glb", (gltf) => {
-      tuneImportedModel(gltf.scene);
-      [[86, -96], [106, -64], [111, 40], [106, 71]].forEach(([x, z], index) => {
-        const palm = gltf.scene.clone(true);
-        const bounds = new THREE.Box3().setFromObject(palm);
-        const size = bounds.getSize(new THREE.Vector3());
-        palm.scale.setScalar(6 / Math.max(size.y, 1));
-        palm.position.set(x, 0, z);
-        palm.rotation.y = index * 1.7;
-        worldRoot.add(palm);
-      });
-    });
+    // Compact authored palms stay on the existing landscaped corners while
+    // matching the city's soft mint-and-clay diorama language.
+    [
+      [86, -96, 0.94, 0.15],
+      [106, -64, 0.9, 1.7],
+      [111, 40, 0.88, 3.4],
+      [106, 71, 0.92, 5.1],
+    ].forEach(([x, z, scale, rotation]) => addPalmTree(worldRoot, x, z, scale, rotation));
     [[109, -123, 0], [109, 101, Math.PI]].forEach(([x, z]) => blockBox(x, z, 8, 6));
     loader.load("/models/diorama/pastel-house.glb", (gltf) => {
       const template = gltf.scene;
