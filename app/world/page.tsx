@@ -549,6 +549,34 @@ function roundedBox(size: [number, number, number], color: string, radius = 0.24
 }
 
 /**
+ * Buildings need a more generous molded radius than small props.  Keeping the
+ * geometry in the same shared cache preserves disposal/performance while the
+ * near-half-height curve gives the warm clay-model silhouette in the approved
+ * city reference.
+ */
+function moldedBuildingBox(
+  size: [number, number, number],
+  colorOrMaterial: string | THREE.Material,
+  radius = 0.72,
+) {
+  const resolvedRadius = Math.min(Math.max(0.04, radius), Math.min(...size) / 2 - 0.01);
+  const geometryKey = `${size.map((value) => value.toFixed(3)).join(":")}:${resolvedRadius.toFixed(3)}`;
+  let geometry = ROUNDED_BOX_GEOMETRY_CACHE.get(geometryKey);
+  if (!geometry) {
+    geometry = new RoundedBoxGeometry(size[0], size[1], size[2], 5, resolvedRadius);
+    ROUNDED_BOX_GEOMETRY_CACHE.set(geometryKey, geometry);
+    SHARED_GEOMETRIES.add(geometry);
+  }
+  const mesh = new THREE.Mesh(
+    geometry,
+    typeof colorOrMaterial === "string" ? material(colorOrMaterial, 0.8, 0.01) : colorOrMaterial,
+  );
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+/**
  * A thin XZ slab with a real plan-view corner radius. RoundedBoxGeometry caps
  * its radius by the smallest dimension, which made wide 16 cm pavements and
  * roofs look square. This keeps the authored footprint and surface height but
@@ -620,7 +648,15 @@ const PALM_FROND_MATERIALS = [
   material("#91aa84", 0.78),
   material("#9caf8c", 0.8),
 ];
-const BUILDING_WINDOW_GEOMETRY = new RoundedBoxGeometry(1.02, 0.9, 0.12, 2, 0.1);
+// Facade pieces stay shared and are instanced per building.  The separate
+// reveal, pane, four-piece frame and sill create real readable depth without
+// cutting openings into every procedural shell (or multiplying draw calls).
+const BUILDING_WINDOW_GEOMETRY = new RoundedBoxGeometry(1.02, 0.82, 0.07, 2, 0.08);
+const BUILDING_WINDOW_REVEAL_GEOMETRY = new RoundedBoxGeometry(1.3, 1.1, 0.075, 2, 0.12);
+const BUILDING_WINDOW_FRAME_HORIZONTAL_GEOMETRY = new RoundedBoxGeometry(1.3, 0.14, 0.15, 2, 0.06);
+const BUILDING_WINDOW_FRAME_VERTICAL_GEOMETRY = new RoundedBoxGeometry(0.14, 1.1, 0.15, 2, 0.06);
+const BUILDING_WINDOW_SILL_GEOMETRY = new RoundedBoxGeometry(1.36, 0.13, 0.25, 2, 0.055);
+const BUILDING_FACADE_RIBBON_GEOMETRY = new RoundedBoxGeometry(1, 1, 0.075, 2, 0.18);
 SHARED_GEOMETRIES.add(TREE_TRUNK_GEOMETRY);
 SHARED_GEOMETRIES.add(TREE_BRANCH_GEOMETRY);
 SHARED_GEOMETRIES.add(TREE_CROWN_GEOMETRY);
@@ -628,30 +664,38 @@ SHARED_GEOMETRIES.add(PALM_TRUNK_SEGMENT_GEOMETRY);
 SHARED_GEOMETRIES.add(PALM_FROND_GEOMETRY);
 SHARED_GEOMETRIES.add(PALM_HEART_GEOMETRY);
 SHARED_GEOMETRIES.add(BUILDING_WINDOW_GEOMETRY);
+SHARED_GEOMETRIES.add(BUILDING_WINDOW_REVEAL_GEOMETRY);
+SHARED_GEOMETRIES.add(BUILDING_WINDOW_FRAME_HORIZONTAL_GEOMETRY);
+SHARED_GEOMETRIES.add(BUILDING_WINDOW_FRAME_VERTICAL_GEOMETRY);
+SHARED_GEOMETRIES.add(BUILDING_WINDOW_SILL_GEOMETRY);
+SHARED_GEOMETRIES.add(BUILDING_FACADE_RIBBON_GEOMETRY);
 const BUILDING_STOREFRONT_MATERIAL = new THREE.MeshStandardMaterial({
-  color: "#58757b",
-  emissive: "#263d41",
-  emissiveIntensity: 0.1,
-  metalness: 0.08,
-  roughness: 0.24,
-  envMapIntensity: 0.76,
-});
-const BUILDING_WINDOW_FRAME_MATERIAL = material("#eee7de", 0.62, 0.02);
-const BUILDING_COOL_WINDOW_MATERIAL = new THREE.MeshStandardMaterial({
-  color: "#91aeb7",
-  emissive: "#45636a",
+  color: "#607b7e",
+  emissive: "#354f51",
   emissiveIntensity: 0.12,
-  roughness: 0.34,
-  metalness: 0.02,
-  envMapIntensity: 0.7,
+  metalness: 0.03,
+  roughness: 0.38,
+  envMapIntensity: 0.62,
+});
+const BUILDING_WINDOW_REVEAL_MATERIAL = material("#c8bbb1", 0.82, 0.01);
+const BUILDING_WINDOW_FRAME_MATERIAL = material("#f1e8df", 0.76, 0.01);
+const BUILDING_WINDOW_SILL_MATERIAL = material("#ded0c4", 0.8, 0.01);
+const BUILDING_FACADE_RIBBON_MATERIAL = material("#879694", 0.72, 0.01);
+const BUILDING_COOL_WINDOW_MATERIAL = new THREE.MeshStandardMaterial({
+  color: "#829fa5",
+  emissive: "#455f62",
+  emissiveIntensity: 0.09,
+  roughness: 0.42,
+  metalness: 0.01,
+  envMapIntensity: 0.58,
 });
 const BUILDING_WARM_WINDOW_MATERIAL = new THREE.MeshStandardMaterial({
-  color: "#e5c390",
-  emissive: "#e1a765",
-  emissiveIntensity: 0.28,
-  roughness: 0.46,
+  color: "#dcb87f",
+  emissive: "#d99e5d",
+  emissiveIntensity: 0.22,
+  roughness: 0.5,
   metalness: 0.01,
-  envMapIntensity: 0.56,
+  envMapIntensity: 0.5,
 });
 const BUILDING_INTERIOR_GLOW_MATERIAL = new THREE.MeshStandardMaterial({
   color: "#f2c9a7",
@@ -666,7 +710,10 @@ const BUILDING_AWNING_LIGHT_MATERIAL = new THREE.MeshStandardMaterial({
   roughness: 0.5,
 });
 SHARED_MATERIALS.add(BUILDING_STOREFRONT_MATERIAL);
+SHARED_MATERIALS.add(BUILDING_WINDOW_REVEAL_MATERIAL);
 SHARED_MATERIALS.add(BUILDING_WINDOW_FRAME_MATERIAL);
+SHARED_MATERIALS.add(BUILDING_WINDOW_SILL_MATERIAL);
+SHARED_MATERIALS.add(BUILDING_FACADE_RIBBON_MATERIAL);
 SHARED_MATERIALS.add(BUILDING_COOL_WINDOW_MATERIAL);
 SHARED_MATERIALS.add(BUILDING_WARM_WINDOW_MATERIAL);
 SHARED_MATERIALS.add(BUILDING_INTERIOR_GLOW_MATERIAL);
@@ -1022,66 +1069,132 @@ function addBuilding(
   const group = new THREE.Group();
   // Keep the authored footprint/collider contract, but build the visible mass
   // as stacked soft forms like the approved close aerial reference.
-  const archetype = Math.abs(Math.round(x * 7 + z * 11)) % 4;
-  const floorCount = THREE.MathUtils.clamp(Math.round(height / 2.45), 3, 7);
-  const groundFloorHeight = 3.25;
-  const upperFloorHeight = 2.45;
+  const stableSignature = Math.abs(Math.round(x * 7 + z * 11));
+  const archetype = stableSignature % 4;
+  const isAuthoredVenue = Boolean(facadeLabel);
+  const floorCount = THREE.MathUtils.clamp(Math.round(height / 2.45), 2, 7);
+  const isRoundedTower = archetype === 0 && !isAuthoredVenue && floorCount >= 5;
+  // Venues always retain their storefront and authored name.  Only a small,
+  // deterministic share of generic parcels become shops; the rest read as the
+  // residential/office blocks visible in the supplied miniature city.
+  const isCommercial = isAuthoredVenue || (!isRoundedTower && stableSignature % 5 === 0);
+  const groundFloorHeight = isCommercial ? 3.15 : 2.78;
+  const upperFloorHeight = 2.38;
   const displayHeight = groundFloorHeight + (floorCount - 1) * upperFloorHeight;
-  const bodyColor = softenDioramaColor(color, 0.76);
-  const resolvedAccent = softenDioramaColor(accent === "#e7dfd3" ? color : accent, 0.2);
-  const roofColor = softenDioramaColor(resolvedAccent, 0.46);
+  // Keep the warm ivory base from the reference without bleaching every block
+  // into the same grey-white. A little of each authored blush, mint, blue or
+  // sand hue must remain visible at street distance.
+  const bodyColor = softenDioramaColor(color, 0.74);
+  const resolvedAccent = softenDioramaColor(accent === "#e7dfd3" ? color : accent, 0.42);
+  const roofColor = softenDioramaColor(resolvedAccent, 0.58);
+  const bodyMaterial = material(bodyColor, 0.82, 0.01);
+  const corniceMaterial = material(roofColor, 0.78, 0.01);
   const tierMetrics = (floor: number) => {
+    const minimumSpan = Math.min(width, depth);
+    const shellInset = floor > 0 ? Math.min(0.16, minimumSpan * 0.014) : 0;
     const setbackSteps = archetype === 2
       ? Math.floor(Math.max(0, floor - 1) / 2)
-      : archetype === 1 && floor >= floorCount - 1
+      : (archetype === 0 && floorCount >= 5 && floor >= floorCount - 2)
         ? 1
-        : 0;
-    const inset = setbackSteps * Math.min(0.32, Math.min(width, depth) * 0.025);
-    const sway = archetype === 3 && floor > 1 ? ((floor % 2 === 0 ? 1 : -1) * Math.min(0.15, width * 0.012)) : 0;
+        : (archetype === 1 || archetype === 3) && floor >= floorCount - 1
+          ? 1
+          : 0;
+    const inset = shellInset + setbackSteps * Math.min(0.42, minimumSpan * 0.034);
+    const sway = archetype === 3 && floor === floorCount - 1
+      ? Math.min(0.22, width * 0.016)
+      : 0;
     return { width: width - inset * 2, depth: depth - inset * 2, inset, sway };
   };
 
-  const groundBody = roundedBox([width, groundFloorHeight + 0.14, depth], bodyColor, 1.05);
+  const groundBody = isRoundedTower
+    ? roundedSlab(
+        [width, groundFloorHeight + 0.18, depth],
+        bodyMaterial,
+        Math.min(width, depth) * 0.36,
+      )
+    : moldedBuildingBox([width, groundFloorHeight + 0.18, depth], bodyMaterial, 0.78);
   groundBody.position.y = groundFloorHeight / 2;
   group.add(groundBody);
   for (let floor = 1; floor < floorCount; floor += 1) {
     const tier = tierMetrics(floor);
-    const shell = roundedBox([tier.width, upperFloorHeight + 0.12, tier.depth], bodyColor, 0.92);
+    const shell = isRoundedTower
+      ? roundedSlab(
+          [tier.width, upperFloorHeight + 0.16, tier.depth],
+          bodyMaterial,
+          Math.min(tier.width, tier.depth) * 0.36,
+        )
+      : moldedBuildingBox([tier.width, upperFloorHeight + 0.16, tier.depth], bodyMaterial, 0.72);
     shell.position.set(tier.sway, groundFloorHeight + (floor - 1) * upperFloorHeight + upperFloorHeight / 2, 0);
     group.add(shell);
   }
 
   const topTier = tierMetrics(floorCount - 1);
-  const roof = roundedSlab([topTier.width * 0.9, 0.36, topTier.depth * 0.86], roofColor, 0.72);
-  roof.position.y = displayHeight + 0.18;
-  const baseTrim = roundedSlab([width * 1.025, 0.34, depth * 1.025], roofColor, 0.82);
-  baseTrim.position.y = 0.17;
-  const rooftopUnit = roundedBox([Math.min(2.4, width * 0.24), 0.48, Math.min(2, depth * 0.28)], "#b7c1bf", 0.18);
-  rooftopUnit.position.set(width * 0.16, displayHeight + 0.6, -depth * 0.12);
-  const skylight = roundedBox([Math.min(1.5, width * 0.15), 0.2, Math.min(1.3, depth * 0.18)], "#b8d3da", 0.12);
-  skylight.position.set(-width * 0.2, displayHeight + 0.46, depth * 0.14);
-  const roofCap = roundedSlab([topTier.width * 0.58, 0.3, topTier.depth * 0.52], bodyColor, 0.62);
-  roofCap.position.set(-width * 0.05, displayHeight + 0.45, depth * 0.02);
-  group.add(baseTrim, roof, roofCap, rooftopUnit, skylight);
+  const roof = roundedSlab([topTier.width * 1.055, 0.42, topTier.depth * 1.055], corniceMaterial, 0.9);
+  roof.position.set(topTier.sway, displayHeight + 0.2, 0);
+  const baseTrim = roundedSlab([width * 1.03, 0.38, depth * 1.03], corniceMaterial, 0.9);
+  baseTrim.position.y = 0.19;
+  group.add(baseTrim, roof);
 
-  if (floorCount >= 5) {
-    const crownBase = roundedBox([Math.min(5.2, topTier.width * 0.42), 0.42, Math.min(4.8, topTier.depth * 0.44)], roofColor, 0.38);
-    crownBase.position.set(0, displayHeight + 0.64, 0);
-    const crownTop = roundedBox([Math.min(3.5, topTier.width * 0.28), 0.34, Math.min(3.2, topTier.depth * 0.3)], bodyColor, 0.3);
-    crownTop.position.set(0, displayHeight + 1.0, 0);
+  const mechanicalColor = archetype % 2 === 0 ? "#b6c2bc" : "#c9b4a8";
+  const glassColor = archetype % 2 === 0 ? "#9db9bd" : "#b4b7ad";
+  const rooftopUnit = moldedBuildingBox(
+    [Math.min(2.45, width * 0.24), 0.52, Math.min(2.05, depth * 0.28)],
+    mechanicalColor,
+    0.2,
+  );
+  rooftopUnit.position.set(topTier.sway + width * 0.17, displayHeight + 0.67, -depth * 0.12);
+  const skylightFrame = roundedSlab(
+    [Math.min(1.85, width * 0.18), 0.16, Math.min(1.58, depth * 0.21)],
+    corniceMaterial,
+    0.22,
+  );
+  skylightFrame.position.set(topTier.sway - width * 0.2, displayHeight + 0.48, depth * 0.14);
+  const skylight = roundedSlab(
+    [Math.min(1.48, width * 0.145), 0.12, Math.min(1.24, depth * 0.17)],
+    glassColor,
+    0.18,
+  );
+  skylight.position.copy(skylightFrame.position);
+  skylight.position.y += 0.11;
+  group.add(rooftopUnit, skylightFrame, skylight);
+
+  // Four deterministic crown silhouettes keep repeated parcels authored while
+  // reusing the same rounded slab vocabulary and cache.
+  if (archetype === 0 || floorCount >= 5) {
+    const crownBase = roundedSlab(
+      [Math.min(6.2, topTier.width * 0.58), 0.42, Math.min(5.6, topTier.depth * 0.58)],
+      corniceMaterial,
+      0.82,
+    );
+    crownBase.position.set(topTier.sway, displayHeight + 0.55, 0);
+    const crownTop = roundedSlab(
+      [Math.min(4.5, topTier.width * 0.4), 0.34, Math.min(4.1, topTier.depth * 0.42)],
+      bodyMaterial,
+      0.68,
+    );
+    crownTop.position.set(topTier.sway, displayHeight + 0.93, 0);
     group.add(crownBase, crownTop);
+  } else if (archetype === 1) {
+    const insetPad = roundedSlab([topTier.width * 0.62, 0.32, topTier.depth * 0.56], bodyMaterial, 0.7);
+    insetPad.position.set(topTier.sway - width * 0.06, displayHeight + 0.48, depth * 0.02);
+    group.add(insetPad);
+  } else if (archetype === 2) {
+    const insetPad = roundedSlab([topTier.width * 0.48, 0.3, topTier.depth * 0.46], corniceMaterial, 0.62);
+    insetPad.position.set(topTier.sway + width * 0.07, displayHeight + 0.46, -depth * 0.03);
+    group.add(insetPad);
   }
 
   // Thousands of separate window meshes made the full-city view expensive on
   // phones. Keep per-building culling, but batch each repeated pane material
   // into one InstancedMesh so the richer facade remains inexpensive.
-  const windowInstances = new Map<THREE.Material, THREE.Matrix4[]>();
+  const facadeInstances = new Map<THREE.BufferGeometry, Map<THREE.Material, THREE.Matrix4[]>>();
   const windowPosition = new THREE.Vector3();
   const windowQuaternion = new THREE.Quaternion();
   const windowScale = new THREE.Vector3();
   const windowMatrix = new THREE.Matrix4();
   const windowEuler = new THREE.Euler();
-  const stageWindowInstance = (
+  const stageFacadeInstance = (
+    geometry: THREE.BufferGeometry,
     paneMaterial: THREE.Material,
     paneX: number,
     paneY: number,
@@ -1096,9 +1209,11 @@ function addBuilding(
     windowQuaternion.setFromEuler(windowEuler);
     windowScale.set(scaleX, scaleY, scaleZ);
     windowMatrix.compose(windowPosition, windowQuaternion, windowScale);
-    const matrices = windowInstances.get(paneMaterial) ?? [];
+    const materialBatches = facadeInstances.get(geometry) ?? new Map<THREE.Material, THREE.Matrix4[]>();
+    const matrices = materialBatches.get(paneMaterial) ?? [];
     matrices.push(windowMatrix.clone());
-    windowInstances.set(paneMaterial, matrices);
+    materialBatches.set(paneMaterial, matrices);
+    facadeInstances.set(geometry, materialBatches);
   };
 
   const addWindow = (
@@ -1111,172 +1226,297 @@ function addBuilding(
     paneMaterial: THREE.Material = BUILDING_COOL_WINDOW_MATERIAL,
   ) => {
     const normal = new THREE.Vector3(Math.sin(rotationY), 0, Math.cos(rotationY));
-    stageWindowInstance(
-      BUILDING_WINDOW_FRAME_MATERIAL,
-      paneX,
+    const tangent = new THREE.Vector3(Math.cos(rotationY), 0, -Math.sin(rotationY));
+    const revealMaterial = paneMaterial === BUILDING_STOREFRONT_MATERIAL
+      ? BUILDING_INTERIOR_GLOW_MATERIAL
+      : BUILDING_WINDOW_REVEAL_MATERIAL;
+    const frameDepth = 0.115;
+    const paneDepth = 0.07;
+    const sillDepth = 0.15;
+    const halfPaneWidth = 0.51 * scaleX;
+    const halfPaneHeight = 0.41 * scaleY;
+
+    // A dark/warm reveal stays nearest the wall; the pane, individual frame
+    // bars and projecting sill step outward in small layers.  From mobile and
+    // aerial cameras this reads as a recessed opening rather than a sticker.
+    stageFacadeInstance(
+      BUILDING_WINDOW_REVEAL_GEOMETRY,
+      revealMaterial,
+      paneX + normal.x * 0.012,
       paneY,
-      paneZ,
+      paneZ + normal.z * 0.012,
       rotationY,
-      scaleX * 1.13,
-      scaleY * 1.12,
-      1.06,
+      scaleX,
+      scaleY,
+      1,
     );
-
-    if (paneMaterial === BUILDING_STOREFRONT_MATERIAL) {
-      stageWindowInstance(
-        BUILDING_INTERIOR_GLOW_MATERIAL,
-        paneX + normal.x * 0.055,
-        paneY,
-        paneZ + normal.z * 0.055,
-        rotationY,
-        scaleX * 0.91,
-        scaleY * 0.91,
-        0.74,
-      );
-    }
-
-    stageWindowInstance(
+    stageFacadeInstance(
+      BUILDING_WINDOW_GEOMETRY,
       paneMaterial,
-      paneX + normal.x * 0.105,
+      paneX + normal.x * paneDepth,
       paneY,
-      paneZ + normal.z * 0.105,
+      paneZ + normal.z * paneDepth,
       rotationY,
-      scaleX * 0.92,
-      scaleY * 0.92,
-      0.82,
+      scaleX,
+      scaleY,
+      1,
+    );
+    [-1, 1].forEach((side) => {
+      stageFacadeInstance(
+        BUILDING_WINDOW_FRAME_HORIZONTAL_GEOMETRY,
+        BUILDING_WINDOW_FRAME_MATERIAL,
+        paneX + normal.x * frameDepth,
+        paneY + side * (halfPaneHeight + 0.075),
+        paneZ + normal.z * frameDepth,
+        rotationY,
+        scaleX,
+        1,
+        1,
+      );
+      stageFacadeInstance(
+        BUILDING_WINDOW_FRAME_VERTICAL_GEOMETRY,
+        BUILDING_WINDOW_FRAME_MATERIAL,
+        paneX + tangent.x * side * (halfPaneWidth + 0.075) + normal.x * frameDepth,
+        paneY,
+        paneZ + tangent.z * side * (halfPaneWidth + 0.075) + normal.z * frameDepth,
+        rotationY,
+        1,
+        scaleY,
+        1,
+      );
+    });
+    stageFacadeInstance(
+      BUILDING_WINDOW_SILL_GEOMETRY,
+      BUILDING_WINDOW_SILL_MATERIAL,
+      paneX + normal.x * sillDepth,
+      paneY - halfPaneHeight - 0.11,
+      paneZ + normal.z * sillDepth,
+      rotationY,
+      scaleX,
+      1,
+      1,
     );
   };
 
   // Horizontal reveals make each storey legible from gameplay and map views.
   for (let floor = 1; floor < floorCount; floor += 1) {
     const tier = tierMetrics(floor);
-    const floorBand = roundedSlab([tier.width * 1.012, 0.16, tier.depth * 1.012], roofColor, 0.48);
+    const bandScale = isRoundedTower ? 1.05 : 1.024;
+    const floorBand = roundedSlab(
+      [tier.width * bandScale, isRoundedTower ? 0.32 : 0.2, tier.depth * bandScale],
+      corniceMaterial,
+      isRoundedTower ? 0.7 : 0.54,
+    );
     floorBand.position.x = tier.sway;
-    floorBand.position.y = groundFloorHeight + (floor - 1) * upperFloorHeight;
+    floorBand.position.y = groundFloorHeight + (floor - 1) * upperFloorHeight + 0.02;
     group.add(floorBand);
     if ((archetype === 1 || archetype === 2) && floor % 2 === 1) {
-      const balcony = roundedSlab([tier.width * 0.4, 0.17, 0.86], resolvedAccent, 0.3);
-      balcony.position.set(tier.sway, floorBand.position.y + 0.42, tier.depth / 2 + 0.34);
+      const balcony = roundedSlab([tier.width * 0.38, 0.18, 0.72], resolvedAccent, 0.3);
+      balcony.position.set(tier.sway, floorBand.position.y + 0.38, tier.depth / 2 + 0.28);
       const balconyBack = balcony.clone();
-      balconyBack.position.z = -tier.depth / 2 - 0.34;
+      balconyBack.position.z = -tier.depth / 2 - 0.28;
       group.add(balcony, balconyBack);
     }
   }
 
   for (let floor = 1; floor < floorCount; floor += 1) {
     const tier = tierMetrics(floor);
-    const columns = Math.min(5, Math.max(2, Math.floor(tier.width / 2.35)));
+    const columns = Math.min(isRoundedTower ? 3 : 4, Math.max(2, Math.floor(tier.width / 2.75)));
+    const paneY = groundFloorHeight + 1.05 + (floor - 1) * upperFloorHeight;
+    if (isRoundedTower) {
+      stageFacadeInstance(
+        BUILDING_FACADE_RIBBON_GEOMETRY,
+        BUILDING_FACADE_RIBBON_MATERIAL,
+        tier.sway,
+        paneY,
+        tier.depth / 2 + 0.025,
+        0,
+        tier.width * 0.58,
+        1.24,
+        1,
+      );
+      stageFacadeInstance(
+        BUILDING_FACADE_RIBBON_GEOMETRY,
+        BUILDING_FACADE_RIBBON_MATERIAL,
+        tier.sway,
+        paneY,
+        -tier.depth / 2 - 0.025,
+        Math.PI,
+        tier.width * 0.58,
+        1.24,
+        1,
+      );
+      stageFacadeInstance(
+        BUILDING_FACADE_RIBBON_GEOMETRY,
+        BUILDING_FACADE_RIBBON_MATERIAL,
+        tier.sway + tier.width / 2 + 0.025,
+        paneY,
+        0,
+        Math.PI / 2,
+        tier.depth * 0.58,
+        1.24,
+        1,
+      );
+      stageFacadeInstance(
+        BUILDING_FACADE_RIBBON_GEOMETRY,
+        BUILDING_FACADE_RIBBON_MATERIAL,
+        tier.sway - tier.width / 2 - 0.025,
+        paneY,
+        0,
+        -Math.PI / 2,
+        tier.depth * 0.58,
+        1.24,
+        1,
+      );
+    }
     for (let column = 0; column < columns; column += 1) {
-      const paneX = tier.sway - tier.width * 0.36 + (column / Math.max(1, columns - 1)) * tier.width * 0.72;
-      const paneY = groundFloorHeight + 1.12 + (floor - 1) * upperFloorHeight;
+      const paneSpan = isRoundedTower ? tier.width * 0.38 : tier.width * 0.68;
+      const paneX = tier.sway - paneSpan / 2 + (column / Math.max(1, columns - 1)) * paneSpan;
       const paneMaterial = Math.abs(Math.round(x + z + floor * 7 + column * 3)) % 5 === 0
         ? BUILDING_WARM_WINDOW_MATERIAL
         : BUILDING_COOL_WINDOW_MATERIAL;
-      addWindow(paneX, paneY, tier.depth / 2 + 0.05, 0, 1.04, 1.16, paneMaterial);
-      addWindow(paneX, paneY, -tier.depth / 2 - 0.05, Math.PI, 1.04, 1.16, paneMaterial);
+      addWindow(paneX, paneY, tier.depth / 2 + 0.05, 0, 0.8, 0.85, paneMaterial);
+      addWindow(paneX, paneY, -tier.depth / 2 - 0.05, Math.PI, 0.8, 0.85, paneMaterial);
     }
-    const sideColumns = Math.min(3, Math.max(2, Math.floor(tier.depth / 3.3)));
+    const sideColumns = Math.min(isRoundedTower ? 2 : 3, Math.max(2, Math.floor(tier.depth / 3.8)));
     for (let column = 0; column < sideColumns; column += 1) {
-      const paneZ = -tier.depth * 0.3 + (column / Math.max(1, sideColumns - 1)) * tier.depth * 0.6;
-      const paneY = groundFloorHeight + 1.12 + (floor - 1) * upperFloorHeight;
+      const sideSpan = isRoundedTower ? tier.depth * 0.34 : tier.depth * 0.6;
+      const paneZ = -sideSpan / 2 + (column / Math.max(1, sideColumns - 1)) * sideSpan;
       const sidePaneMaterial = Math.abs(Math.round(x - z + floor * 5 + column * 7)) % 6 === 0
         ? BUILDING_WARM_WINDOW_MATERIAL
         : BUILDING_COOL_WINDOW_MATERIAL;
-      addWindow(tier.sway + tier.width / 2 + 0.05, paneY, paneZ, Math.PI / 2, 1.04, 1.16, sidePaneMaterial);
-      addWindow(tier.sway - tier.width / 2 - 0.05, paneY, paneZ, -Math.PI / 2, 1.04, 1.16, sidePaneMaterial);
+      addWindow(tier.sway + tier.width / 2 + 0.05, paneY, paneZ, Math.PI / 2, 0.8, 0.85, sidePaneMaterial);
+      addWindow(tier.sway - tier.width / 2 - 0.05, paneY, paneZ, -Math.PI / 2, 0.8, 0.85, sidePaneMaterial);
     }
   }
 
   const facadeColor = new THREE.Color(resolvedAccent);
   const facadeHsl = { h: 0, s: 0, l: 0 };
   facadeColor.getHSL(facadeHsl);
-  facadeColor.setHSL(facadeHsl.h, Math.min(0.58, facadeHsl.s * 1.06), Math.max(0.48, facadeHsl.l - 0.09));
+  facadeColor.setHSL(facadeHsl.h, Math.min(0.42, facadeHsl.s * 0.92), Math.max(0.5, facadeHsl.l - 0.11));
   const facadeHex = `#${facadeColor.getHexString()}`;
-  const storefrontColumns = Math.min(5, Math.max(3, Math.floor(width / 2.65)));
-  const storefrontSpan = width * 0.82;
-  const storefrontStep = storefrontSpan / storefrontColumns;
-  const doorColumn = Math.min(storefrontColumns - 1, Math.ceil(storefrontColumns * 0.62));
-  for (let column = 0; column < storefrontColumns; column += 1) {
-    if (column === doorColumn) continue;
-    const paneX = -storefrontSpan / 2 + storefrontStep * (column + 0.5);
-    addWindow(paneX, 1.32, depth / 2 + 0.08, 0, (storefrontStep * 0.76) / 1.02, 2.15, BUILDING_STOREFRONT_MATERIAL);
-    addWindow(paneX, 1.32, -depth / 2 - 0.08, Math.PI, (storefrontStep * 0.76) / 1.02, 2.15, BUILDING_STOREFRONT_MATERIAL);
+  let doorX = archetype % 2 === 0 ? width * 0.2 : -width * 0.18;
+  let doorWidth = Math.min(1.48, width * 0.13);
+
+  if (isCommercial) {
+    const storefrontColumns = isAuthoredVenue
+      ? Math.min(5, Math.max(3, Math.floor(width / 2.65)))
+      : Math.min(4, Math.max(3, Math.floor(width / 3.25)));
+    const storefrontSpan = width * (isAuthoredVenue ? 0.82 : 0.7);
+    const storefrontStep = storefrontSpan / storefrontColumns;
+    const doorColumn = Math.min(storefrontColumns - 1, Math.ceil(storefrontColumns * 0.62));
+    doorX = -storefrontSpan / 2 + storefrontStep * (doorColumn + 0.5);
+    doorWidth = isAuthoredVenue
+      ? Math.min(1.6, storefrontStep * 0.72)
+      : Math.min(1.52, storefrontStep * 0.68);
+    for (let column = 0; column < storefrontColumns; column += 1) {
+      if (column === doorColumn) continue;
+      const paneX = -storefrontSpan / 2 + storefrontStep * (column + 0.5);
+      const paneScale = (storefrontStep * (isAuthoredVenue ? 0.62 : 0.58)) / 1.02;
+      addWindow(paneX, 1.24, depth / 2 + 0.08, 0, paneScale, 1.45, BUILDING_STOREFRONT_MATERIAL);
+      addWindow(paneX, 1.24, -depth / 2 - 0.08, Math.PI, paneScale, 1.45, BUILDING_STOREFRONT_MATERIAL);
+    }
+    const sidePanelScale = Math.max(1.05, Math.min(1.55, depth * 0.14));
+    addWindow(width / 2 + 0.08, 1.24, 0, Math.PI / 2, sidePanelScale, 1.45, BUILDING_STOREFRONT_MATERIAL);
+    addWindow(-width / 2 - 0.08, 1.24, 0, -Math.PI / 2, sidePanelScale, 1.45, BUILDING_STOREFRONT_MATERIAL);
+  } else {
+    const residentialColumns = Math.min(3, Math.max(2, Math.floor(width / 4.1)));
+    const windowSpan = width * (isRoundedTower ? 0.36 : 0.58);
+    for (let column = 0; column < residentialColumns; column += 1) {
+      const paneX = -windowSpan / 2 + (column / Math.max(1, residentialColumns - 1)) * windowSpan;
+      if (Math.abs(paneX - doorX) < 1.2) continue;
+      const paneMaterial = (stableSignature + column) % 4 === 0
+        ? BUILDING_WARM_WINDOW_MATERIAL
+        : BUILDING_COOL_WINDOW_MATERIAL;
+      addWindow(paneX, 1.22, depth / 2 + 0.07, 0, 0.82, 0.98, paneMaterial);
+      addWindow(paneX, 1.22, -depth / 2 - 0.07, Math.PI, 0.82, 0.98, paneMaterial);
+    }
+    addWindow(width / 2 + 0.07, 1.22, 0, Math.PI / 2, 0.82, 0.98, BUILDING_COOL_WINDOW_MATERIAL);
+    addWindow(-width / 2 - 0.07, 1.22, 0, -Math.PI / 2, 0.82, 0.98, BUILDING_COOL_WINDOW_MATERIAL);
   }
-  const doorX = -storefrontSpan / 2 + storefrontStep * (doorColumn + 0.5);
-  const doorWidth = Math.min(1.6, storefrontStep * 0.72);
-  const frontDoorFrame = roundedBox([doorWidth + 0.34, 2.78, 0.18], "#eee7de", 0.16);
-  frontDoorFrame.position.set(doorX, 1.39, depth / 2 + 0.075);
-  const frontDoor = roundedBox([Math.min(1.6, storefrontStep * 0.72), 2.5, 0.2], "#30383b", 0.15);
-  frontDoor.position.set(doorX, 1.25, depth / 2 + 0.19);
-  const frontDoorGlass = roundedBox([doorWidth * 0.66, 1.24, 0.09], "#6f8f94", 0.1);
-  frontDoorGlass.material = BUILDING_STOREFRONT_MATERIAL;
-  frontDoorGlass.position.set(doorX, 1.66, depth / 2 + 0.32);
+
+  const doorHeight = isAuthoredVenue ? 2.5 : isCommercial ? 2.4 : 2.28;
+  const frontDoorFrame = moldedBuildingBox([doorWidth + 0.36, doorHeight + 0.26, 0.18], BUILDING_WINDOW_FRAME_MATERIAL, 0.13);
+  frontDoorFrame.position.set(doorX, (doorHeight + 0.26) / 2, depth / 2 + 0.075);
+  const frontDoor = moldedBuildingBox([doorWidth, doorHeight, 0.2], isCommercial ? "#465d60" : facadeHex, 0.13);
+  frontDoor.position.set(doorX, doorHeight / 2, depth / 2 + 0.19);
+  const frontDoorGlass = moldedBuildingBox([doorWidth * 0.62, doorHeight * 0.48, 0.09], BUILDING_STOREFRONT_MATERIAL, 0.09);
+  frontDoorGlass.position.set(doorX, doorHeight * 0.67, depth / 2 + 0.32);
   const doorHandle = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 8), material("#d7bf8e", 0.32, 0.35));
-  doorHandle.position.set(doorX + doorWidth * 0.27, 1.25, depth / 2 + 0.38);
+  doorHandle.position.set(doorX + doorWidth * 0.28, doorHeight * 0.48, depth / 2 + 0.38);
   const backDoor = frontDoor.clone();
   backDoor.position.z = -depth / 2 - 0.11;
-  const frontAwning = roundedSlab([width * 0.88, 0.3, 1.35], facadeHex, 0.42);
-  frontAwning.position.set(0, 2.75, depth / 2 + 0.55);
+  const threshold = roundedSlab([doorWidth + 0.72, 0.16, 0.7], corniceMaterial, 0.18);
+  threshold.position.set(doorX, 0.08, depth / 2 + 0.3);
+
+  const canopyWidth = isAuthoredVenue
+    ? width * 0.8
+    : isCommercial
+      ? width * 0.58
+      : Math.min(3.15, width * 0.3);
+  const canopyDepth = isCommercial ? 0.82 : 0.68;
+  const frontAwning = roundedSlab([canopyWidth, 0.24, canopyDepth], facadeHex, 0.38);
+  frontAwning.position.set(isCommercial ? 0 : doorX, groundFloorHeight - 0.34, depth / 2 + 0.2);
   const backAwning = frontAwning.clone();
-  backAwning.position.z = -depth / 2 - 0.5;
+  backAwning.position.z = -depth / 2 - 0.2;
 
   const awningLights = new THREE.Group();
-  const awningLightCount = Math.min(5, Math.max(3, Math.floor(width / 3)));
+  const awningLightCount = isAuthoredVenue ? Math.min(5, Math.max(3, Math.floor(width / 3))) : 0;
   for (let lightIndex = 0; lightIndex < awningLightCount; lightIndex += 1) {
     const amount = awningLightCount <= 1 ? 0.5 : lightIndex / (awningLightCount - 1);
     const lightX = -width * 0.34 + amount * width * 0.68;
     const frontLight = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.055, 10), BUILDING_AWNING_LIGHT_MATERIAL);
     frontLight.rotation.x = Math.PI / 2;
-    frontLight.position.set(lightX, 2.58, depth / 2 + 0.77);
+    frontLight.position.set(lightX, groundFloorHeight - 0.48, depth / 2 + canopyDepth * 0.58);
     awningLights.add(frontLight);
   }
-  const sidePanelScale = Math.max(1.25, Math.min(2.4, depth * 0.22));
-  addWindow(width / 2 + 0.08, 1.32, -depth * 0.18, Math.PI / 2, sidePanelScale, 2.15, BUILDING_STOREFRONT_MATERIAL);
-  addWindow(width / 2 + 0.08, 1.32, depth * 0.18, Math.PI / 2, sidePanelScale, 2.15, BUILDING_STOREFRONT_MATERIAL);
-  addWindow(-width / 2 - 0.08, 1.32, -depth * 0.18, -Math.PI / 2, sidePanelScale, 2.15, BUILDING_STOREFRONT_MATERIAL);
-  addWindow(-width / 2 - 0.08, 1.32, depth * 0.18, -Math.PI / 2, sidePanelScale, 2.15, BUILDING_STOREFRONT_MATERIAL);
 
-  const resolvedLabel = facadeLabel ?? getBuildingFacadeLabel(x, z);
-  const signMaterial = getBuildingSignMaterial(resolvedLabel.toUpperCase(), accent === "#e7dfd3" ? "#fff4df" : accent);
-  const signWidth = Math.min(width * 0.72, Math.max(5.4, resolvedLabel.length * 0.42));
-  const frontSign = new THREE.Mesh(new RoundedBoxGeometry(signWidth, 0.76, 0.18, 3, 0.08), signMaterial);
-  frontSign.position.set(0, 3.24, depth / 2 + 0.13);
-  const backSign = frontSign.clone();
-  backSign.position.z = -depth / 2 - 0.13;
-  backSign.rotation.y = Math.PI;
-  const roofLipMaterial = material(roofColor, 0.7, 0.01);
-  const roofLipFront = new THREE.Mesh(new THREE.BoxGeometry(width * 0.94, 0.28, 0.28), roofLipMaterial);
-  roofLipFront.position.set(0, displayHeight + 0.38, depth * 0.44);
-  const roofLipBack = roofLipFront.clone();
-  roofLipBack.position.z = -depth * 0.44;
-  const roofLipSide = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.28, depth * 0.88), roofLipMaterial);
-  roofLipSide.position.set(width * 0.47, displayHeight + 0.38, 0);
-  const roofLipSideBack = roofLipSide.clone();
-  roofLipSideBack.position.x = -width * 0.47;
-  group.add(
+  const facadeDetails: THREE.Object3D[] = [
     frontDoor,
     frontDoorFrame,
     frontDoorGlass,
     doorHandle,
     backDoor,
+    threshold,
     frontAwning,
     backAwning,
     awningLights,
-    frontSign,
-    backSign,
-    roofLipFront,
-    roofLipBack,
-    roofLipSide,
-    roofLipSideBack,
-  );
-  windowInstances.forEach((matrices, paneMaterial) => {
-    const batch = new THREE.InstancedMesh(BUILDING_WINDOW_GEOMETRY, paneMaterial, matrices.length);
-    matrices.forEach((matrix, index) => batch.setMatrixAt(index, matrix));
-    batch.instanceMatrix.needsUpdate = true;
-    batch.castShadow = false;
-    batch.receiveShadow = false;
-    batch.frustumCulled = true;
-    group.add(batch);
+  ];
+  if (isCommercial) {
+    const resolvedLabel = facadeLabel ?? getBuildingFacadeLabel(x, z);
+    const signMaterial = getBuildingSignMaterial(resolvedLabel.toUpperCase(), accent === "#e7dfd3" ? "#fff4df" : accent);
+    const signWidth = isAuthoredVenue
+      ? Math.min(width * 0.72, Math.max(5.4, resolvedLabel.length * 0.42))
+      : Math.min(width * 0.42, Math.max(3.4, resolvedLabel.length * 0.28));
+    const frontSign = new THREE.Mesh(new RoundedBoxGeometry(signWidth, isAuthoredVenue ? 0.76 : 0.58, 0.18, 3, 0.08), signMaterial);
+    frontSign.position.set(0, groundFloorHeight + 0.04, depth / 2 + 0.13);
+    const backSign = frontSign.clone();
+    backSign.position.z = -depth / 2 - 0.13;
+    backSign.rotation.y = Math.PI;
+    facadeDetails.push(frontSign, backSign);
+  }
+
+  const roofLipFront = moldedBuildingBox([topTier.width * 0.94, 0.3, 0.3], corniceMaterial, 0.12);
+  roofLipFront.position.set(topTier.sway, displayHeight + 0.4, topTier.depth * 0.45);
+  const roofLipBack = roofLipFront.clone();
+  roofLipBack.position.z = -topTier.depth * 0.45;
+  const roofLipSide = moldedBuildingBox([0.3, 0.3, topTier.depth * 0.9], corniceMaterial, 0.12);
+  roofLipSide.position.set(topTier.sway + topTier.width * 0.47, displayHeight + 0.4, 0);
+  const roofLipSideBack = roofLipSide.clone();
+  roofLipSideBack.position.x = topTier.sway - topTier.width * 0.47;
+  facadeDetails.push(roofLipFront, roofLipBack, roofLipSide, roofLipSideBack);
+  group.add(...facadeDetails);
+
+  facadeInstances.forEach((materialBatches, geometry) => {
+    materialBatches.forEach((matrices, paneMaterial) => {
+      const batch = new THREE.InstancedMesh(geometry, paneMaterial, matrices.length);
+      matrices.forEach((matrix, index) => batch.setMatrixAt(index, matrix));
+      batch.instanceMatrix.needsUpdate = true;
+      batch.castShadow = false;
+      batch.receiveShadow = false;
+      batch.frustumCulled = true;
+      group.add(batch);
+    });
   });
   group.position.set(x, 0, z);
   parent.add(group);

@@ -137,6 +137,43 @@
 
 passed
 
+## Pastel molded-building and recessed-window pass
+
+### Source and visual evidence
+
+- Primary source of truth: `/Users/oscarbrendon/.codex/state/plugins/product-design/assets/67verse-soft-pastel-city-model-quality-reference.jpg` (`1280 × 960`).
+- Enlarged reference crops: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/reference-buildings-zoom-left.jpg` and `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/reference-buildings-zoom-central.jpg`.
+- Final live city overview: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/buildings-final-overview.png` (`1280 × 960`, CSS density `1`).
+- Final live Old Town street view: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/buildings-final-old-town.png` (`1280 × 960`, CSS density `1`).
+- Required full-map comparison: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/pastel-buildings-full-comparison-final.png`.
+- Required close-building comparison: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/pastel-buildings-focused-comparison-final.png`.
+- Tested state: selected hero entered the live Three.js world, opened the district map, and traveled to Market Square, Old Town, and 67 Central for aerial and street-level inspection.
+
+### Comparison history and fixes
+
+- **P1 repetitive storefronts:** nearly every generic building previously used oversized teal storefront glass, an awning, and a sign, even when it represented housing or an office.
+- **Fix:** authored venues always remain recognizable shops; only a deterministic approximately `20%` of generic buildings are mixed-use commercial buildings. The rest use residential/office entrances and smaller windows without fake shop signs.
+- **P1 sticker-like windows:** panes previously read as large colored rectangles placed on the facade rather than modeled openings.
+- **Fix:** each upper window now has a recessed reveal, muted tinted pane, four-piece warm-ivory frame, and projecting sill. Window proportions were reduced to match the close reference.
+- **P1 square and repetitive massing:** baseline blocks shared similar straight roof treatment and strong horizontal bands on every floor.
+- **Fix:** warm-ivory molded shells now use thinner seams, softened corners, controlled setbacks, four roof/crown variants, skylights or compact rooftop units, and rounded smoky-glass tower bands only on tall skyline buildings.
+- **P2 color flattening:** an early correction pushed every facade too close to the same grey-white.
+- **Fix:** the final `0.74` softening mix retains subtle blush, mint, pale blue, and sand hues while keeping the reference's warm-ivory city base.
+- **Geometry safety:** authored venue +Z doors, arrival points, x/z positions, footprints, roads, and collider dimensions are unchanged. Commercial canopy and balcony projections remain inside the existing `+0.70` collider margin.
+
+### Final findings
+
+- **Typography and copy:** interface typography and English venue copy were not redesigned in this pass. Authored venue signs remain readable and tied to their real interiors; generic residences no longer carry misleading shop copy.
+- **Layout and spacing:** building locations, parcel spacing, sidewalks, road clearances, entrance anchors, and collision plans remain unchanged.
+- **Color and materials:** matte warm ivory dominates, with low-saturation pastel accents and smoky blue/warm window variation. No transparent glass or expensive post-processing was added.
+- **Model quality:** live Three.js buildings now read as softly molded diorama architecture with real window depth, framed glass, roof undercuts, tower variety, and restrained storefront use. The source image is not embedded in the product.
+- **Performance:** facade details reuse shared geometry/materials and are grouped into per-building instanced meshes; removing unnecessary generic signs, awnings, and storefront panels offsets the added window depth.
+- **Runtime quality:** the final browser reload at `http://127.0.0.1:5173/world?qa=pastel-buildings-before` produced no warning or error logs.
+
+## Final result
+
+passed
+
 ## Sparse crossings and soft-pastel palm pass
 
 ### Source and visual evidence
