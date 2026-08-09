@@ -1,248 +1,165 @@
-# 67VERSE World — Race Loop QA v1
+# 67VERSE Master City — Design QA
 
-## Comparison target
+## Source of truth
 
-- Source visual truth: `/tmp/codex-remote-attachments/019fbafb-ac9c-7883-b039-7e39958a743b/EF12FF8D-B661-437A-A53E-FB326DC19510/1-Fotoğraf-1.jpg` at 588 × 1280 px.
-- Focused source region: `work/reference/race-loop-crop.jpg` at 230 × 230 px.
-- Browser-rendered implementation: `work/reference/race-map-implementation-v1.jpg` at 1280 × 720 px.
-- Focused implementation region: `work/reference/race-map-implementation-v1-crop.jpg` at 240 × 150 px.
-- Same-input comparison: `work/reference/race-qa-comparison-v1.jpg`.
-- Playable chase-camera evidence: `work/reference/race-play-implementation-v1.jpg` at 1280 × 720 px.
-- Viewport: 1280 × 720 CSS px, device pixel ratio 1. No density scaling was applied to the full implementation capture. Focus crops were normalized onto equal 360 × 240 comparison panels.
-- Compared state: live Three.js world map with the Race Loop district marker visible; playable evidence was captured immediately after travelling to Race Loop.
+- Approved aerial layout reference: `/tmp/codex-remote-attachments/019fbafb-ac9c-7883-b039-7e39958a743b/5F84663A-65AB-4E69-8FF8-DDC93C8E6F58/1-Fotoğraf-1.jpg` (588 × 1280; map crop 588 × 589).
+- User-requested deviation: the broken west-side water channel must not cross roads or buildings. The implementation intentionally uses a continuous dry city grid there.
+- Existing 67VERSE English UI, live district pins, economy controls, and character selector are product constraints rather than elements copied from the reference image.
 
-## Findings
+## Implementation evidence
 
-- No actionable P0, P1, or P2 issue remains in the rebuilt Race Loop.
-- The previous implementation used a raised tubular curve that crossed the horizontal city road and continued into neighboring blocks. The revised course is a flat ribbon fully contained within its own rounded green district pad, so the city road and sidewalk remain uninterrupted.
-- The new closed course follows the source's recognizable shape: a long upper loop, tight right hairpin, inner return, and short lower-left tail. It has one readable driving line with no crossing or self-intersection.
-- The pale course edge, muted coral racing surface, green infield, compact start grid, and restrained corner trees match the reference's soft-model palette and density.
-- [P3] The interactive `Race Loop` map marker partially covers the small track at the desktop overview scale. This is an accepted product-layer difference: the marker is required for district travel, and the full course is unobstructed after selection.
-
-## Required fidelity surfaces
-
-- Fonts and typography: the source race tile contains no environment text. Existing 67VERSE marker typography remains compact, English, and readable without changing the established UI system.
-- Spacing and layout rhythm: the course now respects one district block with consistent green margins on all sides; it does not overlap the adjacent road, sidewalk, sports area, or city edge.
-- Colors and visual tokens: soft sage green, dusty coral, warm cream edging, and charcoal/cream start tiles align with the source and the rest of the 67VERSE world.
-- Image quality and asset fidelity: the race area is live antialiased Three.js geometry, not the supplied screenshot or a raster map. Curves remain smooth in both overhead and chase-camera views.
-- Copy and content: the visible district name remains `Race Loop`; no extra labels or visual clutter were added to the environment.
-
-## Focused region evidence
-
-- The side-by-side comparison confirms the most important source signatures at a readable scale: a compact northwest green tile, a clean pastel ribbon course, a long top loop, a right hairpin, and no road crossing.
-- The chase-camera capture confirms the course is a real playable surface with continuous borders and a visible start grid.
+- Final full view: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/world-map-final.png`
+- Reference/implementation comparison: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/world-map-comparison-final.png`
+- North landmark detail: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/world-map-focus-north.png`
+- Stadium and Green Park detail: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/world-map-focus-east.png`
+- Browser viewport: 1280 × 720 CSS px, device scale factor 1.
+- State: selected Gorilla 67, entered the live world, opened the live Three.js map, and traveled through district buttons.
 
 ## Comparison history
 
-1. Earlier evidence in `outputs/world-map-live-v3-1254.png` shows the tubular course leaving its district, crossing the road, and reading as an oversized tangled pipe.
-2. The course was rebuilt as a flat ribbon, resized to the northwest block, reshaped from the supplied crop, and given a compact start grid and low landscaping.
-3. The revised browser overview and playable capture show the road fully clear, the loop fully contained, and no self-intersection. The browser console reported zero warnings or errors.
+### Iteration 1
 
-## Primary interactions tested
+- **P0 layout:** a self-intersecting water polygon produced large blue triangles through four roads, crosswalks, parcel pads, Race Loop, and multiple buildings.
+- **P1 content:** the top sports/amusement band, skatepark silhouette, stadium, central density, western neighborhood, and Green Park were too sparse compared with the source.
+- **Fix:** removed the broken channel and its bridge slabs, revealing the continuous road and parcel geometry already underneath. Added ordered west-side buildings without road overlap.
 
-- Entered the world through the hero-selection action.
-- Opened the live Three.js map.
-- Selected `Race Loop` and completed district travel.
-- Confirmed the player spawns inside the Race district rather than on the city road or inside another building.
-- Browser console warnings/errors: 0.
+### Iteration 2
 
-final result: passed
+- **P1 landmarks:** stadium tiers were hidden inside one another; the skatepark read as four rings; Green Park lacked a bridge/play area; the waterfront lacked a lighthouse; sports lacked baseball detail.
+- **Fix:** added a banked snake bowl, visible stepped stadium tiers and pitch markings, baseball diamond/backstop, playground, walkable pond bridge, lighthouse, denser neighborhood blocks, and stronger district landscaping.
+- **P1 collisions:** several generic edge buildings touched roads or duplicated venue footprints; the original Green Park spawn was in the pond.
+- **Fix:** removed/repositioned the conflicting buildings, moved the Green Park spawn to `(67, 69)`, and separated playground furniture and trees.
 
----
+### Iteration 3
 
-# 67VERSE World — Gorilla Hero & Mobile UI QA v3
+- **P1 behavior:** raised public areas were only visual, leaving the player feet below the baseball field, stadium pitch, city park, amusement pad, and bridge.
+- **Fix:** registered deterministic world-surface heights for every new raised playable area and added blockers for playground toys and the baseball backstop.
+- **P2 depth:** the exact top-down camera hid stadium tiers, trees, building height, and much of the ride structure.
+- **Fix:** changed the orthographic overview to a restrained diorama angle and corrected district-pin vertical projection.
 
-## Comparison target
+## Final findings
 
-- Selected soft-model visual truth: `outputs/67verse-master-map-reference-layout-v1.png` at 1254 × 1254.
-- Browser-rendered live Three.js implementation: `outputs/world-map-live-v3-1254.png` at the same 1254 × 1254 viewport.
-- Same-input side-by-side comparison: `outputs/world-map-reference-vs-live-v3.png`.
-- Mobile map capture: `outputs/world-map-mobile-v3.png` at 390 × 844.
-- Mobile entry/hero-selection capture: `outputs/world-hero-select-mobile-v3.png` at 390 × 844.
-- User-reported prior mobile state: `/tmp/codex-remote-attachments/019fbafb-ac9c-7883-b039-7e39958a743b/A9B93680-0EF8-4E69-A4C7-FA7CD9708B20/1-Fotoğraf-1.jpg`.
+- **Layout:** the single-city composition now preserves the source hierarchy: northwest race loop; sports and skate zones across the north; rides and marina in the northeast; dense central/old-town blocks; stadium east-center; market and Green Park in the south-center; residential blocks along the lower edge.
+- **Spacing:** road bands remain continuous and separate from all audited building/venue footprints. The west side is intentionally dry and ordered per the user's correction.
+- **Color and surfaces:** warm clay parcels, cream buildings, muted coral/mint/blue accents, soft shadows, and restrained PBR response match the supplied soft-diorama direction.
+- **Landmarks:** the new bowl, tiered stadium, baseball field, pond bridge, playground, docks, rides, and lighthouse remain readable at overview scale.
+- **Typography/icons:** existing Figtree/Geist product typography and Phosphor controls remain coherent, English, and accessible. District buttons retain explicit accessible names.
+- **Core interaction:** map pins close the overlay and teleport to the selected live district. Sports Campus travel landed at `(-67, -54)`; Green Park landed safely at `(67, 69)` with raised ground height `0.39`.
+- **Accessibility:** map controls are semantic buttons with descriptive labels; active state and close control remain keyboard-addressable. No new unlabeled UI was introduced.
+- **Implementation integrity:** the map is rendered from live Three.js geometry. No screenshot or flat map image is used in the game.
 
-## Findings and iteration
+## Verification
 
-- The road flashing was traced to full-length horizontal and vertical road/sidewalk meshes occupying the same depth at every junction. Vertical streets and sidewalks are now split at all intersections, leaving one authoritative surface at each junction.
-- Two 390 × 844 static map frames captured 650 ms apart produced `0 / 329,160` changed pixels. This provides direct evidence that the previous road z-fighting is no longer visible in the tested map state.
-- The mobile district UI no longer places long horizontal label pills on the same row. Each marker now uses a centered icon-and-label stack with a constrained width; all ten targets remain visible, distinct, and tappable.
-- The live city received a stronger soft-model palette, less washed-out lighting, colored roofs, roof equipment, skylights, clearer roads, stronger park contours, and richer water/land separation. It remains real Three.js geometry rather than a raster map.
-- The remaining difference from the offline reference is P3 authored-asset density: the reference contains texture-painted façades, dense foliage, and offline-rendered micro-detail. The realtime version intentionally uses lightweight soft geometry and web-safe materials while preserving the district layout and visual hierarchy.
-- No actionable P0, P1, or P2 issue remains for the requested road stability, mobile map usability, Gorilla gameplay character, or hero-selection flow.
+- Repository-wide `npx tsc --noEmit`: still reports pre-existing errors in `app/lobby`, Cloudflare worker typings, and the separate `work/public-network-local` Electron/Bun workspace; filtering the project diagnostics shows no error in `app/world/page.tsx`.
+- `npm run build`: passed (existing chunk-size advisory only).
+- `git diff --check -- app/world/page.tsx`: passed.
+- Browser core-flow test: hero entry, map open, Sports Campus travel, Green Park travel, and map reopen passed.
 
-## Hero selection and character checks
+## Tall mixed-use streetscape and mobile control pass
 
-- A full-screen English entry scene now opens before gameplay with clear `67VERSE`, online state, selected class, character portrait, stats, and a single `ENTER 67VERSE` action.
-- Gorilla 67 is the new-player default. Its actual GLB is loaded into the playable scene, not used only as a portrait.
-- İrem is independently selectable from the same entry scene. Returning to the hero control, choosing İrem, and entering the world replaced the live GLB successfully.
-- The selected hero is stored locally and the selector remains available from the persistent hero button.
-- Gorilla forward movement was held and captured while the character faced the direction of travel; the manual arm/leg/body rig animated during movement.
-- Gorilla jump was captured in the air with an intact model and separated ground shadow; no body split, disappearing half, or sideways snap occurred.
-- World-map travel to `Master Skatepark` completed successfully with Gorilla still active.
+### Source of truth
 
-## Technical verification
+- Tall mixed-use street reference: `/tmp/codex-remote-attachments/019fbafb-ac9c-7883-b039-7e39958a743b/643AD614-C5EC-488A-B034-346454FBCF96/1-Fotoğraf-1.jpg` (1200 × 675).
+- Intentional product constraint: the reference supplies street proportion, storefront hierarchy, and camera scale. The live implementation keeps the established soft-pastel 67VERSE materials, Gorilla 67 character, English premium HUD, and Three.js geometry instead of copying the Roblox avatar or interface.
 
-- Production build completes and includes `/world`.
-- Browser console errors: `0`.
-- The final implementation uses no deprecated Three.js clock or soft-shadow mode in this route.
-- The existing interiors, inventory, ride switching, district teleport controls, and classic lobby route remain in place.
+### Implementation evidence
 
-final result: passed
+- Final browser-rendered street view: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/streetscape-final.png`
+- Required combined reference/implementation comparison: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/streetscape-comparison-final.png`
+- Browser viewport: 1280 × 720 CSS px, device scale factor 1.
+- State: Gorilla 67 entered the world, opened the live map, traveled to Market Square, spawned in the road facing the new shop row, approached Cloud Cafe, and entered its generated 3D interior.
 
----
+### Comparison history
 
-**Comparison Target**
+#### Iteration 1
 
-- Source visual truth: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/outputs/67verse-online-skatepark-master-v4.png`
-- Browser-rendered implementation: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/work/park-v4-implementation.png`
-- Full-view comparison: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/work/park-v4-comparison.png`
-- Focused park comparison: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/work/park-v4-focus-comparison.png`
-- Route/state: `/park-v4`, desktop aerial overview, skate mode selected, online/public status visible.
-- Viewport: 1252 × 720 CSS px at the in-app browser's native density.
-- Source pixels: 1672 × 941. The source was center-cropped to the implementation aspect ratio and downsampled to 1252 × 720 for comparison.
-- Implementation pixels: 1252 × 720. No additional density scaling was applied.
+- **P1 streetscape:** procedural buildings were short, blank pastel blocks with sparse windows and no readable ground-floor commercial hierarchy.
+- **Fix:** preserved every footprint and collider while converting the buildings to three-to-five storeys with four-sided window rows, floor bands, roof detail, broad storefront glazing, dark doors, awnings, and cached English shop signs.
 
-**Findings**
+#### Iteration 2
 
-- No actionable P0, P1, or P2 differences remain for this first playable Three.js translation.
-- [P3] Runtime materials are intentionally cleaner and less textured than the concept render.
-  Location: concrete, building façades, vegetation, and small street props.
-  Evidence: the reference uses offline-rendered texture detail and denser façade dressing; the implementation uses lightweight realtime materials and simplified geometry while retaining the same warm concrete, terracotta, asphalt, grass, and muted brick palette.
-  Impact: the scene reads as a stylized web-game version rather than an offline architectural render.
-  Fix: replace selected procedural props with optimized authored GLB assets and compressed PBR textures after gameplay profiling.
-- [P3] The main bowl is a three-lobed playable contour rather than the reference's larger multi-pocket bowl.
-  Location: west bowl zone.
-  Evidence: both versions retain an organic deep bowl plus a separate smaller flow bowl, terracotta aprons, coping, and downhill surfaces, but the exact contour is simplified for predictable realtime collision sampling.
-  Impact: visual identity and gameplay zoning match; advanced transfer lines differ.
-  Fix: add a signed-distance collision surface and a denser authored bowl mesh in the next geometry pass.
+- **P1 camera:** the high, distant camera made Gorilla 67 and the storefronts too small; lowering it without collision handling could place the camera inside a building.
+- **Fix:** moved free-world play to a closer third-person camera, raised its aim toward the taller façades, and added a collider probe that retracts the camera before walls and smoothly restores the chosen distance.
+- **P1 arrival composition:** Market Square initially spawned on an empty parcel with the shop row off-axis.
+- **Fix:** moved the safe spawn to the road at `(0, 82)` and gave that district a street-facing arrival yaw. The live result now places the character in the road with the tall storefront row directly across it, matching the reference hierarchy.
 
-**Required Fidelity Surfaces**
+#### Iteration 3
 
-- Fonts and typography: the reference is an environment concept with only storefront labels; the implementation's English HUD follows the existing 67VERSE compact sans/mono hierarchy. Weight, casing, line height, and small-label hierarchy are consistent and readable.
-- Spacing and layout rhythm: the park fills the viewport with a high three-quarter crop; four roads form one continuous ring; buildings maintain consistent setbacks; trees remain inside grass strips; HUD panels stay clear of the core play area.
-- Colors and visual tokens: warm concrete, restrained terracotta, charcoal asphalt, soft grass, muted brick façades, green online state, and dark premium controls follow the source palette.
-- Image quality and asset fidelity: the implementation is native Three.js geometry rather than a rasterized background. Bowls have actual depth, ramps and stairs are three-dimensional, cars/trees/lamps/buildings are separate 3D objects, and the scene remains playable from the chase camera.
-- Copy and content: all visible game copy is English and concise: `67VERSE`, `ONLINE · PUBLIC`, `MASTER PARK`, `WALK`, `SKATE`, `BIKE`, `RIDE VIEW`, and `CLASSIC PARK`.
+- **P1 venue truthfulness:** the centered `Cloud Cafe` façade was initially a decorative generic building despite looking enterable.
+- **Fix:** promoted it to a real venue, preserved its block position, and connected it to the cafe interior, barista counter, products, stools, checkout, wallet, and inventory flow.
+- **P1 mobile controls:** the old four-button D-pad provided only binary movement, lost diagonal continuity, and could cancel one held direction when another finger released.
+- **Fix:** replaced it with a 360-degree PUBG-style radial joystick using pointer capture, a 13% dead zone, remapped analog strength, diagonal normalization, analog speed, spring return, landscape coarse-pointer support, and safe-area spacing. WASD remains full-speed and takes deterministic precedence.
+- **P2 input lifecycle:** blur, lost pointer capture, and modal transitions could leave camera drag, keyboard movement, or boost latched.
+- **Fix:** added blur/visibility cleanup for keys, boost, joystick, and camera pointer capture; all gameplay overlays clear analog movement and boost.
 
-**Focused Region Evidence**
+### Final findings
 
-- The focused comparison verifies the three most important spatial signatures at readable size: the west bowl cluster, the central street/rail field, and the east transition/ramp zone.
-- It also confirms the terracotta perimeter and flow ribbon, continuous roads, planted buffers, evenly spaced buildings, crosswalks, cars, and street furniture.
+- **Hierarchy and scale:** three-to-five-storey mixed-use buildings now form a continuous readable city edge without changing road widths, parcel footprints, or collision plans.
+- **Storefront quality:** dark teal glazing, dark doors, full-width awnings, and individual English signs provide the ground-floor contrast visible in the reference while retaining the softer 67VERSE palette.
+- **Street composition:** the tested Market Square arrival shows Gorilla 67 on the marked road, a full sidewalk buffer, and a centered enterable shop row. No building sits on the road.
+- **Camera:** the lower view makes the character and shop entrances useful at gameplay scale. Collider probing prevents the requested close view from passing through tall façades.
+- **Interaction:** keyboard movement changed world coordinates from `(-74.00, 29.00)` to `(-74.39, 31.30)` in a live test. At Market Square, the character reached `(0.00, 64.74)`, received `ENTER CLOUD CAFE`, entered successfully, and reported `data-activity="interior"`. Interior movement changed `z` from `7.50` to `6.84`.
+- **Analog math:** center and inner-dead-zone samples resolve to `0`; half displacement resolves to `0.4253`; full diagonal resolves to normalized magnitude `1`; full-left resolves to `x=-1`.
+- **Responsive controls:** the joystick is present once in the DOM with an explicit accessible label/description. Its UI is enabled at `max-width: 960px` and for coarse pointers, including landscape phones, with horizontal notch safe areas.
+- **Runtime integrity:** no browser console warning or error was produced by the final street, travel, venue-entry, or movement flows. The city and storefronts remain live Three.js geometry; no reference screenshot is embedded in the product.
 
-**Comparison History**
+## Integrated city, interior, and master-skatepark pass
 
-1. Initial comparison found a P1 bowl-visibility defect, a P2 top-bar wrap, and P2 under-scaled park framing. The plaza/base surfaces covered the bowl walls, `CLASSIC PARK` wrapped onto a second row, and the camera showed too much empty perimeter. Fixes: cut bowl-shaped openings into the plaza, corrected the four-column header grid without modifying the existing lobby styles, and moved the overview camera closer.
-2. The second comparison found P2 generic elliptical bowl silhouettes and P2 low obstacle density. Fixes: replaced ellipses with organic clover/bean contours, added terracotta bowl aprons and a curved flow ribbon, added more ledges/rails, and enlarged the playable visual footprint.
-3. The third comparison found the remaining P1 flat-bowl appearance. Evidence showed the lowered bowl meshes were being occluded by the metropolitan base slab. Fix: moved the base below the deepest bowl, revealing the full gradient walls and playable bowl floors. The revised browser capture shows both bowls as visibly sunken 3D forms.
-4. Final full-view and focused comparisons found only the P3 realtime-material and advanced-contour refinements listed above.
+### Additional sources of truth
 
-**Primary Interactions Tested**
+- Large skatepark structure reference: `/tmp/codex-remote-attachments/019fbafb-ac9c-7883-b039-7e39958a743b/C29DCEFE-1403-482A-A7DB-63CA578C6A0D/1-Fotoğraf-1.jpg`.
+- Soft dollhouse-interior reference: `/tmp/codex-remote-attachments/019fbafb-ac9c-7883-b039-7e39958a743b/EF12FF8D-B661-437A-A53E-FB326DC19510/6-Fotoğraf-6.jpg`.
+- Intentional deviation: the skate reference supplies bowl, coping, stair, rail, and hubba language. The live park is larger, traversable, and integrated into the online city rather than reproduced as a small isolated tile.
 
-- Aerial overview ↔ chase-camera toggle.
-- Walk, skate, and bicycle selection; selected state returns correctly to skate.
-- Canvas focus and keyboard movement input, including automatic exit from overview into ride view.
-- `CLASSIC PARK` points back to `/lobby`; both `/park-v4` and `/lobby` return HTTP 200.
-- Desktop responsive layout, HUD visibility, and keyboard focus states.
-- Mobile direction, jump, and boost controls are present with touch/pointer handlers; the responsive CSS breakpoint keeps ride selection and core HUD controls visible.
+### Final combined visual evidence
 
-**Implementation Checklist**
+- City reference/implementation in one image: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/final-city-reference-comparison.png`.
+- Skatepark reference/live-map implementation in one image: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/final-skate-reference-comparison.png`.
+- Interior reference/Hair & Nails implementation in one image: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/final-interior-reference-comparison.png`.
+- Live 390 × 844 street with analog joystick: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/final-old-town-street.png`.
+- Live 390 × 844 Hair & Nails interior: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/final-mobile-hair-nails.png`.
+- Live 3D world overview: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/final-skatepark-map.png`.
 
-- [x] Preserve the existing `/lobby` route and implementation.
-- [x] Add the independent `/park-v4` route.
-- [x] Build continuous roads and orderly building setbacks around the park.
-- [x] Keep every tree inside planted grass strips.
-- [x] Implement deep bowls, street obstacles, ramps, stairs, rails, lamps, benches, cars, and storefront buildings as 3D scene objects.
-- [x] Add walk, skate, and bicycle modes.
-- [x] Add desktop and touch controls, boost, jump, orbit camera, overview camera, and zone labels.
-- [x] Verify lint, production build, browser rendering, and route availability.
+### Final design findings
 
-**Follow-up Polish**
+- **Typography and copy:** the English Figtree/Geist hierarchy stays compact, legible, and consistent across the premium HUD, district map, venue prompts, wallet, inventory, and character studio. Venue and action labels are descriptive rather than placeholder copy.
+- **Layout and spacing:** audited road pieces meet at dedicated junctions rather than overlapping. Crosswalks, stop lines, gutters, curbs, sidewalks, and parking bays form one ordered street system. Sixty-three building/venue footprints have no building-building or building-asphalt overlap.
+- **Color and tokens:** cream plaster, muted coral, teal, mint, pale blue, and warm wood remain shared across the city, interiors, and skate geometry. Dark ink/glass HUD surfaces provide the intended Apple-like contrast without breaking the soft model direction.
+- **Model quality:** tall buildings now read as three-to-five-storey mixed-use blocks with framed windows, ground-floor glazing, doors, awnings, roof bands, and English signs. The skatepark uses live Three.js geometry for two recessed organic bowls, a broad S-shaped snake run, quarter pipes, five-step sets, landings, handrails, hubba, and flat bars.
+- **Skate geometry integrity:** the final snake surface has zero self-intersections, inverted triangles, or longitudinal height jumps. Bowl holes and rims share the same sampled boundary, curved grind registration stays within 0.8 cm of the visible coping, and the `67` mark is a flush visual floor print rather than a hidden platform.
+- **Interior completeness:** cafe, market, skate shop, fashion, salon, arcade, and club treatments use venue-specific counters, displays, equipment, lighting, staff, products, seats, and collision plans. Spawn, exit, service counter, product anchors, and all defined seats are reachable.
+- **Interaction:** the tested flow passed from hero selection to live map, Old Town travel, `ENTER HAIR & NAILS`, `SIT · STYLING CHAIR`, and `STAND UP`. Skate/walk/bike switching, attraction state, shop checkout, credits, and inventory remain connected to the existing world systems.
+- **Responsive controls:** at 390 × 844, the HUD keeps safe margins and exposes one labeled 360-degree joystick plus boost, jump, and interact controls. The analog stick uses pointer capture, dead-zone remapping, partial-speed movement, diagonal normalization, spring return, and cleanup on blur, lost capture, and modal transitions.
+- **Accessibility:** district travel, character parts, wallet, inventory, products, interaction, and mobile controls remain semantic buttons/groups with explicit accessible names. Focus-visible treatment and keyboard controls are preserved.
+- **Runtime quality:** the final production build and whitespace check pass. A clean browser run produced no warning or error logs. Local and LAN `/world?release=overnight-final` requests both returned HTTP 200.
 
-- Replace high-visibility façades, cars, and vegetation with optimized authored GLBs once the final asset kit is available.
-- Add concrete normal/roughness maps after GPU profiling on the target phone tier.
-- Upgrade the main bowl to a denser authored collision mesh for advanced transfer lines.
+## Final result
 
-final result: passed
+passed
 
----
+No remaining actionable P0, P1, or P2 issue was found for the integrated city-road, tall-building, venue-interior, master-skatepark, mobile-control, or tested interaction scope.
 
-# 67VERSE World — Live Map QA v2
+## Soft-pastel diorama model-quality pass
 
-## Comparison target
+### Source of truth
 
-- Selected visual truth: `outputs/67verse-master-map-reference-layout-v1.png` at 1254 × 1254.
-- Browser implementation: `/world`, with the live world camera switched to its orthographic map state at 1254 × 1254.
-- Same-input comparison inspected at `/tmp/67verse-reference-vs-live-final.png`.
-- Mobile implementation inspected at 390 × 844.
+- Final close aerial reference: `/Users/oscarbrendon/.codex/state/plugins/product-design/assets/67verse-soft-pastel-city-model-quality-reference.jpg`.
+- Required language: warm ivory molded forms, low-saturation coral/mint/blue accents, rounded stacked massing, small authored props, soft shadows, and readable landmark silhouettes.
+- Required product constraint: every map element remains live Three.js geometry with the current interaction, ride-anchor, teleport, seating, purchase, and collision systems intact.
 
-## Fidelity and implementation findings
+### Implemented model standard
 
-- No raster map, screenshot or image placeholder is present in the runtime map. The browser inspection returned `0` image elements while the map was open.
-- The visible map is the same playable Three.js scene used by the chase camera. Roads, sidewalks, crosswalks, buildings, canal, bridges, sports campus, race loop, skatepark, waterfront rides, marina, stadium, market blocks, park, southern housing and landscaping are separate 3D objects.
-- The world reproduces the selected reference's major spatial hierarchy: northwest race loop; upper sports, skate and amusement districts; middle old town, central plaza and stadium; lower commercial blocks and green park; southern housing; and a continuous road grid.
-- The responsive live-map UI adds ten accessible district targets without obscuring the underlying city structure. Mobile labels remain readable and do not overflow the viewport.
-- The lighter realtime material finish is an intentional web-performance interpretation of the more densely textured offline reference. It preserves the approved soft-model palette and large-scale composition while avoiding a static background.
-- No actionable P0, P1 or P2 visual differences remain for the live Three.js translation.
+- **Buildings:** three-to-seven-storey rounded silhouettes, controlled setbacks, roof crowns, balconies, opaque batched window groups, warm storefront glass, awnings, and readable English signs. Existing footprints and collider plans were preserved.
+- **Street world:** warm mauve-gray roads, coherent junctions and sidewalks, eleven parked rounded vehicles with audited blockers, and varied blob-tree silhouettes.
+- **Landmarks:** an architectural open stadium bowl, twin-rail coaster and loading station, structural Ferris wheel, striped carousel, authored marina docks and sailboats, detailed lighthouse, pond/pool rims, playground toys, and the functional large skatepark now share the same diorama palette and rounded construction language.
+- **Rendering:** powder-blue fog/background, softer balanced hemisphere and sun lighting, adaptive pixel ratio, cached shared materials/geometries, and per-building instanced window groups improve consistency and mobile cost without changing gameplay geometry.
 
-## Functional checks
+### Final verification
 
-- The initial player spawn is a clear central plaza position outside every building collider; the first interaction is `SWITCH TO SKATE`, not a venue-entry prompt.
-- Desktop forward movement changes the player's position and faces the character away from the camera in the travel direction.
-- The GLB's native `idle`, `walk`, `run`, `jump` and `fall` clips are selected from actual movement state.
-- Map input pauses player movement and touch input; closing it restores normal play.
-- Ten district travel controls were found in the browser. `Waterfront` and `Master Skatepark` teleports were executed successfully and returned the player to their safe entrance points.
-- The 390 × 844 state exposes direction, jump and interact controls; the live map fits the phone viewport and contains no raster image.
-- Browser console errors: `0`.
-
-final result: passed
-
----
-
-# 67VERSE World — Design QA (legacy v1, superseded by Live Map QA v2)
-
-## Target and implementation
-
-- Reference: `outputs/67verse-master-map-reference-layout-v1.png` (1254 × 1254)
-- Implementation: `/world`, master map overlay at a 1440 × 1100 desktop viewport
-- Implementation capture: `outputs/world-map-qa.png`
-- Focused crop: `outputs/world-map-qa-crop.png` (750 × 750)
-- Same-input comparison: `outputs/design-qa-comparison.png`
-- Mobile capture: `outputs/world-mobile.png` (390 × 844)
-
-## State compared
-
-The reference is a top-down master-city map, so the matched implementation state is the in-game **MAP** overlay. Building interiors are intentionally separate states that open after approaching an entrance and pressing **E**.
-
-## Visual findings
-
-- The city footprint, skatepark, sports courts, residential blocks, downtown axis, stadium, waterfront amusement district, beach, river, bridges, roads and outer housing all match the selected reference.
-- This legacy capture used the source artwork. The current v2 implementation removes that runtime artwork entirely and renders the playable Three.js world from an orthographic camera.
-- The current live-map state adds the 67VERSE product frame, close control, online state and interactive district travel targets over real scene geometry.
-- Desktop hierarchy, spacing, corner radii, translucent surfaces and typography remain coherent with the existing premium 67VERSE interface.
-- The 390 × 844 state preserves the 3D viewport and exposes dedicated directional, jump and interact controls without horizontal overflow.
-
-## Functional checks
-
-- `/world` loads a playable Three.js scene with zero console errors in a fresh browser tab.
-- `E`/Interact enters the separate 67 Skate Shop interior from the city.
-- Repeated forward input moves the character from the entrance to the counter; the contextual prompt changes from `EXPLORE INTERIOR` to `OPEN STORE`.
-- The store exposes three real catalog items with unique prices and descriptions.
-- A test purchase reduced the balance from 7,300 CR to 7,040 CR and persisted one owned item in the inventory.
-- Google Play and Web3 Wallet are visibly distinct checkout adapters. The Web3 adapter selection state was verified.
-- Checkout explicitly states that the prototype sends no real payment and no blockchain transaction.
-- The classic `/lobby` route remains intact and links to the new world.
-
-## Build verification
-
-- `vinext build` completed successfully.
-- Route report includes `/world` alongside the pre-existing routes.
-- Build emitted only the existing large-chunk optimization warning; no build error occurred.
-
-## Comparison history
-
-1. First desktop load revealed an SSR/client locale mismatch in the credit counter; formatting was made deterministic with `en-US`.
-2. A missing local credit value was interpreted as zero; the storage guard was corrected.
-3. Persisted inventory initially caused an SSR hydration mismatch; inventory hydration was moved to a mount effect.
-4. A fresh-tab retest produced zero console errors and the final side-by-side visual comparison showed no actionable mismatch.
-
-final result: passed
+- Correct local route: `http://127.0.0.1:5173/world?qa=soft-city-v1`.
+- Final live overview: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/qa-soft-city-overview.png`.
+- Required side-by-side visual QA: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/qa-soft-city-comparison.jpg`.
+- Desktop hero entry, live-world map, district travel, storefront/interior flow, waterfront, stadium, and master-skatepark views passed.
+- Mobile 390 × 844 analog joystick movement, spring return, action controls, and responsive HUD passed.
+- Final browser reload produced no warning or error logs; only Vite connection and React development information appeared.
+- `npm run build` and `git diff --check -- app/world/page.tsx app/world/world.module.css` passed. The build retains only the existing chunk-size optimization advisory.
