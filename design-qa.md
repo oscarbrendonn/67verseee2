@@ -163,3 +163,29 @@ No remaining actionable P0, P1, or P2 issue was found for the integrated city-ro
 - Mobile 390 × 844 analog joystick movement, spring return, action controls, and responsive HUD passed.
 - Final browser reload produced no warning or error logs; only Vite connection and React development information appeared.
 - `npm run build` and `git diff --check -- app/world/page.tsx app/world/world.module.css` passed. The build retains only the existing chunk-size optimization advisory.
+
+## Playground spring-pig ride pass
+
+### Source and visual evidence
+
+- User reference: `/tmp/codex-remote-attachments/019fbafb-ac9c-7883-b039-7e39958a743b/F31DE871-C11F-4C86-8FF6-9BA5A6705F1E/1-Fotoğraf-1.jpg`.
+- Combined reference/live implementation comparison: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/pig-ride-comparison.jpg`.
+- Live mobile mounted state at 390 × 844: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/pig-ride-mobile.png`.
+- Live desktop mounted state at 1280 × 720: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/pig-ride-desktop.png`.
+
+### Final interaction findings
+
+- All three authored playground pigs remain in the scene and are individually detected as `SUNNY PIG`, `BERRY PIG`, and `SKY PIG`; no duplicate ride model is created.
+- Near a pig, the action changes to `RIDE · <PIG NAME>`. Keyboard E and the semantic mobile Interact control enter the dedicated mounted state; E exits again.
+- Mounted pigs use the same camera-relative WASD/PUBG joystick steering as the rest of the world, with a dedicated normal speed, boost speed, spring hop, speed HUD, and `PIG RIDE` movement label.
+- The Gorilla is switched into its seated pose and raised above the rounded back so its torso and legs do not disappear into the toy.
+- The moving pig uses a 1.45 m collision footprint sampled at its center and eight perimeter points. Other pigs and world blockers stay physical while the active pig's former static blocker is ignored.
+- Dismount checks eight candidate directions and only exits to a collision-free point; the tested Sky Pig dismount returned the player to free movement at `(52.31, 71.32)` with zero speed.
+- Mobile travel reached `data-nearby-pig="spring-pig-3"`, mounted with `data-activity="mounted"`, moved the pig by 2.33 m with only 0.21 m sideways drift under forward analog input, changed heading by 2.859 radians under right-stick input, and safely returned to `data-activity="free"`.
+- Customize, map, and inventory remain disabled during the mounted activity. Refresh does not persist a mounted state.
+- Browser console warning/error log was empty after the final mobile mount, steer, turn, and dismount flow.
+- `npm run build` and `git diff --check -- app/world/page.tsx app/world/world.module.css design-qa.md` passed; the build retains only the existing chunk-size advisory.
+
+## Final result
+
+passed

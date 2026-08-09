@@ -10,6 +10,7 @@ import { Clock } from "@phosphor-icons/react/Clock";
 import { Coffee } from "@phosphor-icons/react/Coffee";
 import { ForkKnife } from "@phosphor-icons/react/ForkKnife";
 import { GameController } from "@phosphor-icons/react/GameController";
+import { Horse } from "@phosphor-icons/react/Horse";
 import { Hoodie } from "@phosphor-icons/react/Hoodie";
 import { MapTrifold } from "@phosphor-icons/react/MapTrifold";
 import { MapPin } from "@phosphor-icons/react/MapPin";
@@ -30,6 +31,7 @@ import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.j
 import styles from "./world.module.css";
 
 type RideMode = "walk" | "skate" | "bike";
+type PlayerActivity = "free" | "seated" | "riding" | "mounted";
 type HeroId =
   | "gorilla"
   | "friend-67"
@@ -121,6 +123,18 @@ type SeatSpot = {
 };
 
 type NearbySeat = Pick<SeatSpot, "id" | "label">;
+
+type PlaygroundPig = {
+  id: string;
+  label: string;
+  root: THREE.Group;
+  visual: THREE.Group;
+  anchor: THREE.Object3D;
+  colliderRadius: number;
+  riderOffset: number;
+};
+
+type NearbyPig = Pick<PlaygroundPig, "id" | "label">;
 
 type InteriorProductSpot = {
   id: string;
@@ -1470,6 +1484,7 @@ function addBaseballField(parent: THREE.Group, x: number, z: number) {
 }
 
 function addParkPlayground(parent: THREE.Group, x: number, z: number) {
+  const pigs: PlaygroundPig[] = [];
   const playPad = new THREE.Mesh(new THREE.CircleGeometry(6.8, 36), material("#d6b5c0", 0.84));
   playPad.rotation.x = -Math.PI / 2;
   playPad.position.set(x, 0.38, z);
@@ -1480,6 +1495,7 @@ function addParkPlayground(parent: THREE.Group, x: number, z: number) {
     [2.6, 1.4, "#78a9b7"],
   ].forEach(([offsetX, offsetZ, color], index) => {
     const toy = new THREE.Group();
+    const visual = new THREE.Group();
     const toyMaterial = material(color as string, 0.7);
     const body = new THREE.Mesh(new THREE.SphereGeometry(0.9, 18, 12), toyMaterial);
     body.scale.set(1.3, 0.72, 0.9);
@@ -1494,16 +1510,16 @@ function addParkPlayground(parent: THREE.Group, x: number, z: number) {
       const ear = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.42, 10), toyMaterial);
       ear.position.set(faceDirection * 0.76, 1.62, side * 0.24);
       ear.rotation.z = faceDirection * -0.18;
-      toy.add(ear);
+      visual.add(ear);
       const eye = new THREE.Mesh(new THREE.SphereGeometry(0.055, 9, 7), material("#45494b", 0.64));
       eye.position.set(faceDirection * 1.12, 1.3, side * 0.22);
-      toy.add(eye);
+      visual.add(eye);
     });
     [-0.62, 0.55].forEach((legX) => {
       [-0.42, 0.42].forEach((legZ) => {
         const leg = roundedBox([0.3, 0.55, 0.3], color as string, 0.12);
         leg.position.set(legX, 0.4, legZ);
-        toy.add(leg);
+        visual.add(leg);
       });
     });
     const tail = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 8), toyMaterial);
@@ -1512,8 +1528,16 @@ function addParkPlayground(parent: THREE.Group, x: number, z: number) {
     spring.position.y = 0.2;
     const foot = roundedSlab([1.45, 0.16, 0.82], "#eee3da", 0.32);
     foot.position.y = 0.08;
-    toy.add(foot, spring, body, head, muzzle, tail);
-    toy.position.set(x + (offsetX as number), 0, z + (offsetZ as number));
+    foot.rotation.y = Math.PI / 2;
+    visual.add(body, head, muzzle, tail);
+    visual.rotation.y = faceDirection > 0 ? -Math.PI / 2 : Math.PI / 2;
+
+    const anchor = new THREE.Object3D();
+    anchor.position.set(0, 1.54, 0);
+    visual.add(anchor);
+
+    toy.add(foot, spring, visual);
+    toy.position.set(x + (offsetX as number), 0.38, z + (offsetZ as number));
     toy.rotation.y = index * 1.9;
     toy.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
@@ -1521,8 +1545,20 @@ function addParkPlayground(parent: THREE.Group, x: number, z: number) {
       object.receiveShadow = true;
     });
     parent.add(toy);
+    pigs.push({
+      id: `spring-pig-${index + 1}`,
+      label: ["SUNNY PIG", "BERRY PIG", "SKY PIG"][index],
+      root: toy,
+      visual,
+      anchor,
+      colliderRadius: 1.45,
+      // Keep the rider's hips above the rounded back instead of sinking the
+      // lower torso into the spring toy while the seated pose is active.
+      riderOffset: 1.52,
+    });
   });
   playPad.receiveShadow = true;
+  return pigs;
 }
 
 function makeRaceRibbon(curve: THREE.CatmullRomCurve3, width: number, y: number, segments = 180) {
@@ -4495,10 +4531,11 @@ export default function WorldPage() {
   const [nearbyProduct, setNearbyProduct] = useState<StoreItem | null>(null);
   const [nearbyAttraction, setNearbyAttraction] = useState<Attraction | null>(null);
   const [nearbySeat, setNearbySeat] = useState<NearbySeat | null>(null);
+  const [nearbyPig, setNearbyPig] = useState<NearbyPig | null>(null);
   const [activeAttraction, setActiveAttraction] = useState<Attraction | null>(null);
   const [attractionOpen, setAttractionOpen] = useState(false);
   const [reservedAttractionId, setReservedAttractionId] = useState<string | null>(null);
-  const [playerActivity, setPlayerActivity] = useState<"free" | "seated" | "riding">("free");
+  const [playerActivity, setPlayerActivity] = useState<PlayerActivity>("free");
   const [activeRideSession, setActiveRideSession] = useState<string | null>(null);
   const [nearCounter, setNearCounter] = useState(false);
   const [nearExit, setNearExit] = useState(false);
@@ -4577,7 +4614,7 @@ export default function WorldPage() {
     setDraftLook((look) => ({ ...look, backpack: WARDROBE.backpacks[wrap(index, WARDROBE.backpacks.length)].id }));
   };
 
-  const rideLabel = rideMode === "walk" ? "WALK" : rideMode === "skate" ? "SKATE" : "BIKE";
+  const rideLabel = playerActivity === "mounted" ? "PIG RIDE" : rideMode === "walk" ? "WALK" : rideMode === "skate" ? "SKATE" : "BIKE";
   const venueServicePrompt = activeVenue?.kind === "cafe"
     ? "ORDER COFFEE"
     : activeVenue?.kind === "market"
@@ -4591,7 +4628,9 @@ export default function WorldPage() {
             : activeVenue?.kind === "fashion"
               ? "BROWSE FASHION"
               : "BROWSE PRODUCTS";
-  const currentPrompt = playerActivity === "riding"
+  const currentPrompt = playerActivity === "mounted"
+    ? "GET OFF PIG"
+    : playerActivity === "riding"
     ? "LEAVE ATTRACTION"
     : playerActivity === "seated"
       ? "STAND UP"
@@ -4605,7 +4644,9 @@ export default function WorldPage() {
               : nearbySeat
                 ? `SIT · ${nearbySeat.label}`
                 : "EXPLORE INTERIOR"
-        : nearbySeat
+        : nearbyPig
+          ? `RIDE · ${nearbyPig.label}`
+          : nearbySeat
           ? `SIT · ${nearbySeat.label}`
           : nearbyVenue
             ? `ENTER ${nearbyVenue.name.toUpperCase()}`
@@ -4895,6 +4936,10 @@ export default function WorldPage() {
     const grindRails: Array<{ name: string; start: THREE.Vector3; end: THREE.Vector3 }> = [];
     const seatSpots: SeatSpot[] = [];
     const attractionRigs = new Map<string, AttractionRig>();
+    let activePigMount: PlaygroundPig | null = null;
+    let pigRockPhase = 0;
+    let pigRockEnergy = 0;
+    const pigBlockerPosition = new THREE.Vector3();
     scene.add(worldRoot);
 
     const water = roundedSlab([360, 0.7, 360], "#82bfd2", 12);
@@ -5114,8 +5159,13 @@ export default function WorldPage() {
     pool.position.set(51, 0.33, 42);
     worldRoot.add(pool);
     blockBox(51, 42, 14, 9);
-    addParkPlayground(worldRoot, 52, 67);
-    [[49.6, 67.7], [52.4, 65.5], [54.6, 68.4]].forEach(([x, z]) => blockCircle(x, z, 1.05));
+    const playgroundPigs = addParkPlayground(worldRoot, 52, 67);
+    worldBlockers.push((x, z) => playgroundPigs.some((pig) => {
+      if (pig === activePigMount) return false;
+      pig.root.updateWorldMatrix(true, false);
+      pig.root.getWorldPosition(pigBlockerPosition);
+      return Math.hypot(x - pigBlockerPosition.x, z - pigBlockerPosition.z) < pig.colliderRadius;
+    }));
     const pondBridge = roundedSlab([3.1, 0.28, 16], "#c7a987", 0.72);
     pondBridge.position.set(73, 0.47, 58);
     worldRoot.add(pondBridge);
@@ -5423,6 +5473,7 @@ export default function WorldPage() {
       setNearbyProduct(null);
       setNearbyAttraction(null);
       setNearbySeat(null);
+      setNearbyPig(null);
       setActiveVenue(venue);
       const arrivalGuide: Record<VenueKind, string> = {
         cafe: "Walk to the barista to order, or press E beside a stool to sit.",
@@ -5460,6 +5511,7 @@ export default function WorldPage() {
       setCheckoutItem(null);
       setNearbyAttraction(null);
       setNearbySeat(null);
+      setNearbyPig(null);
       setNearbyProduct(null);
       setToast("Back in the city.");
     };
@@ -5486,13 +5538,13 @@ export default function WorldPage() {
       keys.add(event.code);
       if (!event.repeat && (event.code === "KeyE" || event.code === "Enter")) interactRef.current = true;
       if (!event.repeat && event.code === "Space") jumpRef.current = true;
-      if (!event.repeat && event.code === "KeyM" && !currentVenue && !activeSeatSpot && !activeAttractionRide) {
+      if (!event.repeat && event.code === "KeyM" && !currentVenue && !activeSeatSpot && !activeAttractionRide && !activePigMount) {
         const next = !mapOpenRef.current;
         mapOpenRef.current = next;
         touchInputRef.current = { x: 0, z: 0 };
         setMapOpen(next);
       }
-      if (!event.repeat && event.code === "KeyI" && !activeSeatSpot && !activeAttractionRide) setInventoryOpen((value) => !value);
+      if (!event.repeat && event.code === "KeyI" && !activeSeatSpot && !activeAttractionRide && !activePigMount) setInventoryOpen((value) => !value);
       if (!event.repeat && event.code === "Escape") {
         mapOpenRef.current = false;
         setMapOpen(false);
@@ -5693,7 +5745,85 @@ export default function WorldPage() {
       setNearbySeat({ id: seat.id, label: seat.label });
       setNearbyVenue(null);
       setNearbyAttraction(null);
+      setNearbyPig(null);
       setToast("Seated. Press E or move to stand up.");
+    };
+    const mountPig = (pig: PlaygroundPig) => {
+      if (currentVenue || activeSeatSpot || activeAttractionRide || activePigMount) return;
+      pig.root.updateWorldMatrix(true, false);
+      pig.root.getWorldPosition(anchorPosition);
+      pig.root.getWorldQuaternion(anchorQuaternion);
+      forceWalkMode();
+      player.position.set(anchorPosition.x, skateSurfaceAt(anchorPosition.x, anchorPosition.z), anchorPosition.z);
+      player.quaternion.copy(anchorQuaternion);
+      player.add(pig.root);
+      pig.root.position.set(0, -0.055, 0);
+      pig.root.rotation.set(0, 0, 0);
+      pig.visual.position.y = 0;
+      pig.visual.rotation.x = 0;
+      pig.visual.rotation.z = 0;
+      activePigMount = pig;
+      pigRockPhase = 0;
+      pigRockEnergy = 0.2;
+      characterRideOffset = pig.riderOffset;
+      if (characterModel) characterModel.position.y = characterBaseY + characterRideOffset;
+      shadow.visible = true;
+      grounded = true;
+      setPlayerActivity("mounted");
+      setNearbyPig(null);
+      setNearbySeat(null);
+      setNearbyVenue(null);
+      setNearbyAttraction(null);
+      setToast(`${pig.label} mounted. Steer with WASD or the joystick; press E to get off.`);
+    };
+    const dismountPig = () => {
+      const pig = activePigMount;
+      if (!pig) return;
+      const yaw = player.rotation.y;
+      const cos = Math.cos(yaw);
+      const sin = Math.sin(yaw);
+      const distance = 2.85;
+      const localCandidates: Array<[number, number]> = [
+        [distance, 0], [-distance, 0], [0, -distance], [0, distance],
+        [distance * 0.72, distance * 0.72], [-distance * 0.72, distance * 0.72],
+        [distance * 0.72, -distance * 0.72], [-distance * 0.72, -distance * 0.72],
+      ];
+      const safe = localCandidates
+        .map(([localX, localZ]) => ({
+          x: player.position.x + localX * cos + localZ * sin,
+          z: player.position.z - localX * sin + localZ * cos,
+        }))
+        .find(({ x, z }) => Math.abs(x) < WORLD_LIMIT - 0.5 && Math.abs(z) < WORLD_LIMIT - 0.5 && !collides(x, z));
+      if (!safe) {
+        setToast("Move the pig to a clearer space before getting off.");
+        return;
+      }
+
+      pig.root.updateWorldMatrix(true, false);
+      pig.root.getWorldPosition(anchorPosition);
+      pig.root.getWorldQuaternion(anchorQuaternion);
+      worldRoot.add(pig.root);
+      pig.root.position.copy(anchorPosition);
+      pig.root.quaternion.copy(anchorQuaternion);
+      pig.root.rotation.x = 0;
+      pig.root.rotation.z = 0;
+      pig.root.position.y = Math.max(0, skateSurfaceAt(pig.root.position.x, pig.root.position.z) - 0.055);
+      pig.visual.position.y = 0;
+      pig.visual.rotation.x = 0;
+      pig.visual.rotation.z = 0;
+
+      activePigMount = null;
+      pigRockEnergy = 0;
+      player.position.set(safe.x, skateSurfaceAt(safe.x, safe.z), safe.z);
+      characterRideOffset = 0;
+      if (characterModel) characterModel.position.y = characterBaseY;
+      planarVelocity.set(0, 0, 0);
+      velocityY = 0;
+      grounded = true;
+      shadow.visible = true;
+      setPlayerActivity("free");
+      setNearbyPig(null);
+      setToast(`${pig.label} parked. Press E beside it to ride again.`);
     };
     const finishAttractionRide = (early = false) => {
       if (!activeAttractionRide) return;
@@ -5706,6 +5836,7 @@ export default function WorldPage() {
       setActiveRideSession(null);
       setPlayerActivity("free");
       setNearbyAttraction(null);
+      setNearbyPig(null);
       setToast(early ? `${finished.attraction.name} ride exited safely.` : `${finished.attraction.name} complete.`);
     };
     const startAttractionRide = (attraction: Attraction) => {
@@ -5720,6 +5851,7 @@ export default function WorldPage() {
       activeAttractionRide = { rig, attraction, startedAt: elapsedTime };
       shadow.visible = false;
       setNearbyAttraction(null);
+      setNearbyPig(null);
       setActiveRideSession(attraction.id);
       setPlayerActivity("riding");
       setToast(`${attraction.name} started. Press E to leave safely.`);
@@ -5799,6 +5931,7 @@ export default function WorldPage() {
       setNearbyVenue(null);
       setNearbyAttraction(null);
       setNearbySeat(null);
+      setNearbyPig(null);
       setActiveAttraction(null);
       attractionOpenRef.current = false;
       setAttractionOpen(false);
@@ -5856,6 +5989,24 @@ export default function WorldPage() {
       const inputZ = keyboardMoving ? keyInputZ : touch.z;
       const inputStrength = Math.min(1, Math.hypot(inputX, inputZ));
       const isBoosting = keys.has("ShiftLeft") || keys.has("ShiftRight") || boostRef.current;
+      if (activePigMount) {
+        const targetRockEnergy = inputStrength > 0.02 ? (isBoosting ? 1 : 0.74) : 0.18;
+        pigRockEnergy = THREE.MathUtils.damp(pigRockEnergy, targetRockEnergy, inputStrength > 0.02 ? 6.5 : 2.8, delta);
+        pigRockPhase += delta * (3.6 + pigRockEnergy * 5.2);
+        activePigMount.visual.position.y = Math.max(0, Math.sin(pigRockPhase * 2) * 0.045 * pigRockEnergy);
+        activePigMount.visual.rotation.x = THREE.MathUtils.damp(
+          activePigMount.visual.rotation.x,
+          -inputZ * 0.11 + Math.sin(pigRockPhase) * 0.035 * pigRockEnergy,
+          8,
+          delta,
+        );
+        activePigMount.visual.rotation.z = THREE.MathUtils.damp(
+          activePigMount.visual.rotation.z,
+          -inputX * 0.1 + Math.cos(pigRockPhase * 0.9) * 0.025 * pigRockEnergy,
+          8,
+          delta,
+        );
+      }
       if (activeSeatSpot && inputStrength > 0.05) standUp();
       const controlsBlocked = mapOpenRef.current
         || heroSelectOpenRef.current
@@ -5874,7 +6025,9 @@ export default function WorldPage() {
         movement.addScaledVector(forward, inputZ).addScaledVector(right, inputX).normalize();
       }
 
-      const maximumSpeed = currentVenue
+      const maximumSpeed = activePigMount
+        ? (isBoosting ? 7.2 : 5.2)
+        : currentVenue
         ? (isBoosting ? 8.1 : 5.8)
         : activeRide === "walk"
           ? (isBoosting ? 9.6 : 6.4)
@@ -5884,7 +6037,9 @@ export default function WorldPage() {
       targetVelocity.copy(movement).multiplyScalar(maximumSpeed * inputStrength);
       if (isMoving) {
         const reversing = planarVelocity.lengthSq() > 0.04 && planarVelocity.dot(targetVelocity) < 0;
-        const acceleration = currentVenue || activeRide === "walk"
+        const acceleration = activePigMount
+          ? (reversing ? 11 : isBoosting ? 7.2 : 8.5)
+          : currentVenue || activeRide === "walk"
           ? 14
           : activeRide === "skate"
             ? (reversing ? 10 : isBoosting ? 5.5 : 4.2)
@@ -5944,11 +6099,21 @@ export default function WorldPage() {
           if (!collidesInterior(player.position.x, desiredPosition.z)) player.position.z = desiredPosition.z;
           else planarVelocity.z = 0;
         } else {
-          desiredPosition.x = THREE.MathUtils.clamp(desiredPosition.x, -WORLD_LIMIT, WORLD_LIMIT);
-          desiredPosition.z = THREE.MathUtils.clamp(desiredPosition.z, -WORLD_LIMIT, WORLD_LIMIT);
-          const maxStep = activeRide === "walk" ? 0.34 : 0.62;
+          const movementLimit = WORLD_LIMIT - (activePigMount?.colliderRadius ?? 0);
+          desiredPosition.x = THREE.MathUtils.clamp(desiredPosition.x, -movementLimit, movementLimit);
+          desiredPosition.z = THREE.MathUtils.clamp(desiredPosition.z, -movementLimit, movementLimit);
+          const maxStep = activePigMount ? 0.42 : activeRide === "walk" ? 0.34 : 0.62;
           const canMoveTo = (x: number, z: number) => {
             if (collides(x, z)) return false;
+            if (activePigMount) {
+              for (let sample = 0; sample < 8; sample += 1) {
+                const angle = sample / 8 * Math.PI * 2;
+                if (collides(
+                  x + Math.cos(angle) * activePigMount.colliderRadius,
+                  z + Math.sin(angle) * activePigMount.colliderRadius,
+                )) return false;
+              }
+            }
             const currentSurface = skateSurfaceAt(player.position.x, player.position.z);
             const nextSurface = skateSurfaceAt(x, z);
             if (grounded) return nextSurface - currentSurface <= maxStep;
@@ -5996,7 +6161,7 @@ export default function WorldPage() {
         jumpRef.current = false;
       } else {
         if (!mapOpenRef.current && !heroSelectOpenRef.current && jumpRef.current && grounded) {
-          velocityY = activeRide === "bike" ? 6.4 : 7.2;
+          velocityY = activePigMount ? 5.2 : activeRide === "bike" ? 6.4 : 7.2;
           grounded = false;
         }
         jumpRef.current = false;
@@ -6043,7 +6208,7 @@ export default function WorldPage() {
         grounded = false;
       }
 
-      if (activeAttractionRide || activeSeatSpot) playCharacterAction("sit");
+      if (activeAttractionRide || activeSeatSpot || activePigMount) playCharacterAction("sit");
       else if (mapOpenRef.current || rideModeRef.current !== "walk") playCharacterAction("idle");
       else if (!grounded) playCharacterAction(velocityY > 0.35 ? "jump" : "fall");
       else if (hasPlanarMotion) playCharacterAction(isBoosting ? "run" : "walk");
@@ -6051,7 +6216,7 @@ export default function WorldPage() {
 
       if (gorillaRig && characterModel) {
         const elapsed = elapsedTime;
-        const sitting = Boolean(activeSeatSpot || activeAttractionRide);
+        const sitting = Boolean(activeSeatSpot || activeAttractionRide || activePigMount);
         const walking = !sitting && rideModeRef.current === "walk" && hasPlanarMotion;
         const stridePhase = elapsed * (isBoosting ? 10.5 : 7.2);
         const stride = walking && grounded ? Math.sin(stridePhase) : 0;
@@ -6066,16 +6231,21 @@ export default function WorldPage() {
         poseGorillaJoint(gorillaRig.spine, sitting ? -0.18 : 0, 0, walking ? stride * 0.025 : Math.sin(elapsed * 1.7) * 0.009, 9, delta);
         poseGorillaJoint(gorillaRig.head, 0, 0, walking ? -stride * 0.018 : Math.sin(elapsed * 1.25) * 0.012, 9, delta);
         const movementBob = sitting ? 0 : walking && grounded ? Math.abs(Math.sin(stridePhase)) * 0.045 : grounded ? Math.sin(elapsed * 1.8) * 0.014 : 0;
-        characterModel.position.y = characterBaseY + (sitting ? -0.12 : characterRideOffset) + movementBob;
+        const mountedOffset = activePigMount ? activePigMount.riderOffset : sitting ? -0.12 : characterRideOffset;
+        characterModel.position.y = characterBaseY + mountedOffset + movementBob;
       }
 
       if (mapOpenRef.current || heroSelectOpenRef.current || attractionOpenRef.current || inventoryOpenRef.current || shopOpenRef.current || checkoutOpenRef.current) {
         interactRef.current = false;
+      } else if (activePigMount) {
+        if (interactRef.current) dismountPig();
       } else if (activeAttractionRide) {
         if (interactRef.current) finishAttractionRide(true);
       } else if (activeSeatSpot) {
         if (interactRef.current) standUp();
       } else if (currentVenue) {
+        setNearbyPig((value) => (value === null ? value : null));
+        mount.dataset.nearbyPig = "";
         const counterNearby = getInteriorServicePoints(currentVenue).some(([x, z, radius]) => (
           Math.hypot(player.position.x - x, player.position.z - z) < radius
         ));
@@ -6117,6 +6287,20 @@ export default function WorldPage() {
         }
       } else {
         setNearbyProduct((value) => (value === null ? value : null));
+        let closestPig: PlaygroundPig | null = null;
+        let closestPigDistance = 3.25;
+        playgroundPigs.forEach((pig) => {
+          pig.anchor.updateWorldMatrix(true, false);
+          pig.anchor.getWorldPosition(anchorPosition);
+          const distance = Math.hypot(player.position.x - anchorPosition.x, player.position.z - anchorPosition.z);
+          if (distance < closestPigDistance) {
+            closestPigDistance = distance;
+            closestPig = pig;
+          }
+        });
+        const pigCandidate = closestPig as PlaygroundPig | null;
+        setNearbyPig((value) => (value?.id === pigCandidate?.id ? value : pigCandidate ? { id: pigCandidate.id, label: pigCandidate.label } : null));
+        mount.dataset.nearbyPig = pigCandidate?.id ?? "";
         let closestSeat: SeatSpot | null = null;
         let closestSeatDistance = 3.3;
         seatSpots.forEach((seat) => {
@@ -6150,7 +6334,8 @@ export default function WorldPage() {
         }
         setNearbyAttraction((value) => (value?.id === closestAttraction?.id ? value : closestAttraction));
         if (interactRef.current) {
-          if (closestSeat) sitDown(closestSeat);
+          if (pigCandidate) mountPig(pigCandidate);
+          else if (closestSeat) sitDown(closestSeat);
           else if (closest) enterVenue(closest);
           else if (closestAttraction) {
             keys.clear();
@@ -6174,6 +6359,8 @@ export default function WorldPage() {
         const portrait = mount.clientWidth < 720;
         const cameraDistance = activeAttractionRide
           ? (portrait ? 7.8 : 9.4)
+          : activePigMount
+            ? (portrait ? 6.5 : 6.2)
           : activeSeatSpot
             ? (portrait ? 7.6 : 7)
             : currentVenue
@@ -6181,12 +6368,14 @@ export default function WorldPage() {
               : portrait ? 5.2 : 4.6;
         const cameraHeight = activeAttractionRide
           ? (portrait ? 5.2 : 4.6)
+          : activePigMount
+            ? (portrait ? 4.4 : 3.7)
           : activeSeatSpot
             ? (portrait ? 4.9 : 4.4)
             : currentVenue
               ? (portrait ? 5.7 : 5.1)
               : portrait ? 3.5 : 2.65;
-        const targetHeight = activeAttractionRide ? 0.8 : activeSeatSpot ? 1.05 : currentVenue ? 1.35 : 1.55;
+        const targetHeight = activeAttractionRide ? 0.8 : activePigMount ? 2.05 : activeSeatSpot ? 1.05 : currentVenue ? 1.35 : 1.55;
         cameraTarget.set(player.position.x, player.position.y + targetHeight, player.position.z);
         const viewYaw = activeSeatSpot ? cameraYaw + Math.PI / 2 : cameraYaw;
         cameraOffset.set(Math.sin(viewYaw) * cameraDistance, cameraHeight, Math.cos(viewYaw) * cameraDistance);
@@ -6220,7 +6409,12 @@ export default function WorldPage() {
       mount.dataset.playerX = player.position.x.toFixed(2);
       mount.dataset.playerY = player.position.y.toFixed(2);
       mount.dataset.playerZ = player.position.z.toFixed(2);
-      mount.dataset.activity = activeAttractionRide ? "riding" : activeSeatSpot ? "seated" : currentVenue ? "interior" : "free";
+      mount.dataset.playerYaw = player.rotation.y.toFixed(3);
+      mount.dataset.speedKmh = (planarVelocity.length() * 3.6).toFixed(1);
+      mount.dataset.rideMode = activePigMount ? "pig" : rideModeRef.current;
+      mount.dataset.mountedPig = activePigMount?.id ?? "";
+      if (activePigMount) mount.dataset.nearbyPig = "";
+      mount.dataset.activity = activePigMount ? "mounted" : activeAttractionRide ? "riding" : activeSeatSpot ? "seated" : currentVenue ? "interior" : "free";
     };
     animate();
 
@@ -6456,10 +6650,10 @@ export default function WorldPage() {
         </nav>
       </header>
 
-      {!mapOpen && !heroSelectOpen && !attractionOpen && playerActivity === "free" && <aside className={styles.modeCard}>
-        {rideMode === "bike" ? <Bicycle size={22} weight="bold" /> : <PersonSimpleRun size={22} weight="bold" />}
+      {!mapOpen && !heroSelectOpen && !attractionOpen && (playerActivity === "free" || playerActivity === "mounted") && <aside className={styles.modeCard}>
+        {playerActivity === "mounted" ? <Horse size={22} weight="fill" /> : rideMode === "bike" ? <Bicycle size={22} weight="bold" /> : <PersonSimpleRun size={22} weight="bold" />}
         <span><small>MOVEMENT</small><strong>{rideLabel}</strong></span>
-        {rideMode !== "walk" && <em><b>{speedometer}</b><small>KM/H</small></em>}
+        {(playerActivity === "mounted" || rideMode !== "walk") && <em><b>{speedometer}</b><small>KM/H</small></em>}
       </aside>}
 
       {nearbyAttraction && !mapOpen && !heroSelectOpen && !attractionOpen && !activeVenue && (
@@ -6485,14 +6679,16 @@ export default function WorldPage() {
       {toast && <div className={styles.toast}>{toast}</div>}
 
       {!mapOpen && !heroSelectOpen && !inventoryOpen && !checkoutItem && !shopOpen && !attractionOpen && (
-        <button type="button" className={`${styles.interaction} ${(nearbyVenue || nearbyAttraction || nearbySeat || nearbyProduct || nearCounter || nearExit || playerActivity !== "free") ? styles.ready : ""}`} onClick={handleInteract}>
+        <button type="button" className={`${styles.interaction} ${(nearbyVenue || nearbyAttraction || nearbySeat || nearbyPig || nearbyProduct || nearCounter || nearExit || playerActivity !== "free") ? styles.ready : ""}`} onClick={handleInteract}>
           <kbd>E</kbd><span><small>INTERACT</small><strong>{currentPrompt}</strong></span>
         </button>
       )}
 
       {!mapOpen && !heroSelectOpen && !attractionOpen && !inventoryOpen && !shopOpen && !checkoutItem && (
         <div className={styles.help}>
-          {playerActivity === "riding"
+          {playerActivity === "mounted"
+            ? "PIG RIDE · WASD OR JOYSTICK TO STEER · SHIFT TO BOOST · SPACE TO HOP · E TO GET OFF"
+            : playerActivity === "riding"
             ? "RIDE IN PROGRESS · E TO EXIT SAFELY"
             : playerActivity === "seated"
               ? "SEATED · E OR MOVE TO STAND"
