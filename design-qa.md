@@ -137,6 +137,43 @@
 
 passed
 
+## Exact soft-pastel product family and oblique aerial pass
+
+### Source and combined review input
+
+- Green Park product reference: `/tmp/codex-remote-attachments/019fbafb-ac9c-7883-b039-7e39958a743b/946B697F-58D9-4906-A55D-47570A1E6F4B/1-Fotoğraf-1.jpg`.
+- Full-city aerial reference: `/tmp/codex-remote-attachments/019fbafb-ac9c-7883-b039-7e39958a743b/946B697F-58D9-4906-A55D-47570A1E6F4B/2-Fotoğraf-2.jpg`.
+- Final live city capture: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/reference-match-city-final.png`.
+- Final Green Park capture: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/reference-match-green-park.png`.
+- Required source/implementation comparison input: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/design-qa-reference-match-final.png`.
+
+### Comparison findings and fixes
+
+- **P1 flat map camera:** the previous orthographic view presented the world as a plan and hid the model massing that defines the supplied city image.
+- **Fix:** the live map now uses a responsive south-to-north perspective camera. Desktop crops the near edge like the source and exposes building fronts; portrait uses a steeper board angle so the square city remains usable on a phone.
+- **P1 detached map labels:** fixed percentage positions no longer matched landmarks after the camera changed.
+- **Fix:** each district button is projected every frame from its actual Three.js world coordinate through the live overview camera. Pins remain aligned at every tested aspect ratio.
+- **P1 incomplete Green Park product set:** the park lacked the reference's coherent kidney pond, secondary water feature, curved paths, picnic furniture, waste bin, stones, grass tufts, play arches, and dense edge planting.
+- **Fix:** all of those elements are authored live Three.js geometry using one warm-ivory, sage, dusty-mauve, powder-blue, coral, butter, blush, and pale-wood palette. The existing rideable spring pigs, swimming, bridge walking, seating, and collision systems remain connected.
+- **P1 missing civic foreground landmark:** the southern city edge lacked the domed civic silhouette visible in the aerial source.
+- **Fix:** a molded warm-ivory civic hall with a dome, drum, cornice, columns, framed windows, canopy, and safe collider now anchors Southside without moving its spawn or entering a road.
+- **P1 Ferris-wheel silhouette:** the wheel plane faced sideways to the city camera and disappeared at aerial scale.
+- **Fix:** the wheel now faces the southern aerial/gameplay approach, spins on the correct axis, retains its cabin seat anchor and dismount, and uses updated support blockers.
+- **P2 low residential massing:** two-floor procedural blocks made the city read flatter and emptier than the source.
+- **Fix:** procedural blocks now start at three floors, while the two southern central buildings become taller molded towers. Footprints, entrances, roads, and collider dimensions are unchanged.
+
+### Final findings
+
+- The city keeps the source hierarchy: race and sports at northwest; skatepark north-center; amusement/marina northeast; tall central square; stadium east; Green Park southeast; civic dome in the near south.
+- Shared geometry now uses the same molded edges, opaque smoky windows, matte roughness, restrained pastel accents, soft blob vegetation, and rounded miniature props throughout the world.
+- Green Park's bridge still overlaps both banks, has a registered walkable deck and physical rails, and is excluded from the pond swim volume. The revised kidney water remains swimmable outside that deck lane.
+- The map remains an interactive live Three.js scene. No supplied screenshot is embedded as the terrain or used as a flat map.
+- Desktop hero entry, map opening, district travel to Green Park and Waterfront, park/bridge inspection, and mobile map layout were exercised. The final audited browser run reported no console warning or error.
+- `npm run build` and `git diff --check` pass. The production build retains only the existing chunk-size advisory.
+- No remaining actionable P0, P1, or P2 issue was found in this reference-match scope.
+
+final result: passed
+
 ## Pastel molded-building and recessed-window pass
 
 ### Source and visual evidence

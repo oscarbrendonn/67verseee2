@@ -451,6 +451,20 @@ const VERTICAL_ROAD_SEGMENTS: Array<[number, number]> = [
 const WORLD_LIMIT = 134;
 
 const DIORAMA_IVORY = new THREE.Color("#efe5dc");
+const DIORAMA_PALETTE = {
+  ivory: "#eee4dc",
+  warmIvory: "#f3ebe3",
+  sage: "#a9b88d",
+  sageDark: "#81936f",
+  path: "#ada2a0",
+  water: "#86bcd0",
+  wood: "#cfb18d",
+  woodDark: "#aa896f",
+  coral: "#df8978",
+  butter: "#e2bd72",
+  blush: "#dca7b3",
+  powderBlue: "#84afbf",
+} as const;
 const MATERIAL_CACHE = new Map<string, THREE.MeshStandardMaterial>();
 const WATER_MATERIAL_CACHE = new Map<string, THREE.MeshPhysicalMaterial>();
 const ROUNDED_BOX_GEOMETRY_CACHE = new Map<string, RoundedBoxGeometry>();
@@ -1002,6 +1016,285 @@ function addPlanter(parent: THREE.Group, x: number, z: number, rotation = 0) {
   parent.add(planter);
 }
 
+function addParkPicnicTable(parent: THREE.Group, x: number, z: number, rotation = 0) {
+  const table = new THREE.Group();
+  const timber = material(DIORAMA_PALETTE.wood, 0.84);
+  const timberDark = material(DIORAMA_PALETTE.woodDark, 0.86);
+  const top = roundedBox([3.05, 0.2, 1.28], DIORAMA_PALETTE.wood, 0.1);
+  top.position.y = 0.94;
+  table.add(top);
+  [-1, 1].forEach((side) => {
+    const bench = roundedBox([3.05, 0.17, 0.42], DIORAMA_PALETTE.wood, 0.09);
+    bench.position.set(0, 0.57, side * 1.02);
+    table.add(bench);
+  });
+  [-0.92, 0.92].forEach((legX) => {
+    [-1, 1].forEach((side) => {
+      const brace = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.12, 0.93, 10), timberDark);
+      brace.position.set(legX, 0.46, side * 0.38);
+      brace.rotation.z = side * 0.22;
+      brace.castShadow = true;
+      brace.receiveShadow = true;
+      table.add(brace);
+    });
+  });
+  const centerBrace = roundedBox([2.4, 0.12, 0.12], DIORAMA_PALETTE.woodDark, 0.04);
+  centerBrace.position.y = 0.45;
+  table.add(centerBrace);
+  table.position.set(x, 0, z);
+  table.rotation.y = rotation;
+  table.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    object.castShadow = true;
+    object.receiveShadow = true;
+    if (object.material === timber) object.material = timber;
+  });
+  parent.add(table);
+}
+
+function addParkTrashCan(parent: THREE.Group, x: number, z: number) {
+  const can = new THREE.Group();
+  const shell = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.48, 0.53, 1.08, 14),
+    material(DIORAMA_PALETTE.wood, 0.88),
+  );
+  shell.position.y = 0.54;
+  const opening = new THREE.Mesh(
+    new THREE.TorusGeometry(0.41, 0.075, 8, 20),
+    material(DIORAMA_PALETTE.woodDark, 0.82),
+  );
+  opening.rotation.x = Math.PI / 2;
+  opening.position.y = 1.08;
+  const inset = new THREE.Mesh(
+    new THREE.CircleGeometry(0.34, 20),
+    material("#6f6964", 0.92),
+  );
+  inset.rotation.x = -Math.PI / 2;
+  inset.position.y = 1.085;
+  can.add(shell, opening, inset);
+  can.position.set(x, 0, z);
+  can.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    object.castShadow = true;
+    object.receiveShadow = true;
+  });
+  parent.add(can);
+}
+
+function addPastelPlayArch(parent: THREE.Group, x: number, z: number, color: string, rotation = 0) {
+  const curve = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(-0.72, 0.08, 0),
+    new THREE.Vector3(-0.72, 0.72, 0),
+    new THREE.Vector3(-0.46, 1.22, 0),
+    new THREE.Vector3(0, 1.42, 0),
+    new THREE.Vector3(0.46, 1.22, 0),
+    new THREE.Vector3(0.72, 0.72, 0),
+    new THREE.Vector3(0.72, 0.08, 0),
+  ], false, "catmullrom", 0.34);
+  const arch = new THREE.Mesh(
+    new THREE.TubeGeometry(curve, 36, 0.23, 10, false),
+    material(color, 0.82),
+  );
+  arch.position.set(x, 0.22, z);
+  arch.rotation.y = rotation;
+  arch.castShadow = true;
+  arch.receiveShadow = true;
+  parent.add(arch);
+}
+
+function addParkRockCluster(parent: THREE.Group, x: number, z: number, scale = 1) {
+  const cluster = new THREE.Group();
+  [
+    [-0.5, 0.34, 0.12, 0.7, 0.5, 0.62],
+    [0.18, 0.48, -0.12, 0.86, 0.68, 0.72],
+    [0.76, 0.25, 0.18, 0.48, 0.35, 0.45],
+  ].forEach(([rockX, rockY, rockZ, scaleX, scaleY, scaleZ]) => {
+    const rock = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(0.75, 1),
+      material("#a69b88", 0.9),
+    );
+    rock.position.set(rockX, rockY, rockZ);
+    rock.scale.set(scaleX, scaleY, scaleZ);
+    rock.castShadow = true;
+    rock.receiveShadow = true;
+    cluster.add(rock);
+  });
+  cluster.position.set(x, 0, z);
+  cluster.scale.setScalar(scale);
+  parent.add(cluster);
+}
+
+function addGrassTuft(parent: THREE.Group, x: number, z: number, rotation = 0) {
+  const tuft = new THREE.Group();
+  [-0.18, 0, 0.18].forEach((offset, index) => {
+    const blade = new THREE.Mesh(
+      new THREE.ConeGeometry(0.095, 0.52 + index * 0.08, 7),
+      material(index === 1 ? "#82936f" : "#91a07b", 0.9),
+    );
+    blade.position.set(offset, 0.24 + index * 0.035, 0);
+    blade.rotation.z = offset * -1.2;
+    blade.castShadow = true;
+    tuft.add(blade);
+  });
+  tuft.position.set(x, 0, z);
+  tuft.rotation.y = rotation;
+  parent.add(tuft);
+}
+
+function addParkPath(
+  parent: THREE.Group,
+  points: Array<[number, number]>,
+  width = 2.15,
+  color = DIORAMA_PALETTE.path,
+) {
+  const curve = new THREE.CatmullRomCurve3(
+    points.map(([x, z]) => new THREE.Vector3(x, 0, z)),
+    false,
+    "catmullrom",
+    0.38,
+  );
+  const segments = Math.max(32, points.length * 18);
+  const positions: number[] = [];
+  const indices: number[] = [];
+  const point = new THREE.Vector3();
+  const tangent = new THREE.Vector3();
+  for (let index = 0; index <= segments; index += 1) {
+    const amount = index / segments;
+    curve.getPoint(amount, point);
+    curve.getTangent(amount, tangent).setY(0).normalize();
+    const normalX = -tangent.z;
+    const normalZ = tangent.x;
+    positions.push(
+      point.x + normalX * width * 0.5, 0.342, point.z + normalZ * width * 0.5,
+      point.x - normalX * width * 0.5, 0.342, point.z - normalZ * width * 0.5,
+    );
+    if (index === segments) continue;
+    const left = index * 2;
+    const right = left + 1;
+    const nextLeft = left + 2;
+    const nextRight = left + 3;
+    indices.push(left, nextLeft, right, right, nextLeft, nextRight);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  const ribbon = new THREE.Mesh(geometry, material(color, 0.9));
+  ribbon.receiveShadow = true;
+  parent.add(ribbon);
+}
+
+function makeKidneyShape(width: number, depth: number) {
+  const halfWidth = width / 2;
+  const halfDepth = depth / 2;
+  const shape = new THREE.Shape();
+  shape.moveTo(-halfWidth, -halfDepth * 0.08);
+  shape.bezierCurveTo(-halfWidth * 0.96, -halfDepth * 0.78, -halfWidth * 0.38, -halfDepth, halfWidth * 0.18, -halfDepth * 0.88);
+  shape.bezierCurveTo(halfWidth * 0.78, -halfDepth * 0.76, halfWidth, -halfDepth * 0.28, halfWidth * 0.86, halfDepth * 0.18);
+  shape.bezierCurveTo(halfWidth * 0.74, halfDepth * 0.62, halfWidth * 0.22, halfDepth * 0.98, -halfWidth * 0.18, halfDepth * 0.72);
+  shape.bezierCurveTo(-halfWidth * 0.44, halfDepth * 0.55, -halfWidth * 0.62, halfDepth * 0.78, -halfWidth * 0.86, halfDepth * 0.48);
+  shape.bezierCurveTo(-halfWidth, halfDepth * 0.3, -halfWidth * 1.02, halfDepth * 0.08, -halfWidth, -halfDepth * 0.08);
+  shape.closePath();
+  return shape;
+}
+
+function addKidneyPond(
+  parent: THREE.Group,
+  x: number,
+  z: number,
+  width: number,
+  depth: number,
+  waterY: number,
+) {
+  const outer = makeKidneyShape(width + 1.35, depth + 1.35);
+  const innerPoints = makeKidneyShape(width, depth).getSpacedPoints(96).reverse();
+  const hole = new THREE.Path();
+  innerPoints.forEach((point, index) => {
+    if (index === 0) hole.moveTo(point.x, point.y);
+    else hole.lineTo(point.x, point.y);
+  });
+  hole.closePath();
+  outer.holes.push(hole);
+  const rim = new THREE.Mesh(
+    new THREE.ShapeGeometry(outer, 64),
+    material(DIORAMA_PALETTE.ivory, 0.84),
+  );
+  rim.rotation.x = -Math.PI / 2;
+  rim.position.set(x, waterY - 0.006, z);
+  rim.receiveShadow = true;
+  const water = new THREE.Mesh(
+    new THREE.ShapeGeometry(makeKidneyShape(width, depth), 64),
+    waterMaterial(DIORAMA_PALETTE.water),
+  );
+  water.rotation.x = -Math.PI / 2;
+  water.position.set(x, waterY, z);
+  water.receiveShadow = true;
+  parent.add(rim, water);
+  return { rim, water };
+}
+
+function addCivicDome(parent: THREE.Group, x: number, z: number) {
+  const civic = new THREE.Group();
+  const base = roundedSlab([15.5, 0.5, 16.2], DIORAMA_PALETTE.ivory, 2.6);
+  base.position.y = 0.25;
+  const body = moldedBuildingBox([13.7, 6.2, 14.3], DIORAMA_PALETTE.warmIvory, 1.15);
+  body.position.y = 3.55;
+  const cornice = roundedSlab([14.6, 0.42, 15.2], "#e1d4ca", 2.35);
+  cornice.position.y = 6.55;
+  const drum = new THREE.Mesh(
+    new THREE.CylinderGeometry(5.15, 5.45, 1.55, 36),
+    material(DIORAMA_PALETTE.ivory, 0.82),
+  );
+  drum.position.y = 7.35;
+  const dome = new THREE.Mesh(
+    new THREE.SphereGeometry(5.05, 36, 18, 0, Math.PI * 2, 0, Math.PI / 2),
+    material("#e8ddd4", 0.8),
+  );
+  dome.position.y = 8.12;
+  const cap = new THREE.Mesh(
+    new THREE.SphereGeometry(0.52, 18, 12),
+    material(DIORAMA_PALETTE.butter, 0.76, 0.02),
+  );
+  cap.position.y = 13.05;
+  civic.add(base, body, cornice, drum, dome, cap);
+
+  const entrance = roundedSlab([7.2, 0.28, 3.2], "#ddd0c5", 0.7);
+  entrance.position.set(0, 0.55, 8.05);
+  civic.add(entrance);
+  [-2.35, -0.78, 0.78, 2.35].forEach((columnX) => {
+    const column = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.28, 0.34, 4.2, 14),
+      material(DIORAMA_PALETTE.ivory, 0.84),
+    );
+    column.position.set(columnX, 2.75, 7.2);
+    column.castShadow = true;
+    civic.add(column);
+  });
+  const canopy = roundedSlab([7.4, 0.42, 2.1], "#ddd0c5", 0.62);
+  canopy.position.set(0, 4.9, 7.25);
+  const door = moldedBuildingBox([2.05, 3.2, 0.25], "#9f765e", 0.36);
+  door.position.set(0, 2.15, 7.25);
+  civic.add(canopy, door);
+
+  [-4.2, 4.2].forEach((windowX) => {
+    [2.35, 4.65].forEach((windowY) => {
+      const frame = moldedBuildingBox([1.6, 2.15, 0.22], "#d9ccc2", 0.32);
+      const pane = moldedBuildingBox([1.15, 1.68, 0.26], "#829fa5", 0.25);
+      frame.position.set(windowX, windowY, 7.18);
+      pane.position.copy(frame.position);
+      pane.position.z += 0.03;
+      civic.add(frame, pane);
+    });
+  });
+  civic.position.set(x, 0, z);
+  civic.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    object.castShadow = true;
+    object.receiveShadow = true;
+  });
+  parent.add(civic);
+}
+
 function addLightString(parent: THREE.Group, start: THREE.Vector3, end: THREE.Vector3) {
   const middle = start.clone().lerp(end, 0.5);
   middle.y -= 0.42;
@@ -1072,7 +1365,7 @@ function addBuilding(
   const stableSignature = Math.abs(Math.round(x * 7 + z * 11));
   const archetype = stableSignature % 4;
   const isAuthoredVenue = Boolean(facadeLabel);
-  const floorCount = THREE.MathUtils.clamp(Math.round(height / 2.45), 2, 7);
+  const floorCount = THREE.MathUtils.clamp(Math.round(height / 2.45), 3, 7);
   const isRoundedTower = archetype === 0 && !isAuthoredVenue && floorCount >= 5;
   // Venues always retain their storefront and authored name.  Only a small,
   // deterministic share of generic parcels become shops; the rest read as the
@@ -2852,10 +3145,8 @@ function addFerrisWheel(parent: THREE.Group, x: number, z: number): AttractionRi
   const rotor = new THREE.Group();
   const ring = new THREE.Mesh(new THREE.TorusGeometry(7.2, 0.28, 12, 44), material("#e8ddd3", 0.55, 0.18));
   ring.position.y = 8;
-  ring.rotation.y = Math.PI / 2;
-  const innerRing = new THREE.Mesh(new THREE.TorusGeometry(6.45, 0.11, 8, 44), material("#d8c9bf", 0.52, 0.14));
+  const innerRing = new THREE.Mesh(new THREE.TorusGeometry(6.45, 0.11, 8, 44), material("#d7aaa2", 0.52, 0.14));
   innerRing.position.y = 8;
-  innerRing.rotation.y = Math.PI / 2;
   rotor.add(ring, innerRing);
   const cabins: THREE.Group[] = [];
   let seatAnchor = new THREE.Object3D();
@@ -2869,7 +3160,7 @@ function addFerrisWheel(parent: THREE.Group, x: number, z: number): AttractionRi
     const cabinRoof = roundedBox([1.22, 0.14, 1.08], "#f3e8dc", 0.12);
     cabinRoof.position.y = 0.48;
     cabin.add(body, safetyBar, cabinRoof);
-    cabin.position.set(0, 8 + Math.sin(angle) * 7.2, Math.cos(angle) * 7.2);
+    cabin.position.set(Math.sin(angle) * 7.2, 8 + Math.cos(angle) * 7.2, 0);
     if (index === 0) {
       seatAnchor = new THREE.Object3D();
       seatAnchor.position.set(0, 0.24, 0);
@@ -2884,11 +3175,11 @@ function addFerrisWheel(parent: THREE.Group, x: number, z: number): AttractionRi
     spoke.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), spokeDirection.clone().normalize());
     rotor.add(spoke);
   }
-  [-1, 1].forEach((frameX) => {
+  [-1, 1].forEach((frameZ) => {
     [-1, 1].forEach((side) => {
       wheel.add(makeDioramaBeam(
-        new THREE.Vector3(frameX * 1.15, 0.3, side * 4.75),
-        new THREE.Vector3(frameX * 1.15, 8, 0),
+        new THREE.Vector3(side * 4.75, 0.3, frameZ * 1.15),
+        new THREE.Vector3(0, 8, frameZ * 1.15),
         0.24,
         "#d8cbc0",
         0.68,
@@ -2897,12 +3188,12 @@ function addFerrisWheel(parent: THREE.Group, x: number, z: number): AttractionRi
     });
   });
   const axle = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 3.1, 18), material("#d6b77e", 0.42, 0.18));
-  axle.rotation.z = Math.PI / 2;
+  axle.rotation.x = Math.PI / 2;
   axle.position.y = 8;
   const hubFront = new THREE.Mesh(new THREE.SphereGeometry(0.68, 20, 14), material("#ef9a8e", 0.58));
-  hubFront.position.set(1.62, 8, 0);
+  hubFront.position.set(0, 8, 1.62);
   const hubBack = hubFront.clone();
-  hubBack.position.x = -1.62;
+  hubBack.position.z = -1.62;
   const loadingDeck = roundedBox([5.6, 0.28, 2.25], "#e7ddd4", 0.34);
   loadingDeck.position.set(0, 0.16, 7.55);
   const loadingRail = roundedBox([5.05, 0.16, 0.14], "#d2c2b5", 0.06);
@@ -2917,20 +3208,26 @@ function addFerrisWheel(parent: THREE.Group, x: number, z: number): AttractionRi
     dismount: new THREE.Vector3(x, 0.06, z + 10.2),
     duration: 22,
     update: (elapsed) => {
-      rotor.rotation.x = elapsed * 0.16;
-      cabins.forEach((cabin) => { cabin.rotation.x = -rotor.rotation.x; });
+      rotor.rotation.z = elapsed * 0.16;
+      cabins.forEach((cabin) => { cabin.rotation.z = -rotor.rotation.z; });
     },
   };
 }
 
 function addCarousel(parent: THREE.Group, x: number, z: number): AttractionRig {
   const root = new THREE.Group();
-  const base = new THREE.Mesh(new THREE.CylinderGeometry(6.4, 6.7, 0.7, 32), material("#e6d8ce", 0.72));
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(6.4, 6.7, 0.7, 32), material(DIORAMA_PALETTE.ivory, 0.78));
   base.position.y = 0.36;
   const rotor = new THREE.Group();
-  const platform = new THREE.Mesh(new THREE.CylinderGeometry(5.8, 5.8, 0.35, 32), material("#e9b760", 0.6));
+  const platform = new THREE.Mesh(new THREE.CylinderGeometry(5.8, 5.8, 0.35, 32), material("#e6d1c2", 0.76));
   platform.position.y = 0.75;
-  rotor.add(platform);
+  const platformTrim = new THREE.Mesh(
+    new THREE.TorusGeometry(5.72, 0.17, 8, 48),
+    material(DIORAMA_PALETTE.coral, 0.66),
+  );
+  platformTrim.rotation.x = Math.PI / 2;
+  platformTrim.position.y = 0.9;
+  rotor.add(platform, platformTrim);
 
   const canopyMaterials = [material("#f2e7dc", 0.72), material("#e7a89d", 0.68)];
   canopyMaterials.forEach((entry) => { entry.side = THREE.DoubleSide; });
@@ -4890,6 +5187,7 @@ function ProductIcon({ category, size = 38 }: { category: string; size?: number 
 
 export default function WorldPage() {
   const mountRef = useRef<HTMLDivElement>(null);
+  const mapPinRefsRef = useRef(new Map<string, HTMLButtonElement>());
   const interactRef = useRef(false);
   const jumpRef = useRef(false);
   const boostRef = useRef(false);
@@ -5261,28 +5559,48 @@ export default function WorldPage() {
     scene.fog = new THREE.Fog("#c7dce8", 172, 334);
 
     const camera = new THREE.PerspectiveCamera(49, mount.clientWidth / mount.clientHeight, 0.1, 800);
-    const overviewCamera = new THREE.OrthographicCamera(-152.5, 152.5, 152.5, -152.5, 0.1, 800);
-    // A restrained diorama angle preserves the useful bird's-eye layout while
-    // revealing stadium tiers, ride cabins, trees and building height.
-    overviewCamera.position.set(0, 260, 190);
-    overviewCamera.up.set(0, 0, -1);
-    overviewCamera.lookAt(0, 0, 0);
+    const overviewCamera = new THREE.PerspectiveCamera(41, mount.clientWidth / mount.clientHeight, 0.1, 1100);
+    // The approved reference is an oblique south-to-north miniature-city
+    // photograph, not a flat plan. This camera keeps the complete island in
+    // frame while revealing building fronts, stadium seating and ride depth.
     const syncOverviewCamera = () => {
       const aspect = Math.max(0.1, mount.clientWidth / Math.max(1, mount.clientHeight));
-      if (aspect >= 1) {
-        overviewCamera.left = -152.5 * aspect;
-        overviewCamera.right = 152.5 * aspect;
-        overviewCamera.top = 152.5;
-        overviewCamera.bottom = -152.5;
+      overviewCamera.aspect = aspect;
+      if (aspect < 0.78) {
+        overviewCamera.fov = 54;
+        // Portrait screens need a steeper miniature-board angle; otherwise
+        // the 1:1 city footprint collapses into a short strip and wastes most
+        // of the phone display above and below it.
+        overviewCamera.position.set(0, 690, 170);
+      } else if (aspect < 1.2) {
+        overviewCamera.fov = 43;
+        overviewCamera.position.set(0, 282, 338);
       } else {
-        overviewCamera.left = -152.5;
-        overviewCamera.right = 152.5;
-        overviewCamera.top = 152.5 / aspect;
-        overviewCamera.bottom = -152.5 / aspect;
+        overviewCamera.fov = 37;
+        overviewCamera.position.set(0, 205, 285);
       }
+      overviewCamera.up.set(0, 1, 0);
+      overviewCamera.lookAt(0, 0, -18);
       overviewCamera.updateProjectionMatrix();
+      overviewCamera.updateMatrixWorld(true);
     };
     syncOverviewCamera();
+    const overviewFog = new THREE.Fog("#b9d3e5", 620, 1150);
+    const mapPinProjection = new THREE.Vector3();
+    const updateMapPinPositions = () => {
+      overviewCamera.updateMatrixWorld(true);
+      DISTRICTS.forEach((district) => {
+        const element = mapPinRefsRef.current.get(district.id);
+        if (!element) return;
+        mapPinProjection
+          .set(district.mapPosition[0], 4.2, district.mapPosition[1])
+          .project(overviewCamera);
+        const visible = mapPinProjection.z > -1 && mapPinProjection.z < 1;
+        element.style.left = `${THREE.MathUtils.clamp((mapPinProjection.x * 0.5 + 0.5) * 100, 3, 97)}%`;
+        element.style.top = `${THREE.MathUtils.clamp((-mapPinProjection.y * 0.5 + 0.5) * 100, 7, 92)}%`;
+        element.style.visibility = visible ? "visible" : "hidden";
+      });
+    };
     const compactRendererProfile = window.matchMedia("(pointer: coarse)").matches
       || Math.min(mount.clientWidth, mount.clientHeight) < 760;
     const pixelRatioCeiling = Math.min(window.devicePixelRatio, compactRendererProfile ? 1.38 : 1.72);
@@ -5359,11 +5677,11 @@ export default function WorldPage() {
     const pigBlockerPosition = new THREE.Vector3();
     scene.add(worldRoot);
 
-    const water = roundedSlab([360, 0.7, 360], "#82bfd2", 12);
-    water.material = waterMaterial("#82bfd2");
+    const water = roundedSlab([720, 0.7, 720], DIORAMA_PALETTE.water, 28);
+    water.material = waterMaterial(DIORAMA_PALETTE.water);
     water.position.y = -1.35;
     worldRoot.add(water);
-    const island = roundedSlab([278, 1.5, 278], "#b7c99b", 12);
+    const island = roundedSlab([278, 1.5, 278], DIORAMA_PALETTE.sage, 12);
     island.position.y = -0.78;
     worldRoot.add(island);
 
@@ -5477,7 +5795,7 @@ export default function WorldPage() {
     const wheelRig = addFerrisWheel(worldRoot, 67, -76);
     attractionRigs.set(wheelRig.id, wheelRig);
     blockCircle(67, -76, 4.4);
-    [[65.85, -80.75], [68.15, -80.75], [65.85, -71.25], [68.15, -71.25]].forEach(([x, z]) => blockCircle(x, z, 0.74));
+    [[62.25, -77.15], [71.75, -77.15], [62.25, -74.85], [71.75, -74.85]].forEach(([x, z]) => blockCircle(x, z, 0.74));
     blockBox(67, -69.44, 5.05, 0.14);
     const carouselRig = addCarousel(worldRoot, 79, -58);
     attractionRigs.set(carouselRig.id, carouselRig);
@@ -5564,9 +5882,13 @@ export default function WorldPage() {
     );
     stadiumMark.position.set(67, 0.47, -5.6);
     worldRoot.add(stadiumMark);
-    const cityPark = roundedSlab([45, 0.34, 44], "#adc493", 4.4);
+    const cityPark = roundedSlab([45, 0.34, 44], DIORAMA_PALETTE.sage, 4.4);
     cityPark.position.set(67, 0.16, 53);
     worldRoot.add(cityPark);
+    addParkPath(worldRoot, [[67, 31.2], [67, 39], [65, 46], [62, 54], [61, 62], [61, 74.6]], 2.35);
+    addParkPath(worldRoot, [[62, 53], [67, 48], [74, 44], [83.5, 41]], 2.05);
+    addParkPath(worldRoot, [[61.5, 58], [56, 61.5], [49, 64.5], [44.8, 69]], 1.95);
+    addParkPath(worldRoot, [[82, 42], [86, 49], [87.5, 57], [88.2, 69.5]], 1.9);
     const pondCenterX = 73;
     const pondCenterZ = 58;
     const pondBridgeHalfWidth = 1.75;
@@ -5574,17 +5896,7 @@ export default function WorldPage() {
     const pondBridgeRailOffset = 1.5;
     const pondBridgeRailHalfLength = 10.05;
     const pondBridgeDeckTop = 0.61;
-    const pondRim = new THREE.Mesh(new THREE.RingGeometry(9.9, 10.65, 48), material("#e8ddd5", 0.82));
-    pondRim.rotation.x = -Math.PI / 2;
-    pondRim.scale.set(1.4, 0.9, 1);
-    pondRim.position.set(pondCenterX, 0.355, pondCenterZ);
-    pondRim.receiveShadow = true;
-    worldRoot.add(pondRim);
-    const pond = new THREE.Mesh(new THREE.CircleGeometry(10, 36), waterMaterial("#8ac9da"));
-    pond.rotation.x = -Math.PI / 2;
-    pond.scale.set(1.4, 0.9, 1);
-    pond.position.set(pondCenterX, 0.36, pondCenterZ);
-    worldRoot.add(pond);
+    addKidneyPond(worldRoot, pondCenterX, pondCenterZ, 28.2, 19.2, 0.36);
     swimZones.push({
       id: "green-park-pond",
       label: "GREEN PARK POND",
@@ -5596,17 +5908,12 @@ export default function WorldPage() {
         return !onBridgeLane && ((x - pondCenterX) / 14.7) ** 2 + ((z - pondCenterZ) / 9.7) ** 2 < 0.965;
       },
     });
-    const poolRim = roundedSlab([14.9, 0.2, 9.9], "#e8ddd5", 2.95);
-    poolRim.position.set(51, 0.3, 42);
-    worldRoot.add(poolRim);
-    const pool = roundedSlab([14, 0.25, 9], waterMaterial("#86c7da"), 2.6);
-    pool.position.set(51, 0.33, 42);
-    worldRoot.add(pool);
+    addKidneyPond(worldRoot, 51, 42, 13.8, 8.8, 0.405);
     swimZones.push({
       id: "green-park-pool",
       label: "GREEN PARK POOL",
-      surfaceY: 0.455,
-      contains: (x, z) => insideRoundedRectangle(x, z, 51, 42, 6.85, 4.35, 2.5),
+      surfaceY: 0.405,
+      contains: (x, z) => ((x - 51) / 6.45) ** 2 + ((z - 42) / 4.05) ** 2 < 0.9,
     });
     const playgroundPigs = addParkPlayground(worldRoot, 52, 67);
     worldBlockers.push((x, z) => playgroundPigs.some((pig) => {
@@ -5615,26 +5922,45 @@ export default function WorldPage() {
       pig.root.getWorldPosition(pigBlockerPosition);
       return Math.hypot(x - pigBlockerPosition.x, z - pigBlockerPosition.z) < pig.colliderRadius;
     }));
+    addParkPicnicTable(worldRoot, 57.5, 36.4, 0.08);
+    addParkPicnicTable(worldRoot, 65, 36.8, -0.08);
+    addParkPicnicTable(worldRoot, 73.3, 37.2, 0.1);
+    addParkTrashCan(worldRoot, 46.5, 37.5);
+    addPastelPlayArch(worldRoot, 82.1, 72.1, DIORAMA_PALETTE.coral, -0.18);
+    addPastelPlayArch(worldRoot, 85.3, 70.3, DIORAMA_PALETTE.powderBlue, 0.2);
+    addPastelPlayArch(worldRoot, 88.1, 67.1, DIORAMA_PALETTE.butter, -0.12);
+    addParkRockCluster(worldRoot, 45.3, 43.5, 0.82);
+    addParkRockCluster(worldRoot, 87, 36.2, 1.08);
+    addParkRockCluster(worldRoot, 86.9, 74, 0.78);
+    [[48, 48, 0.2], [57, 47, -0.4], [46, 61, 0.5], [78, 72.8, -0.2], [88, 54, 0.4], [65, 72.8, -0.5]].forEach(
+      ([x, z, rotation]) => addGrassTuft(worldRoot, x, z, rotation),
+    );
     // The deck overlaps both pond banks so its rounded ends read as real
     // abutments instead of floating islands with a strip of water in front.
     // Its 28 cm rise remains a walkable step from the surrounding park pad.
     const pondBridge = roundedSlab(
       [pondBridgeHalfWidth * 2, 0.28, pondBridgeHalfLength * 2],
-      "#c7a987",
+      DIORAMA_PALETTE.wood,
       0.72,
     );
     pondBridge.position.set(pondCenterX, pondBridgeDeckTop - 0.14, pondCenterZ);
     worldRoot.add(pondBridge);
     [-pondBridgeRailOffset, pondBridgeRailOffset].forEach((offsetX) => {
-      const rail = roundedBox([0.12, 0.14, pondBridgeRailHalfLength * 2], "#b5967b", 0.05);
+      const rail = roundedBox([0.12, 0.14, pondBridgeRailHalfLength * 2], DIORAMA_PALETTE.woodDark, 0.05);
       rail.position.set(pondCenterX + offsetX, 1.18, pondCenterZ);
       worldRoot.add(rail);
       [-9.4, -5.65, -1.9, 1.9, 5.65, 9.4].forEach((offsetZ) => {
-        const post = roundedBox([0.14, 1.08, 0.14], "#b5967b", 0.05);
+        const post = roundedBox([0.14, 1.08, 0.14], DIORAMA_PALETTE.woodDark, 0.05);
         post.position.set(pondCenterX + offsetX, 0.82, pondCenterZ + offsetZ);
         worldRoot.add(post);
       });
     });
+    for (let plank = -9; plank <= 9; plank += 1) {
+      const seam = roundedBox([pondBridgeHalfWidth * 2 - 0.24, 0.018, 0.035], "#ad9277", 0.01);
+      seam.position.set(pondCenterX, pondBridgeDeckTop + 0.012, pondCenterZ + plank * 1.04);
+      seam.castShadow = false;
+      worldRoot.add(seam);
+    }
     // Rails are physical boundaries. The end openings remain clear for a
     // straight approach from either bank, while the sides cannot be crossed.
     worldBlockers.push((x, z) => {
@@ -5650,7 +5976,7 @@ export default function WorldPage() {
       [-80, -31, 13, 10, 7], [-79, -16, 13, 11, 6], [-80, 5, 14, 12, 8], [-48, 8, 11, 12, 7],
       [-21, -17, 11, 11, 15], [0, -20, 12, 10, 19], [21, -17, 11, 11, 14], [-22, 4, 11, 11, 12], [22, 4, 11, 11, 13],
       [-79, 71, 15, 8, 6],
-      [-20, 41, 12, 12, 7], [20, 41, 12, 12, 8],
+      [-20, 41, 12, 12, 13], [20, 41, 12, 12, 14],
       [112, 8, 13, 15, 8], [119, 50, 12, 14, 7], [116, 69, 14, 10, 6],
     ];
     blockBuildings.forEach(([x, z, w, d, h], index) => {
@@ -5689,6 +6015,7 @@ export default function WorldPage() {
     [-123, 123].forEach((z, row) => {
       [-77, -58, -18, 0, 18, 58, 77].forEach((x, index) => {
         if (z === -123 && (x === -77 || x === -58)) return;
+        if (z === 123 && x === 0) return;
         addBuilding(worldRoot, colliders, x, z, 12 + (index % 2) * 2, 9, 5 + ((index + row) % 3) * 2, palettes[(index + row) % palettes.length]);
       });
     });
@@ -5702,16 +6029,18 @@ export default function WorldPage() {
     [-74, -54, -18, 18, 54, 74].forEach((x, index) => {
       addBuilding(worldRoot, colliders, x, 101, 13, 10, 5 + (index % 2) * 2, palettes[(index + 1) % palettes.length]);
     });
+    addCivicDome(worldRoot, 0, 116);
+    blockBox(0, 116, 15.5, 16.2);
 
     // Landscaping is placed only on parks, plazas and verges—not on roads.
     const treePoints: Array<[number, number, number]> = [
-      [46, 34, 1.15], [46, 52, 1.05], [86, 35, 1.1], [86, 70, 1.2], [60, 72, 0.95], [86, 51, 1],
+      [46, 34, 1.15], [46, 52, 1.05], [88.5, 35, 1.1], [89, 75, 1.2], [60, 74, 0.95], [89, 51, 1],
       [-132, -96, 1], [-127, 93, 1.1], [-77, 91, 0.92], [-57, 91, 1.05], [-19, 91, 1], [19, 91, 1.05],
       [54, 91, 1], [79, 91, 1.12], [128, -116, 1.1], [112, 91, 1.05], [-45, -94, 0.95], [47, -113, 1],
       [-87, 13, 0.92], [-46, -31, 0.9], [-47, 13, 0.95], [-28, 31, 0.9], [28, 31, 0.9],
     ];
     treePoints.forEach(([x, z, scale]) => addTree(worldRoot, x, z, scale));
-    [[50, 49], [58, 35], [62, 70], [80, 38], [84, 61], [72, 37], [49, 59], [84, 72]].forEach(([x, z], index) => {
+    [[49, 48], [54, 34], [65, 74], [81, 36], [89, 59], [77, 34], [48, 58], [89, 72]].forEach(([x, z], index) => {
       addTree(worldRoot, x, z, 0.82 + (index % 3) * 0.08);
     });
 
@@ -6902,7 +7231,8 @@ export default function WorldPage() {
 
       if (mapOpenRef.current && !currentVenue) {
         const savedFog = scene.fog;
-        scene.fog = null;
+        scene.fog = overviewFog;
+        updateMapPinPositions();
         renderer.render(scene, overviewCamera);
         scene.fog = savedFog;
       } else {
@@ -7343,14 +7673,18 @@ export default function WorldPage() {
           <div className={styles.mapPinStage} aria-label="Choose a district to travel">
             {DISTRICTS.map((district) => {
               const style = {
-                left: `${50 + (district.mapPosition[0] / 278) * 100}%`,
-                top: `${50 + (district.mapPosition[1] / 278) * 92.85}%`,
+                left: "50%",
+                top: "50%",
                 "--pin-accent": district.accent,
               } as CSSProperties;
               return (
                 <button
                   type="button"
                   key={district.id}
+                  ref={(element) => {
+                    if (element) mapPinRefsRef.current.set(district.id, element);
+                    else mapPinRefsRef.current.delete(district.id);
+                  }}
                   className={`${styles.mapPin} ${currentDistrict === district.name ? styles.currentPin : ""}`}
                   style={style}
                   aria-label={`Travel to ${district.name}`}
