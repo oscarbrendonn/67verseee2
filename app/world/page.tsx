@@ -338,30 +338,30 @@ const STORE_ITEMS: Record<VenueKind, StoreItem[]> = {
 };
 
 const VENUES: Venue[] = [
-  { id: "skate-shop", name: "67 Skate Shop", kind: "skate", position: [-19, -32], accent: "#d77e6c", items: STORE_ITEMS.skate },
-  { id: "coast-cafe", name: "Coast Cafe", kind: "cafe", position: [112, -24], accent: "#4d8778", items: STORE_ITEMS.cafe },
-  { id: "cloud-cafe", name: "Cloud Cafe", kind: "cafe", position: [-1, 59], accent: "#b98b54", items: STORE_ITEMS.cafe },
-  { id: "city-market", name: "City Market", kind: "market", position: [18, 65], accent: "#66836d", items: STORE_ITEMS.market },
-  { id: "soft-store", name: "Soft Store", kind: "fashion", position: [-18, 65], accent: "#b27d8d", items: STORE_ITEMS.fashion },
-  { id: "arcade-67", name: "Arcade 67", kind: "arcade", position: [-60, -5], accent: "#578ea7", items: STORE_ITEMS.arcade },
-  { id: "violet-club", name: "Violet Club", kind: "club", position: [-60, -30], accent: "#7657a0", items: STORE_ITEMS.club },
-  { id: "old-town-salon", name: "Hair & Nails", kind: "fashion", position: [-80, 38], accent: "#c78396", items: STORE_ITEMS.fashion },
-  { id: "old-town-icecream", name: "Ice Cream", kind: "cafe", position: [-61, 38], accent: "#7fb6c5", items: STORE_ITEMS.cafe },
-  { id: "old-town-grocery", name: "City Grocery", kind: "market", position: [-80, 58], accent: "#65a18a", items: STORE_ITEMS.market },
-  { id: "old-town-games", name: "Game Lounge", kind: "arcade", position: [-61, 59], accent: "#8870bd", items: STORE_ITEMS.arcade },
+  { id: "skate-shop", name: "67 Skate Shop", kind: "skate", position: [-27, -125], accent: "#d77e6c", items: STORE_ITEMS.skate },
+  { id: "coast-cafe", name: "Coast Cafe", kind: "cafe", position: [78, -125], accent: "#4d8778", items: STORE_ITEMS.cafe },
+  { id: "cloud-cafe", name: "Cloud Cafe", kind: "cafe", position: [27, 54], accent: "#b98b54", items: STORE_ITEMS.cafe },
+  { id: "city-market", name: "City Market", kind: "market", position: [27, 79], accent: "#66836d", items: STORE_ITEMS.market },
+  { id: "soft-store", name: "Soft Store", kind: "fashion", position: [-27, 54], accent: "#b27d8d", items: STORE_ITEMS.fashion },
+  { id: "arcade-67", name: "Arcade 67", kind: "arcade", position: [-90, -29], accent: "#578ea7", items: STORE_ITEMS.arcade },
+  { id: "violet-club", name: "Violet Club", kind: "club", position: [-108, -29], accent: "#7657a0", items: STORE_ITEMS.club },
+  { id: "old-town-salon", name: "Hair & Nails", kind: "fashion", position: [-72, -29], accent: "#c78396", items: STORE_ITEMS.fashion },
+  { id: "old-town-icecream", name: "Ice Cream", kind: "cafe", position: [-53, -29], accent: "#7fb6c5", items: STORE_ITEMS.cafe },
+  { id: "old-town-grocery", name: "City Grocery", kind: "market", position: [-112, 10], accent: "#65a18a", items: STORE_ITEMS.market },
+  { id: "old-town-games", name: "Game Lounge", kind: "arcade", position: [-53.5, 10], accent: "#8870bd", items: STORE_ITEMS.arcade },
 ];
 
 const DISTRICTS: District[] = [
-  { id: "race-loop", name: "Race Loop", eyebrow: "NORTHWEST", spawn: [-117, -130], mapPosition: [-118, -124], accent: "#e58a7c" },
-  { id: "sports-campus", name: "Sports Campus", eyebrow: "ATHLETICS", spawn: [-67, -54], mapPosition: [-67, -72], accent: "#729b77" },
-  { id: "master-skatepark", name: "Master Skatepark", eyebrow: "MAIN LOBBY", spawn: [0, -53], mapPosition: [0, -76], accent: "#dd806f" },
-  { id: "waterfront", name: "Waterfront", eyebrow: "RIDES & MARINA", spawn: [88, -55], mapPosition: [72, -76], accent: "#5c9eb0" },
-  { id: "old-town", name: "Old Town", eyebrow: "NEIGHBORHOOD", spawn: [-80, 46], mapPosition: [-67, -4], accent: "#a78471" },
-  { id: "downtown", name: "67 Central", eyebrow: "DOWNTOWN", spawn: [0, 32], mapPosition: [0, -2], accent: "#887bb4" },
-  { id: "stadium", name: "67 Stadium", eyebrow: "MATCH DAY", spawn: [67, -11.5], mapPosition: [67, -11.5], accent: "#6d9470" },
-  { id: "market-square", name: "Market Square", eyebrow: "SHOPS & CAFE", spawn: [0, 82], mapPosition: [0, 55], accent: "#c68a72", cameraYaw: 0 },
-  { id: "green-park", name: "Green Park", eyebrow: "POOLS & TRAILS", spawn: [67, 69], mapPosition: [68, 53], accent: "#72a57f" },
-  { id: "southside", name: "Southside", eyebrow: "RESIDENTIAL", spawn: [0, 103], mapPosition: [0, 116], accent: "#7697a2" },
+  { id: "race-loop", name: "Race Loop", eyebrow: "NORTHWEST", spawn: [-116, -103], mapPosition: [-116, -116], accent: "#e58a7c" },
+  { id: "sports-campus", name: "Sports Campus", eyebrow: "ATHLETICS", spawn: [-82, -48], mapPosition: [-83, -76], accent: "#729b77" },
+  { id: "master-skatepark", name: "Master Skatepark", eyebrow: "MAIN LOBBY", spawn: [0, -48], mapPosition: [1, -77], accent: "#dd806f" },
+  { id: "waterfront", name: "Waterfront", eyebrow: "RIDES & MARINA", spawn: [88, -48], mapPosition: [75, -78], accent: "#5c9eb0" },
+  { id: "old-town", name: "Old Town", eyebrow: "NEIGHBORHOOD", spawn: [-82, 35], mapPosition: [-82, 0], accent: "#a78471" },
+  { id: "downtown", name: "67 Central", eyebrow: "DOWNTOWN", spawn: [0, 34], mapPosition: [0, 0], accent: "#887bb4" },
+  { id: "stadium", name: "67 Stadium", eyebrow: "MATCH DAY", spawn: [68, 34], mapPosition: [68, 0], accent: "#6d9470" },
+  { id: "market-square", name: "Market Square", eyebrow: "SHOPS & CAFE", spawn: [0, 108], mapPosition: [0, 78], accent: "#c68a72", cameraYaw: 0 },
+  { id: "green-park", name: "Green Park", eyebrow: "POOLS & TRAILS", spawn: [60, 108], mapPosition: [90, 79], accent: "#72a57f" },
+  { id: "southside", name: "Southside", eyebrow: "RESIDENTIAL", spawn: [0, 126], mapPosition: [0, 127], accent: "#7697a2" },
 ];
 
 const ATTRACTIONS: Attraction[] = [
@@ -369,7 +369,7 @@ const ATTRACTIONS: Attraction[] = [
     id: "harbor-coaster",
     name: "Harbor Loop",
     eyebrow: "SIGNATURE COASTER",
-    position: [49, -84],
+    position: [49, -71],
     accent: "#ff8b78",
     wait: "06 MIN",
     duration: "02:40",
@@ -380,7 +380,7 @@ const ATTRACTIONS: Attraction[] = [
     id: "skyline-wheel",
     name: "Skyline 67",
     eyebrow: "PANORAMIC WHEEL",
-    position: [67, -76],
+    position: [60, -97],
     accent: "#7fc7d5",
     wait: "04 MIN",
     duration: "06:00",
@@ -391,7 +391,7 @@ const ATTRACTIONS: Attraction[] = [
     id: "cloud-carousel",
     name: "Cloud Carousel",
     eyebrow: "CLASSIC RIDE",
-    position: [79, -58],
+    position: [79, -99],
     accent: "#e9b760",
     wait: "02 MIN",
     duration: "03:20",
@@ -400,53 +400,59 @@ const ATTRACTIONS: Attraction[] = [
   },
 ];
 
-const ROAD_X = [-96, -36, 36, 96] as const;
-const ROAD_Z = [-106, -45, 22, 82] as const;
-type RoadX = (typeof ROAD_X)[number];
-type RoadZ = (typeof ROAD_Z)[number];
 type IntersectionCrossingSide = "north" | "east" | "south" | "west";
-type IntersectionKey = `${RoadX},${RoadZ}`;
+type ReferenceRoadSegment = { x: number; z: number; width: number; depth: number };
+type ReferenceIntersection = { x: number; z: number; crossing: IntersectionCrossingSide };
+type ReferenceBlock = { fromX: number; toX: number; fromZ: number; toZ: number; color: string; sidewalk?: boolean };
 
-// One deliberately placed crossing per junction keeps the city readable at
-// street level and from the bird's-eye map. The sides alternate toward active
-// parcels instead of repeating four zebra patterns around every intersection.
-// `satisfies` makes additions to either road axis fail type-checking until the
-// new junction has been explicitly audited here.
-const INTERSECTION_CROSSING_PLAN = {
-  "-96,-106": "east",
-  "-36,-106": "south",
-  "36,-106": "south",
-  "96,-106": "west",
-  "-96,-45": "east",
-  "-36,-45": "north",
-  "36,-45": "south",
-  "96,-45": "west",
-  "-96,22": "east",
-  "-36,22": "east",
-  "36,22": "west",
-  "96,22": "west",
-  "-96,82": "east",
-  "-36,82": "north",
-  "36,82": "north",
-  "96,82": "west",
-} satisfies Record<IntersectionKey, IntersectionCrossingSide>;
-
-function intersectionKey(x: RoadX, z: RoadZ): IntersectionKey {
-  return `${x},${z}`;
-}
-const HORIZONTAL_ROAD_SEGMENTS: Array<[number, number]> = [
-  [-135, -101],
-  [-91, -41],
-  [-31, 31],
-  [41, 91],
-  [101, 135],
+// Digitized from the selected 588×588 city plan. Only the two civic avenues
+// run continuously north/south; the sports distributor and coastal boulevard
+// stop where they do in the source instead of forcing a generic 5×5 grid.
+const REFERENCE_ROAD_SEGMENTS: ReferenceRoadSegment[] = [
+  { x: -70, z: -110, width: 50, depth: 10 },
+  { x: 1.5, z: -110, width: 73, depth: 10 },
+  { x: 68, z: -110, width: 40, depth: 10 },
+  { x: -128, z: -40, width: 14, depth: 10 }, { x: -78, z: -40, width: 66, depth: 10 },
+  { x: 1.5, z: -40, width: 73, depth: 10 }, { x: 68, z: -40, width: 40, depth: 10 }, { x: 116.5, z: -40, width: 37, depth: 10 },
+  ...[41].flatMap((z) => [
+    { x: -90, z, width: 90, depth: 10 }, { x: 1.5, z, width: 73, depth: 10 },
+    { x: 68, z, width: 40, depth: 10 }, { x: 116.5, z, width: 37, depth: 10 },
+  ]),
+  { x: -90, z: 116, width: 90, depth: 10 }, { x: 1.5, z: 116, width: 73, depth: 10 }, { x: 91.5, z: 116, width: 87, depth: 10 },
+  ...[-40, 43].flatMap((x) => [
+    { x, z: -125, width: 10, depth: 20 }, { x, z: -75, width: 10, depth: 60 },
+    { x, z: 0.5, width: 10, depth: 71 }, { x, z: 78.5, width: 10, depth: 65 }, { x, z: 128, width: 10, depth: 14 },
+  ]),
+  { x: -116, z: -72, width: 8, depth: 54 },
+  { x: 93, z: -75, width: 10, depth: 60 }, { x: 93, z: 0.5, width: 10, depth: 71 },
 ];
-const VERTICAL_ROAD_SEGMENTS: Array<[number, number]> = [
-  [-135, -111],
-  [-101, -50],
-  [-40, 17],
-  [27, 77],
-  [87, 135],
+
+const REFERENCE_INTERSECTIONS: ReferenceIntersection[] = [
+  { x: -40, z: -110, crossing: "south" },
+  { x: 43, z: -110, crossing: "south" }, { x: 93, z: -110, crossing: "west" },
+  { x: -116, z: -40, crossing: "east" }, { x: -40, z: -40, crossing: "north" },
+  { x: 43, z: -40, crossing: "south" }, { x: 93, z: -40, crossing: "west" },
+  { x: -40, z: 41, crossing: "east" }, { x: 43, z: 41, crossing: "west" },
+  { x: 93, z: 41, crossing: "west" }, { x: -40, z: 116, crossing: "north" },
+  { x: 43, z: 116, crossing: "north" },
+];
+
+const REFERENCE_BLOCKS: ReferenceBlock[] = [
+  { fromX: -134, toX: -121, fromZ: -134, toZ: -115, color: "#a9b88d" },
+  { fromX: -111, toX: -45, fromZ: -134, toZ: -115, color: "#dfd2cc", sidewalk: true },
+  { fromX: -35, toX: 38, fromZ: -134, toZ: -115, color: "#dfd2cc", sidewalk: true },
+  { fromX: 48, toX: 88, fromZ: -134, toZ: -115, color: "#a9b88d", sidewalk: true },
+  { fromX: -112, toX: -45, fromZ: -105, toZ: -45, color: "#ded5ce", sidewalk: true },
+  { fromX: -35, toX: 38, fromZ: -105, toZ: -45, color: "#ddd1ca", sidewalk: true },
+  { fromX: 48, toX: 88, fromZ: -105, toZ: -45, color: "#dfd1c8", sidewalk: true },
+  { fromX: -134, toX: -121, fromZ: -105, toZ: 36, color: "#a9b88d" },
+  { fromX: -112, toX: -45, fromZ: -35, toZ: 36, color: "#dfd3cd", sidewalk: true },
+  { fromX: -35, toX: 38, fromZ: -35, toZ: 36, color: "#ddd0ca", sidewalk: true },
+  { fromX: 48, toX: 88, fromZ: -35, toZ: 36, color: "#dfd4cd", sidewalk: true },
+  { fromX: -134, toX: -45, fromZ: 46, toZ: 111, color: "#a9b88d" },
+  { fromX: -35, toX: 38, fromZ: 46, toZ: 111, color: "#dfd2cc", sidewalk: true },
+  { fromX: 48, toX: 134, fromZ: 46, toZ: 111, color: "#a9b88d" },
+  { fromX: -134, toX: 134, fromZ: 121, toZ: 134, color: "#a9b88d" },
 ];
 const WORLD_LIMIT = 134;
 
@@ -1146,10 +1152,11 @@ function addParkPath(
   points: Array<[number, number]>,
   width = 2.15,
   color = DIORAMA_PALETTE.path,
+  closed = false,
 ) {
   const curve = new THREE.CatmullRomCurve3(
     points.map(([x, z]) => new THREE.Vector3(x, 0, z)),
-    false,
+    closed,
     "catmullrom",
     0.38,
   );
@@ -1182,6 +1189,87 @@ function addParkPath(
   const ribbon = new THREE.Mesh(geometry, material(color, 0.9));
   ribbon.receiveShadow = true;
   parent.add(ribbon);
+}
+
+function addGroundPolygon(
+  parent: THREE.Group,
+  points: Array<[number, number]>,
+  color: string,
+  y = 0.1,
+) {
+  const shape = new THREE.Shape();
+  points.forEach(([x, z], index) => {
+    if (index === 0) shape.moveTo(x, -z);
+    else shape.lineTo(x, -z);
+  });
+  shape.closePath();
+  const mesh = new THREE.Mesh(new THREE.ShapeGeometry(shape, 24), material(color, 0.86));
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.y = y;
+  mesh.receiveShadow = true;
+  parent.add(mesh);
+  return mesh;
+}
+
+function addReferenceCanal(
+  parent: THREE.Group,
+  points: Array<[number, number]>,
+  width: number,
+) {
+  const curve = new THREE.CatmullRomCurve3(
+    points.map(([x, z]) => new THREE.Vector3(x, 0, z)),
+    false,
+    "catmullrom",
+    0.28,
+  );
+  const makeRibbon = (ribbonWidth: number, y: number, ribbonMaterial: THREE.Material) => {
+    const segments = 160;
+    const positions: number[] = [];
+    const indices: number[] = [];
+    const point = new THREE.Vector3();
+    const tangent = new THREE.Vector3();
+    for (let index = 0; index <= segments; index += 1) {
+      const amount = index / segments;
+      curve.getPoint(amount, point);
+      curve.getTangent(amount, tangent).setY(0).normalize();
+      const normalX = -tangent.z;
+      const normalZ = tangent.x;
+      positions.push(
+        point.x + normalX * ribbonWidth * 0.5, y, point.z + normalZ * ribbonWidth * 0.5,
+        point.x - normalX * ribbonWidth * 0.5, y, point.z - normalZ * ribbonWidth * 0.5,
+      );
+      if (index === segments) continue;
+      const left = index * 2;
+      indices.push(left, left + 2, left + 1, left + 1, left + 2, left + 3);
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    const mesh = new THREE.Mesh(geometry, ribbonMaterial);
+    mesh.receiveShadow = true;
+    parent.add(mesh);
+    return mesh;
+  };
+  makeRibbon(width + 3.2, 0.098, material("#e8ded6", 0.88));
+  makeRibbon(width, 0.13, waterMaterial("#9fc7d2"));
+  return curve.getSpacedPoints(140);
+}
+
+function distanceToPolylineXZ(x: number, z: number, points: THREE.Vector3[]) {
+  let shortest = Number.POSITIVE_INFINITY;
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const start = points[index];
+    const end = points[index + 1];
+    const dx = end.x - start.x;
+    const dz = end.z - start.z;
+    const lengthSquared = dx * dx + dz * dz;
+    const amount = lengthSquared <= 1e-6
+      ? 0
+      : THREE.MathUtils.clamp(((x - start.x) * dx + (z - start.z) * dz) / lengthSquared, 0, 1);
+    shortest = Math.min(shortest, Math.hypot(x - (start.x + dx * amount), z - (start.z + dz * amount)));
+  }
+  return shortest;
 }
 
 function makeKidneyShape(width: number, depth: number) {
@@ -1365,7 +1453,7 @@ function addBuilding(
   const stableSignature = Math.abs(Math.round(x * 7 + z * 11));
   const archetype = stableSignature % 4;
   const isAuthoredVenue = Boolean(facadeLabel);
-  const floorCount = THREE.MathUtils.clamp(Math.round(height / 2.45), 3, 7);
+  const floorCount = THREE.MathUtils.clamp(Math.round(height / 2.45), 2, 7);
   const isRoundedTower = archetype === 0 && !isAuthoredVenue && floorCount >= 5;
   // Venues always retain their storefront and authored name.  Only a small,
   // deterministic share of generic parcels become shops; the rest read as the
@@ -1377,9 +1465,9 @@ function addBuilding(
   // Keep the warm ivory base from the reference without bleaching every block
   // into the same grey-white. A little of each authored blush, mint, blue or
   // sand hue must remain visible at street distance.
-  const bodyColor = softenDioramaColor(color, 0.74);
-  const resolvedAccent = softenDioramaColor(accent === "#e7dfd3" ? color : accent, 0.42);
-  const roofColor = softenDioramaColor(resolvedAccent, 0.58);
+  const bodyColor = softenDioramaColor(color, 0.24);
+  const resolvedAccent = softenDioramaColor(accent === "#e7dfd3" ? color : accent, 0.28);
+  const roofColor = softenDioramaColor(resolvedAccent, 0.44);
   const bodyMaterial = material(bodyColor, 0.82, 0.01);
   const corniceMaterial = material(roofColor, 0.78, 0.01);
   const tierMetrics = (floor: number) => {
@@ -1817,13 +1905,68 @@ function addBuilding(
   return group;
 }
 
-const ROAD_ASPHALT_MATERIAL = material("#8d8788", 0.84, 0.01);
-const ROAD_GUTTER_MATERIAL = material("#787476", 0.88, 0.01);
+function addReferenceHouse(
+  parent: THREE.Group,
+  colliders: Collider[],
+  x: number,
+  z: number,
+  width: number,
+  depth: number,
+  floors: 1 | 2,
+  color: string,
+  accent: string,
+) {
+  const house = new THREE.Group();
+  const floorHeight = 2.65;
+  const bodyHeight = floors * floorHeight;
+  const body = moldedBuildingBox([width, bodyHeight, depth], softenDioramaColor(color, 0.72), 0.72);
+  body.position.y = bodyHeight / 2;
+  const base = roundedSlab([width * 1.035, 0.3, depth * 1.035], softenDioramaColor(accent, 0.55), 0.65);
+  base.position.y = 0.15;
+  const roof = roundedSlab([width * 1.06, 0.36, depth * 1.06], softenDioramaColor(accent, 0.48), 0.78);
+  roof.position.y = bodyHeight + 0.18;
+  house.add(body, base, roof);
+
+  const glass = material("#789ba1", 0.56, 0.02);
+  const frame = material("#eee4dc", 0.82, 0.01);
+  const addWindow = (windowX: number, windowY: number, windowZ: number, rotationY = 0) => {
+    const reveal = roundedBox([1.38, 1.3, 0.16], "#d9ccc4", 0.13);
+    reveal.position.set(windowX, windowY, windowZ);
+    reveal.rotation.y = rotationY;
+    const pane = roundedBox([1.04, 0.94, 0.09], "#789ba1", 0.1);
+    pane.material = glass;
+    pane.position.copy(reveal.position);
+    pane.rotation.y = rotationY;
+    if (rotationY === 0) pane.position.z += windowZ > 0 ? 0.09 : -0.09;
+    else pane.position.x += windowX > 0 ? 0.09 : -0.09;
+    reveal.material = frame;
+    house.add(reveal, pane);
+  };
+  for (let floor = 0; floor < floors; floor += 1) {
+    const y = 1.45 + floor * floorHeight;
+    [-width * 0.24, width * 0.24].forEach((windowX) => {
+      addWindow(windowX, y, depth / 2 + 0.055);
+      addWindow(windowX, y, -depth / 2 - 0.055, Math.PI);
+    });
+  }
+  const door = roundedBox([1.18, 2.15, 0.18], "#b98378", 0.18);
+  door.position.set(0, 1.12, depth / 2 + 0.1);
+  const porch = roundedSlab([2.1, 0.16, 1.15], "#dfd2c9", 0.28);
+  porch.position.set(0, 0.12, depth / 2 + 0.5);
+  house.add(door, porch);
+  house.position.set(x, 0, z);
+  parent.add(house);
+  colliders.push({ minX: x - width / 2 - 0.55, maxX: x + width / 2 + 0.55, minZ: z - depth / 2 - 0.55, maxZ: z + depth / 2 + 0.55 });
+  return house;
+}
+
+const ROAD_ASPHALT_MATERIAL = material("#a89f9b", 0.86, 0.01);
+const ROAD_GUTTER_MATERIAL = material("#918783", 0.9, 0.01);
 const ROAD_MARKING_MATERIAL = material("#f4eee7", 0.84, 0.01);
-const ROAD_CROSSWALK_MATERIAL = material("#ddd5cf", 0.88, 0.01);
-const ROAD_UTILITY_MATERIAL = material("#666467", 0.7, 0.06);
-const SIDEWALK_MATERIAL = material("#e3dad4", 0.82, 0.01);
-const CURB_MATERIAL = material("#cbbdb4", 0.84, 0.01);
+const ROAD_CROSSWALK_MATERIAL = material("#e3d9d3", 0.88, 0.01);
+const ROAD_UTILITY_MATERIAL = material("#736c6b", 0.72, 0.05);
+const SIDEWALK_MATERIAL = material("#d8c8c2", 0.84, 0.01);
+const CURB_MATERIAL = material("#c6b4ae", 0.86, 0.01);
 
 const PARKED_CAR_BODY_GEOMETRY = new RoundedBoxGeometry(1.76, 0.64, 3.26, 4, 0.28);
 const PARKED_CAR_CABIN_GEOMETRY = new RoundedBoxGeometry(1.48, 0.66, 1.72, 4, 0.28);
@@ -2121,15 +2264,15 @@ function addCourt(parent: THREE.Group, x: number, z: number, width: number, dept
 }
 
 function addBaseballField(parent: THREE.Group, x: number, z: number) {
-  const field = roundedSlab([28, 0.28, 22], "#a9c58f", 3.4);
+  const field = roundedSlab([23, 0.28, 22], "#a9c58f", 3.4);
   field.position.set(x, 0.2, z);
   parent.add(field);
 
   const infieldShape = new THREE.Shape();
-  infieldShape.moveTo(0, -6.8);
-  infieldShape.lineTo(6.8, 0);
-  infieldShape.lineTo(0, 6.8);
-  infieldShape.lineTo(-6.8, 0);
+  infieldShape.moveTo(0, -5.9);
+  infieldShape.lineTo(5.9, 0);
+  infieldShape.lineTo(0, 5.9);
+  infieldShape.lineTo(-5.9, 0);
   infieldShape.closePath();
   const infield = new THREE.Mesh(new THREE.ShapeGeometry(infieldShape), material("#d8af82", 0.86));
   infield.rotation.x = -Math.PI / 2;
@@ -2142,11 +2285,20 @@ function addBaseballField(parent: THREE.Group, x: number, z: number) {
   grassDiamond.position.set(x, 0.39, z + 1.6);
   parent.add(grassDiamond);
 
-  [[0, -5.2], [5.2, 0], [0, 5.2], [-5.2, 0]].forEach(([offsetX, offsetZ]) => {
+  [[0, -4.6], [4.6, 0], [0, 4.6], [-4.6, 0]].forEach(([offsetX, offsetZ]) => {
     const base = roundedBox([0.72, 0.1, 0.72], "#f7eee5", 0.08);
     base.position.set(x + offsetX, 0.45, z + 1.6 + offsetZ);
     base.rotation.y = Math.PI / 4;
     parent.add(base);
+  });
+
+  // Clean foul lines preserve the simple diorama language while making the
+  // baseball diamond unmistakable at the square overview scale.
+  [-1, 1].forEach((side) => {
+    const foulLine = roundedBox([0.11, 0.025, 10.7], "#f5ede5", 0.025);
+    foulLine.position.set(x + side * 3.75, 0.435, z - 0.65);
+    foulLine.rotation.y = side * 0.74;
+    parent.add(foulLine);
   });
 
   const backstop = new THREE.Mesh(
@@ -2165,7 +2317,7 @@ function addBaseballField(parent: THREE.Group, x: number, z: number) {
 
 function addParkPlayground(parent: THREE.Group, x: number, z: number) {
   const pigs: PlaygroundPig[] = [];
-  const playPad = new THREE.Mesh(new THREE.CircleGeometry(6.8, 36), material("#d6b5c0", 0.84));
+  const playPad = new THREE.Mesh(new THREE.CircleGeometry(10.25, 48), material("#e8bbc7", 0.78));
   playPad.rotation.x = -Math.PI / 2;
   playPad.position.set(x, 0.38, z);
   parent.add(playPad);
@@ -2219,6 +2371,7 @@ function addParkPlayground(parent: THREE.Group, x: number, z: number) {
     toy.add(foot, spring, visual);
     toy.position.set(x + (offsetX as number), 0.38, z + (offsetZ as number));
     toy.rotation.y = index * 1.9;
+    toy.scale.setScalar(1.12);
     toy.traverse((object) => {
       if (!(object instanceof THREE.Mesh)) return;
       object.castShadow = true;
@@ -2231,10 +2384,10 @@ function addParkPlayground(parent: THREE.Group, x: number, z: number) {
       root: toy,
       visual,
       anchor,
-      colliderRadius: 1.45,
+      colliderRadius: 1.68,
       // Keep the rider's hips above the rounded back instead of sinking the
       // lower torso into the spring toy while the seated pose is active.
-      riderOffset: 1.52,
+      riderOffset: 1.62,
     });
   });
   playPad.receiveShadow = true;
@@ -2286,30 +2439,36 @@ function makeRaceRibbon(curve: THREE.CatmullRomCurve3, width: number, y: number,
 function addRaceLoop(parent: THREE.Group) {
   // The reference keeps the circuit completely inside one landscaped block.
   // It never crosses or overlaps either neighboring city road.
-  const raceGreen = roundedSlab([35, 0.34, 21.5], "#b8c99c", 3.2);
-  raceGreen.position.set(-119, 0.17, -124.25);
+  const raceGreen = roundedSlab([38, 0.34, 34], "#b8c99c", 4.4);
+  raceGreen.position.set(-115, 0.17, -116);
   parent.add(raceGreen);
 
   const points = [
-    new THREE.Vector3(-131.1, 0, -115.3),
-    new THREE.Vector3(-133.2, 0, -120.5),
-    new THREE.Vector3(-132.4, 0, -130.3),
-    new THREE.Vector3(-126.6, 0, -134.1),
-    new THREE.Vector3(-108.4, 0, -133.8),
-    new THREE.Vector3(-104.1, 0, -131.1),
-    new THREE.Vector3(-104.8, 0, -127.2),
-    new THREE.Vector3(-110.1, 0, -124.8),
-    new THREE.Vector3(-124.2, 0, -125.1),
-    new THREE.Vector3(-127.2, 0, -122.9),
-    new THREE.Vector3(-126.8, 0, -118.7),
+    new THREE.Vector3(-130.2, 0, -101.8),
+    new THREE.Vector3(-133.2, 0, -108.5),
+    new THREE.Vector3(-132.1, 0, -125.8),
+    new THREE.Vector3(-126.1, 0, -131.8),
+    new THREE.Vector3(-103.3, 0, -131.2),
+    new THREE.Vector3(-97.2, 0, -127.1),
+    new THREE.Vector3(-98.2, 0, -120.9),
+    new THREE.Vector3(-105.4, 0, -116.7),
+    new THREE.Vector3(-123.2, 0, -116.9),
+    new THREE.Vector3(-127.6, 0, -112.4),
+    new THREE.Vector3(-126.7, 0, -105.7),
   ];
   const curve = new THREE.CatmullRomCurve3(points, true, "catmullrom", 0.22);
 
-  const border = new THREE.Mesh(makeRaceRibbon(curve, 4.7, 0.39), material("#eee1d7", 0.84));
+  const border = new THREE.Mesh(makeRaceRibbon(curve, 4.08, 0.39), material("#f2e8df", 0.84));
   border.receiveShadow = true;
-  const lane = new THREE.Mesh(makeRaceRibbon(curve, 3.82, 0.43), material("#cf9187", 0.82));
+  const lane = new THREE.Mesh(makeRaceRibbon(curve, 3.24, 0.43), material("#d58e86", 0.82));
   lane.receiveShadow = true;
   parent.add(border, lane);
+
+  // A hairline inner stripe keeps the circuit legible at the exact square-map
+  // scale without turning the compact track into a heavy coral ribbon.
+  const laneGuide = new THREE.Mesh(makeRaceRibbon(curve, 0.115, 0.455), material("#f6eee7", 0.8));
+  laneGuide.receiveShadow = true;
+  parent.add(laneGuide);
 
   // A compact, readable start grid instead of scattered race props.
   const startAmount = 0.015;
@@ -2330,9 +2489,9 @@ function addRaceLoop(parent: THREE.Group) {
   }
 
   // Soft, low landscaping mirrors the reference without hiding the course.
-  addTree(parent, -135.5, -135.2, 0.54);
-  addTree(parent, -102.5, -135.1, 0.5);
-  addTree(parent, -103.2, -114.2, 0.48);
+  addTree(parent, -133.2, -133.2, 0.54);
+  addTree(parent, -97.6, -133.1, 0.5);
+  addTree(parent, -96.8, -100.4, 0.48);
 }
 
 type SkateRailSpec = { name: string; start: THREE.Vector3; end: THREE.Vector3 };
@@ -2636,7 +2795,10 @@ function makeWedgeGeometry(width: number, depth: number, baseY: number, rise: nu
 function addMasterSkatepark(parent: THREE.Group): SkateParkBuild {
   const surfaces: THREE.Mesh[] = [];
   const rails: SkateRailSpec[] = [];
-  const concrete = material("#e8e0d8", 0.78);
+  // The approved map has warm porcelain decks and noticeably shaded bowl
+  // interiors. Keeping those values apart makes the concave geometry readable
+  // from the bird's-eye map while retaining the same physical surfaces.
+  const concrete = material("#d9d0c9", 0.79);
   const parkCenterZ = -75.5;
   const snakeWidth = 6.8;
   const snakeCurve = new THREE.CatmullRomCurve3([
@@ -2687,7 +2849,7 @@ function addMasterSkatepark(parent: THREE.Group): SkateParkBuild {
     curveSegments: 2,
   });
   deckGeometry.rotateX(-Math.PI / 2);
-  const deck = new THREE.Mesh(deckGeometry, material("#d8cec5", 0.8));
+  const deck = new THREE.Mesh(deckGeometry, material("#eee6df", 0.82));
   deck.position.set(0, 0.06, parkCenterZ);
   deck.castShadow = true;
   deck.receiveShadow = true;
@@ -3142,6 +3304,14 @@ function addFountain(parent: THREE.Group, x: number, z: number) {
 
 function addFerrisWheel(parent: THREE.Group, x: number, z: number): AttractionRig {
   const wheel = new THREE.Group();
+  // The vertical wheel naturally collapses to a thin line in a true top-down
+  // camera. A low authored loading court gives it the same readable rectangular
+  // footprint as the reference without changing the moving rotor or ride rig.
+  const loadingCourt = roundedSlab([15.6, 0.22, 9.2], "#e8ddd5", 1.15);
+  loadingCourt.position.y = 0.1;
+  const courtInset = roundedSlab([13.8, 0.055, 7.45], "#d9cdc5", 0.95);
+  courtInset.position.y = 0.225;
+  wheel.add(loadingCourt, courtInset);
   const rotor = new THREE.Group();
   const ring = new THREE.Mesh(new THREE.TorusGeometry(7.2, 0.28, 12, 44), material("#e8ddd3", 0.55, 0.18));
   ring.position.y = 8;
@@ -3214,7 +3384,7 @@ function addFerrisWheel(parent: THREE.Group, x: number, z: number): AttractionRi
   };
 }
 
-function addCarousel(parent: THREE.Group, x: number, z: number): AttractionRig {
+function addCarousel(parent: THREE.Group, x: number, z: number, visualScale = 1): AttractionRig {
   const root = new THREE.Group();
   const base = new THREE.Mesh(new THREE.CylinderGeometry(6.4, 6.7, 0.7, 32), material(DIORAMA_PALETTE.ivory, 0.78));
   base.position.y = 0.36;
@@ -3307,6 +3477,7 @@ function addCarousel(parent: THREE.Group, x: number, z: number): AttractionRig {
   });
   root.add(base, rotor);
   root.position.set(x, 0, z);
+  root.scale.setScalar(visualScale);
   parent.add(root);
   return {
     id: "cloud-carousel",
@@ -3522,11 +3693,10 @@ function addSoftPastelStadium(parent: THREE.Group, x: number, z: number) {
   stadium.position.set(x, 0, z);
 
   const tierSpecs = [
-    { outer: [19.15, 23.25], inner: [17.35, 21.35], top: 4.65, color: "#e8ddd4", trim: "#d9978f" },
-    { outer: [17.35, 21.35], inner: [15.55, 19.45], top: 4.02, color: "#d8cbc2", trim: "#e1b27c" },
-    { outer: [15.55, 19.45], inner: [13.72, 17.55], top: 3.36, color: "#e7d8ce", trim: "#8fb4b0" },
-    { outer: [13.72, 17.55], inner: [11.95, 15.82], top: 2.7, color: "#d5cdc8", trim: "#d59ca9" },
-    { outer: [11.95, 15.82], inner: [10.18, 14.18], top: 2.05, color: "#eadfd5", trim: "#e2c36e" },
+    { outer: [19.65, 33.45], inner: [18.02, 31.05], top: 4.9, color: "#eee5dd", trim: "#d8d0cf" },
+    { outer: [18.02, 31.05], inner: [16.52, 28.85], top: 4.15, color: "#c6bdc3", trim: "#b7aeb8" },
+    { outer: [16.52, 28.85], inner: [15.18, 26.8], top: 3.42, color: "#b3abb5", trim: "#a29aa7" },
+    { outer: [15.18, 26.8], inner: [13.9, 24.85], top: 2.72, color: "#cbc2c5", trim: "#b8afb7" },
   ] as const;
 
   tierSpecs.forEach((tier, tierIndex) => {
@@ -3564,7 +3734,7 @@ function addSoftPastelStadium(parent: THREE.Group, x: number, z: number) {
 
   // These portals align with the existing north/south collider exception.
   const addEntrance = (side: -1 | 1, main = false) => {
-    const entranceZ = side * 21.7;
+    const entranceZ = side * 31.75;
     [-6.85, 6.85].forEach((pillarX) => {
       const pillarHeight = main ? 4.25 : 3.65;
       const pillar = roundedBox([6.2, pillarHeight, 1.55], "#eee4da", 0.42);
@@ -3576,7 +3746,7 @@ function addSoftPastelStadium(parent: THREE.Group, x: number, z: number) {
     stadium.add(lintel);
 
     const tunnelFloor = roundedSlab([6.35, 0.07, 10.2], "#d9cec4", 0.46);
-    tunnelFloor.position.set(0, 0.07, side * 17.6);
+    tunnelFloor.position.set(0, 0.07, side * 27.65);
     tunnelFloor.castShadow = false;
     stadium.add(tunnelFloor);
 
@@ -3597,11 +3767,23 @@ function addSoftPastelStadium(parent: THREE.Group, x: number, z: number) {
   addEntrance(1, true);
   addEntrance(-1);
 
+  // The reference stadium has two quiet, rectangular long-side facades that
+  // interrupt the seating silhouette at midfield. They also make the oval read
+  // as a real civic stadium rather than a stack of decorative rings.
+  [-1, 1].forEach((side) => {
+    const facade = roundedBox([3.8, 4.35, 13.4], "#e8ddd5", 0.55);
+    facade.position.set(side * 19.15, 2.25, 0);
+    stadium.add(facade);
+    const cap = roundedSlab([4.25, 0.34, 14.1], "#d8cbc3", 0.66);
+    cap.position.set(side * 19.15, 4.5, 0);
+    stadium.add(cap);
+  });
+
   const frameMaterial = material("#f2e9df", 0.5, 0.08);
   const netMaterial = material("#d5ddd7", 0.82);
   const addGoal = (side: -1 | 1) => {
     const goal = new THREE.Group();
-    goal.position.z = side * 12.55;
+    goal.position.z = side * 22.1;
     [-2.75, 2.75].forEach((postX) => {
       const post = roundedBox([0.16, 2.35, 0.16], "#f2e9df", 0.06);
       post.material = frameMaterial;
@@ -3648,7 +3830,7 @@ function addSoftPastelStadium(parent: THREE.Group, x: number, z: number) {
     roughness: 0.5,
     metalness: 0.02,
   });
-  [[-14, -15.7], [14, -15.7], [-14, 15.7], [14, 15.7]].forEach(([towerX, towerZ]) => {
+  [[-16.2, -27.2], [16.2, -27.2], [-16.2, 27.2], [16.2, 27.2]].forEach(([towerX, towerZ]) => {
     const tower = new THREE.Group();
     tower.position.set(towerX, 0, towerZ);
     tower.rotation.y = Math.atan2(-towerX, -towerZ);
@@ -5559,33 +5741,24 @@ export default function WorldPage() {
     scene.fog = new THREE.Fog("#c7dce8", 172, 334);
 
     const camera = new THREE.PerspectiveCamera(49, mount.clientWidth / mount.clientHeight, 0.1, 800);
-    const overviewCamera = new THREE.PerspectiveCamera(41, mount.clientWidth / mount.clientHeight, 0.1, 1100);
-    // The approved reference is an oblique south-to-north miniature-city
-    // photograph, not a flat plan. This camera keeps the complete island in
-    // frame while revealing building fronts, stadium seating and ride depth.
+    const overviewCamera = new THREE.OrthographicCamera(-141, 141, 141, -141, 0.1, 900);
+    // The selected map source is a measured square plan: parallel roads stay
+    // parallel and every district keeps the same scale from north to south.
+    // A slight southward offset preserves readable building mass without the
+    // trapezoid distortion of the former perspective overview.
     const syncOverviewCamera = () => {
-      const aspect = Math.max(0.1, mount.clientWidth / Math.max(1, mount.clientHeight));
-      overviewCamera.aspect = aspect;
-      if (aspect < 0.78) {
-        overviewCamera.fov = 54;
-        // Portrait screens need a steeper miniature-board angle; otherwise
-        // the 1:1 city footprint collapses into a short strip and wastes most
-        // of the phone display above and below it.
-        overviewCamera.position.set(0, 690, 170);
-      } else if (aspect < 1.2) {
-        overviewCamera.fov = 43;
-        overviewCamera.position.set(0, 282, 338);
-      } else {
-        overviewCamera.fov = 37;
-        overviewCamera.position.set(0, 205, 285);
-      }
-      overviewCamera.up.set(0, 1, 0);
-      overviewCamera.lookAt(0, 0, -18);
+      overviewCamera.left = -141;
+      overviewCamera.right = 141;
+      overviewCamera.top = 141;
+      overviewCamera.bottom = -141;
+      overviewCamera.position.set(0, 360, 94);
+      overviewCamera.up.set(0, 0, -1);
+      overviewCamera.lookAt(0, 0, 0);
       overviewCamera.updateProjectionMatrix();
       overviewCamera.updateMatrixWorld(true);
     };
     syncOverviewCamera();
-    const overviewFog = new THREE.Fog("#b9d3e5", 620, 1150);
+    const overviewFog = new THREE.Fog("#b9d3e5", 760, 1300);
     const mapPinProjection = new THREE.Vector3();
     const updateMapPinPositions = () => {
       overviewCamera.updateMatrixWorld(true);
@@ -5595,9 +5768,15 @@ export default function WorldPage() {
         mapPinProjection
           .set(district.mapPosition[0], 4.2, district.mapPosition[1])
           .project(overviewCamera);
-        const visible = mapPinProjection.z > -1 && mapPinProjection.z < 1;
-        element.style.left = `${THREE.MathUtils.clamp((mapPinProjection.x * 0.5 + 0.5) * 100, 3, 97)}%`;
-        element.style.top = `${THREE.MathUtils.clamp((-mapPinProjection.y * 0.5 + 0.5) * 100, 7, 92)}%`;
+        const screenX = mapPinProjection.x * 0.5 + 0.5;
+        const screenY = -mapPinProjection.y * 0.5 + 0.5;
+        const visible = mapPinProjection.z > -1 && mapPinProjection.z < 1
+          && screenX > -0.04 && screenX < 1.04
+          && screenY > -0.04 && screenY < 1.04;
+        // Do not clamp edge districts into a fake grid: the DOM marker follows
+        // the exact projected POI inside the square overview frame.
+        element.style.left = `${screenX * 100}%`;
+        element.style.top = `${screenY * 100}%`;
         element.style.visibility = visible ? "visible" : "hidden";
       });
     };
@@ -5685,46 +5864,40 @@ export default function WorldPage() {
     island.position.y = -0.78;
     worldRoot.add(island);
 
-    // The references use warm clay-colored city parcels and reserve green for
-    // parks and verges. These pads make every building read as intentionally
-    // placed on a city block instead of sitting directly in grass.
-    const blockXBands: Array<[number, number]> = [[-134, -101], [-91, -41], [-31, 31], [41, 91], [101, 134]];
-    const blockZBands: Array<[number, number]> = [[-134, -111], [-101, -50], [-40, 17], [27, 77], [87, 134]];
-    const blockPalette = ["#ded4cd", "#e4dbd4", "#d9cfc8"];
-    blockXBands.forEach(([fromX, toX], column) => {
-      blockZBands.forEach(([fromZ, toZ], row) => {
-        const inset = 0.45;
-        const pad = roundedSlab(
-          [toX - fromX - inset * 2, 0.16, toZ - fromZ - inset * 2],
-          blockPalette[(row + column) % blockPalette.length],
-          1.8,
-        );
-        pad.position.set((fromX + toX) / 2, -0.015, (fromZ + toZ) / 2);
-        worldRoot.add(pad);
-      });
+    // These land parcels, roads and sidewalks were digitized from the selected
+    // 588×588 source. Activity areas are intentionally different sizes; no
+    // procedural grid fills the open sports, park, marina or beach parcels.
+    REFERENCE_BLOCKS.forEach((block) => {
+      const inset = 0.42;
+      const pad = roundedSlab(
+        [block.toX - block.fromX - inset * 2, 0.16, block.toZ - block.fromZ - inset * 2],
+        block.color,
+        2.1,
+      );
+      pad.position.set((block.fromX + block.toX) / 2, -0.015, (block.fromZ + block.toZ) / 2);
+      worldRoot.add(pad);
     });
 
-    // Both axes are built as junction-to-junction segments. A dedicated square
-    // owns every intersection, so asphalt never stacks and mobile GPUs do not
-    // flash where the roads meet.
-    ROAD_Z.forEach((z) => {
-      HORIZONTAL_ROAD_SEGMENTS.forEach(([from, to]) => addRoad(worldRoot, (from + to) / 2, z, to - from, 10));
-    });
-    ROAD_X.forEach((x) => {
-      VERTICAL_ROAD_SEGMENTS.forEach(([from, to]) => addRoad(worldRoot, x, (from + to) / 2, 10, to - from));
-    });
-    ROAD_X.forEach((x) => ROAD_Z.forEach((z) => {
-      addIntersection(worldRoot, x, z, INTERSECTION_CROSSING_PLAN[intersectionKey(x, z)]);
+    const roadSurfaceRects = REFERENCE_ROAD_SEGMENTS.map((road) => ({
+      minX: road.x - road.width / 2,
+      maxX: road.x + road.width / 2,
+      minZ: road.z - road.depth / 2,
+      maxZ: road.z + road.depth / 2,
     }));
-
-    // Each parcel owns one non-overlapping pavement perimeter. This produces
-    // clean raised sidewalks and coherent corners instead of bars crossing the
-    // driving lanes at every junction.
-    blockXBands.forEach(([fromX, toX]) => {
-      blockZBands.forEach(([fromZ, toZ]) => {
-        const isWaterfrontParcel = fromX === 101 && fromZ === -101;
-        addSidewalkBlock(worldRoot, fromX, toX, fromZ, toZ, isWaterfrontParcel);
+    REFERENCE_ROAD_SEGMENTS.forEach((road) => addRoad(worldRoot, road.x, road.z, road.width, road.depth));
+    REFERENCE_INTERSECTIONS.forEach((intersection) => {
+      addIntersection(worldRoot, intersection.x, intersection.z, intersection.crossing);
+      roadSurfaceRects.push({
+        minX: intersection.x - 5,
+        maxX: intersection.x + 5,
+        minZ: intersection.z - 5,
+        maxZ: intersection.z + 5,
       });
+    });
+
+    const sidewalkSurfaceBlocks = REFERENCE_BLOCKS.filter((block) => block.sidewalk);
+    sidewalkSurfaceBlocks.forEach((block) => {
+      addSidewalkBlock(worldRoot, block.fromX, block.toX, block.fromZ, block.toZ, false);
     });
 
     // Sparse curbside traffic gives the close street camera a lived-in scale.
@@ -5733,17 +5906,17 @@ export default function WorldPage() {
     // doors. Their compact colliders make the parked silhouettes physically real
     // without narrowing either central driving lane.
     const parkedCars: Array<[number, number, number, string]> = [
-      [-66, -109.65, Math.PI / 2, "#c98d86"],
-      [15, -102.35, -Math.PI / 2, "#8fa99a"],
-      [-78, -48.65, Math.PI / 2, "#8dabc0"],
-      [8, -41.35, -Math.PI / 2, "#d2b66f"],
-      [128, -48.65, Math.PI / 2, "#aca1bd"],
-      [20, 18.35, -Math.PI / 2, "#d5a19a"],
-      [78, 25.65, Math.PI / 2, "#83a69b"],
-      [-52, 85.65, -Math.PI / 2, "#d4bd82"],
-      [-99.65, -20, 0, "#91adbb"],
-      [39.65, 43, Math.PI, "#c9928c"],
-      [99.65, 2, 0, "#9da88b"],
+      [-82, -113.4, Math.PI / 2, "#c98d86"],
+      [5, -106.6, -Math.PI / 2, "#8fa99a"],
+      [-84, -43.4, Math.PI / 2, "#8dabc0"],
+      [4, -36.6, -Math.PI / 2, "#d2b66f"],
+      [68, -43.4, Math.PI / 2, "#aca1bd"],
+      [-78, 37.6, Math.PI / 2, "#d5a19a"],
+      [8, 44.4, -Math.PI / 2, "#83a69b"],
+      [-98, 112.6, Math.PI / 2, "#d4bd82"],
+      [-43.4, -74, 0, "#91adbb"],
+      [46.4, 78, Math.PI, "#c9928c"],
+      [89.6, -73, 0, "#9da88b"],
     ];
     parkedCars.forEach(([x, z, rotation, color]) => {
       addParkedDioramaCar(worldRoot, colliders, x, z, rotation, color);
@@ -5753,83 +5926,169 @@ export default function WorldPage() {
     // this exact geometry; no map image is used at runtime.
     addRaceLoop(worldRoot);
 
-    // Sports campus, upper-left of the central skatepark.
-    const sportsCenter = roundedBox([38, 5.4, 13], "#e7ddd4", 1.6);
-    sportsCenter.position.set(-67, 2.72, -119);
+    // Sports campus dimensions and positions follow the source: one broad hall
+    // above an oval track and baseball field, not four generic city parcels.
+    const sportsCenter = roundedBox([50, 6.1, 27], "#eaded8", 2.2);
+    sportsCenter.position.set(-73, 3.07, -94);
     worldRoot.add(sportsCenter);
-    blockBox(-67, -119, 38, 13);
-    addCourt(worldRoot, -77, -92, 17, 15, "#abc7d7");
-    addCourt(worldRoot, -56, -92, 17, 15, "#d4a197");
-    addBaseballField(worldRoot, -118, -75);
-    blockBox(-118, -67.2, 14, 0.45);
-    const track = new THREE.Mesh(new THREE.TorusGeometry(14.2, 2.5, 14, 48), material("#cf9187", 0.82));
-    track.rotation.x = Math.PI / 2;
-    track.scale.y = 0.58;
-    track.position.set(-67, 0.38, -67);
+    blockBox(-73, -94, 50, 27);
+    const sportsRoof = roundedSlab([15.5, 0.18, 8.4], "#9fc4d1", 0.8);
+    sportsRoof.position.set(-73, 6.22, -94);
+    worldRoot.add(sportsRoof);
+    // Pale roof glazing and mullions reproduce the broad translucent sports
+    // hall roof seen in the approved plan, rather than a single flat cyan tile.
+    const roofGlass = roundedSlab([14.5, 0.055, 7.45], "#a8cbd3", 0.62);
+    roofGlass.position.set(-73, 6.335, -94);
+    worldRoot.add(roofGlass);
+    [-4.85, -2.42, 0, 2.42, 4.85].forEach((offsetX) => {
+      const mullion = roundedBox([0.1, 0.075, 7.05], "#edf0ed", 0.035);
+      mullion.position.set(-73 + offsetX, 6.39, -94);
+      worldRoot.add(mullion);
+    });
+    [-2.35, 0, 2.35].forEach((offsetZ) => {
+      const mullion = roundedBox([14.05, 0.075, 0.1], "#edf0ed", 0.035);
+      mullion.position.set(-73, 6.39, -94 + offsetZ);
+      worldRoot.add(mullion);
+    });
+    const sportsEntrance = roundedBox([12.4, 0.34, 2.15], "#d5aaa0", 0.5);
+    sportsEntrance.position.set(-73, 1.05, -79.9);
+    worldRoot.add(sportsEntrance);
+    const parkingPad = roundedSlab([10, 0.18, 26], "#b4aaa7", 1.2);
+    parkingPad.position.set(-105, 0.14, -94);
+    worldRoot.add(parkingPad);
+    // Six tiny plan-readable parked cars remain decorative so no district
+    // arrival, road blocker or traversal geometry changes.
+    const campusCarColors = ["#d88f87", "#e5c76f", "#7da8b1", "#c6a2b8", "#90a789", "#e6ddd4"];
+    [-100.5, -94, -87.5].forEach((carZ, rowIndex) => {
+      [-107.1, -103.2].forEach((carX, columnIndex) => {
+        const car = new THREE.Group();
+        const body = roundedBox([1.55, 0.52, 3.05], campusCarColors[rowIndex * 2 + columnIndex], 0.32);
+        body.position.y = 0.57;
+        const cabin = roundedBox([1.23, 0.42, 1.38], "#dbe3e2", 0.27);
+        cabin.position.set(0, 0.98, 0.05);
+        car.add(body, cabin);
+        car.position.set(carX, 0, carZ);
+        car.rotation.y = rowIndex % 2 === 0 ? 0.04 : -0.04;
+        car.traverse((object) => {
+          if (!(object instanceof THREE.Mesh)) return;
+          object.castShadow = true;
+          object.receiveShadow = true;
+        });
+        worldRoot.add(car);
+      });
+    });
+    addBaseballField(worldRoot, -59, -62.5);
+    blockBox(-59, -54.7, 14, 0.45);
+    const track = new THREE.Mesh(new THREE.RingGeometry(0.81, 1, 72), material("#cf9187", 0.82));
+    track.rotation.x = -Math.PI / 2;
+    track.scale.set(16.5, 12.2, 1);
+    track.position.set(-94, 0.38, -63);
     worldRoot.add(track);
-    const trackInner = new THREE.Mesh(new THREE.CircleGeometry(11.7, 48), material("#abc28f", 0.84));
+    const trackInner = new THREE.Mesh(new THREE.CircleGeometry(1, 72), material("#abc28f", 0.84));
     trackInner.rotation.x = -Math.PI / 2;
-    trackInner.scale.y = 0.58;
-    trackInner.position.set(-67, 0.41, -67);
+    trackInner.scale.set(13.32, 9.86, 1);
+    trackInner.position.set(-94, 0.41, -63);
     worldRoot.add(trackInner);
+    [0.86, 0.925].forEach((laneRadius) => {
+      const laneLine = new THREE.Mesh(
+        new THREE.RingGeometry(laneRadius - 0.006, laneRadius + 0.006, 72),
+        material("#f4ebe4", 0.82),
+      );
+      laneLine.rotation.x = -Math.PI / 2;
+      laneLine.scale.set(16.5, 12.2, 1);
+      laneLine.position.set(-94, 0.425, -63);
+      worldRoot.add(laneLine);
+    });
 
-    // Large playable master skatepark: linked concave bowls on the west side,
-    // a flowing snake run through the center and a functional street section.
-    const skatepark = addMasterSkatepark(worldRoot);
+    // Scale the complete playable skate system into the exact 79×67 source
+    // footprint. Visual meshes, raycast surfaces and grind vectors share the
+    // same transform, so the enlarged park remains fully functional.
+    const skateparkRoot = new THREE.Group();
+    const skatepark = addMasterSkatepark(skateparkRoot);
+    skateparkRoot.scale.set(1.31, 1, 1.32);
+    skateparkRoot.position.set(1.35, 0, 22.25);
+    skateparkRoot.updateMatrixWorld(true);
+    worldRoot.add(skateparkRoot);
     skatepark.surfaces.forEach((surface) => skateRideSurfaces.push(surface));
-    skatepark.rails.forEach((rail) => grindRails.push(rail));
+    skatepark.rails.forEach((rail) => grindRails.push({
+      name: rail.name,
+      start: rail.start.clone().applyMatrix4(skateparkRoot.matrixWorld),
+      end: rail.end.clone().applyMatrix4(skateparkRoot.matrixWorld),
+    }));
     const skateMark = new THREE.Mesh(
       new RoundedBoxGeometry(6.8, 0.012, 4.2, 3, 0.22),
       makeInteriorSign("67", "#d5a19a", "#fff6ed"),
     );
     // Printed into the bowl floor: visual only, so it cannot become a hidden ramp.
     skateMark.position.set(-17.1, 0.087, -86.4);
-    worldRoot.add(skateMark);
+    skateparkRoot.add(skateMark);
 
     // Waterfront amusement park and marina.
-    const amusementPad = roundedSlab([46, 0.42, 47], "#e6d8ce", 2.8);
-    amusementPad.position.set(67, 0.22, -75);
+    const amusementPad = roundedSlab([45, 0.42, 62], "#e6d8ce", 3.2);
+    amusementPad.position.set(69, 0.22, -76.5);
     worldRoot.add(amusementPad);
-    const coasterRig = addRollerCoaster(worldRoot);
+    const coasterCourt = roundedSlab([42, 0.08, 21], "#ddd2ca", 2.8);
+    coasterCourt.position.set(66, 0.47, -56.5);
+    worldRoot.add(coasterCourt);
+    const carouselLawn = new THREE.Mesh(new THREE.CircleGeometry(9.2, 48), material("#afc29a", 0.84));
+    carouselLawn.rotation.x = -Math.PI / 2;
+    carouselLawn.position.set(73, 0.475, -78);
+    carouselLawn.receiveShadow = true;
+    worldRoot.add(carouselLawn);
+    const coasterRoot = new THREE.Group();
+    coasterRoot.position.z = 20;
+    worldRoot.add(coasterRoot);
+    const coasterRig = addRollerCoaster(coasterRoot);
+    coasterRig.dismount.add(coasterRoot.position);
     attractionRigs.set(coasterRig.id, coasterRig);
-    const wheelRig = addFerrisWheel(worldRoot, 67, -76);
+    const wheelRig = addFerrisWheel(worldRoot, 60, -97);
     attractionRigs.set(wheelRig.id, wheelRig);
-    blockCircle(67, -76, 4.4);
-    [[62.25, -77.15], [71.75, -77.15], [62.25, -74.85], [71.75, -74.85]].forEach(([x, z]) => blockCircle(x, z, 0.74));
-    blockBox(67, -69.44, 5.05, 0.14);
-    const carouselRig = addCarousel(worldRoot, 79, -58);
+    blockCircle(60, -97, 4.4);
+    [[55.25, -98.15], [64.75, -98.15], [55.25, -95.85], [64.75, -95.85]].forEach(([x, z]) => blockCircle(x, z, 0.74));
+    blockBox(60, -90.44, 5.05, 0.14);
+    const carouselRig = addCarousel(worldRoot, 79, -99);
     attractionRigs.set(carouselRig.id, carouselRig);
-    blockCircle(79, -58, 7.45);
-    [[47.25, -93.7], [49.65, -93.7], [47.25, -88.3], [49.65, -88.3]].forEach(([x, z]) => blockCircle(x, z, 0.74));
-    blockBox(48.45, -91, 3.1, 7.2);
-    const marina = roundedSlab([33, 0.25, 44.5], waterMaterial("#89c6d9"), 1.4);
-    marina.position.set(120.5, -0.02, -75.5);
+    blockCircle(79, -99, 7.45);
+    const smallCarousel = addCarousel(worldRoot, 73, -78, 0.68);
+    smallCarousel.update(0);
+    blockCircle(73, -78, 7.1);
+    [-2.55, -1.55, -0.55, 0.55, 1.55, 2.55].forEach((angle) => {
+      const bench = roundedBox([2.25, 0.48, 0.62], "#c5a287", 0.2);
+      bench.position.set(73 + Math.cos(angle) * 10.3, 0.78, -78 + Math.sin(angle) * 10.3);
+      bench.rotation.y = -angle + Math.PI / 2;
+      bench.castShadow = true;
+      worldRoot.add(bench);
+    });
+    [[47.25, -73.7], [49.65, -73.7], [47.25, -68.3], [49.65, -68.3]].forEach(([x, z]) => blockCircle(x, z, 0.74));
+    blockBox(48.45, -71, 3.1, 7.2);
+    const marina = roundedSlab([43, 0.25, 63], waterMaterial("#9fc7d2"), 2.2);
+    marina.position.set(113.5, -0.02, -76.5);
     worldRoot.add(marina);
-    const marinaDockRows = [-91.5, -75.5, -59.5];
+    const marinaDockRows = [-102, -77, -57.5];
     swimZones.push({
       id: "waterfront-marina",
       label: "WATERFRONT MARINA",
       surfaceY: 0.105,
       contains: (x, z) => (
-        insideRoundedRectangle(x, z, 120.5, -75.5, 16.5, 22.25, 1.4)
-        && x > 107.55
-        && !marinaDockRows.some((dockZ) => x >= 107.85 && x <= 133.15 && Math.abs(z - dockZ) <= 1.16)
+        insideRoundedRectangle(x, z, 113.5, -76.5, 21.5, 31.5, 2.2)
+        && x > 97.2
+        && !marinaDockRows.some((dockZ) => x >= 96.2 && x <= 128.2 && Math.abs(z - dockZ) <= 1.16)
       ),
     });
-    const marinaQuay = roundedSlab([3.6, 0.3, 43.6], "#c4a68a", 0.42);
-    marinaQuay.position.set(105.85, 0.18, -75.5);
+    const marinaQuay = roundedSlab([3.6, 0.3, 61.4], "#c4a68a", 0.42);
+    marinaQuay.position.set(95.8, 0.18, -76.5);
     worldRoot.add(marinaQuay);
-    [-95.2, -81.5, -67.8, -55.5].forEach((quayZ) => {
+    [-104.5, -88, -71.5, -55].forEach((quayZ) => {
       const bollard = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 0.58, 10), material("#8d7869", 0.7, 0.08));
-      bollard.position.set(106.9, 0.54, quayZ);
+      bollard.position.set(96.9, 0.54, quayZ);
       bollard.castShadow = true;
       worldRoot.add(bollard);
     });
-    addMarinaUmbrella(worldRoot, 106.1, -84.5, "#ef9b8e");
-    addMarinaUmbrella(worldRoot, 106.1, -65.3, "#e9c972");
+    addMarinaUmbrella(worldRoot, 96.1, -88, "#ef9b8e");
+    addMarinaUmbrella(worldRoot, 96.1, -66, "#e9c972");
     marinaDockRows.forEach((z, rowIndex) => {
-      addDioramaDock(worldRoot, 120.5, z, 25);
-      [110, 119, 128].forEach((x, index) => {
+      addDioramaDock(worldRoot, 112, z, 32);
+      [100, 111, 122].forEach((x, index) => {
         blockCircle(x + 1.5, z + (rowIndex === 2 ? -3.7 : 3.7), index === 2 ? 1.7 : 1.35);
         addDioramaBoat(
           worldRoot,
@@ -5841,98 +6100,125 @@ export default function WorldPage() {
         );
       });
     });
+    // Two outer-harbour sails complete the reference silhouette beyond the
+    // three finger piers; they are decorative and do not alter swim routing.
+    addDioramaBoat(worldRoot, 131.2, -112.4, "#e7ddd5", -0.38, true);
+    addDioramaBoat(worldRoot, 131.1, -63.1, "#d98c84", 0.24, true);
     // The lighthouse sits on the sea outside the street grid, leaving the
     // marina docks, boats and coastal road completely unobstructed.
-    addLighthouse(worldRoot, 143, -54);
+    addLighthouse(worldRoot, 124.4, -42.7);
+    blockCircle(124.4, -42.7, 4.8);
+
+    addGroundPolygon(worldRoot, [
+      [97.4, -35.8], [95.1, -17.9], [100.1, 11.9], [115.7, 36.7], [135, 38.6], [135, -38.1],
+    ], "#e8d0ad", 0.105);
 
     // Stadium and the lower-right green recreation park. The stadium footprint
     // stays inside the x 36–96 / z -45–22 city block, including its road verges.
-    addSoftPastelStadium(worldRoot, 67, -11.5);
+    addSoftPastelStadium(worldRoot, 67, 0);
     worldBlockers.push((x, z) => {
       const dx = x - 67;
-      const dz = (z + 11.5) / 1.22;
+      const dz = z / 1.7;
       const radius = Math.hypot(dx, dz);
-      const atEntrance = Math.abs(dx) < 3.2 && Math.abs(dz) > 10.5;
-      return !atEntrance && radius > 10.1 && radius < 19.3;
+      const atEntrance = Math.abs(dx) < 3.2 && Math.abs(z) > 27.2;
+      return !atEntrance && radius > 13.7 && radius < 20.1;
     });
-    const pitch = roundedSlab([17, 0.2, 28], "#9fba8a", 2.4);
-    pitch.position.set(67, 0.3, -11.5);
+    const pitch = roundedSlab([27, 0.2, 50.2], "#94ae7d", 4.4);
+    pitch.position.set(67, 0.3, 0);
     worldRoot.add(pitch);
-    const midfield = new THREE.Mesh(new THREE.RingGeometry(3.5, 3.7, 32), material("#dce7d6", 0.96));
+    const midfield = new THREE.Mesh(new THREE.RingGeometry(4.15, 4.38, 40), material("#e6eadf", 0.96));
     midfield.rotation.x = -Math.PI / 2;
-    midfield.position.set(67, 0.44, -11.5);
+    midfield.position.set(67, 0.44, 0);
     worldRoot.add(midfield);
     const pitchMarking = material("#e8efe2", 0.9);
-    [58.8, 75.2].forEach((x) => {
-      const sideline = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.03, 27.2), pitchMarking);
-      sideline.position.set(x, 0.44, -11.5);
+    [53.85, 80.15].forEach((x) => {
+      const sideline = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.03, 49.1), pitchMarking);
+      sideline.position.set(x, 0.44, 0);
       worldRoot.add(sideline);
     });
-    [-24.9, 1.9].forEach((z) => {
-      const endline = new THREE.Mesh(new THREE.BoxGeometry(16.5, 0.03, 0.16), pitchMarking);
+    [-24.55, 24.55].forEach((z) => {
+      const endline = new THREE.Mesh(new THREE.BoxGeometry(26.35, 0.03, 0.16), pitchMarking);
       endline.position.set(67, 0.44, z);
       worldRoot.add(endline);
     });
-    const halfway = new THREE.Mesh(new THREE.BoxGeometry(16.5, 0.03, 0.16), pitchMarking);
-    halfway.position.set(67, 0.45, -11.5);
+    const halfway = new THREE.Mesh(new THREE.BoxGeometry(26.35, 0.03, 0.16), pitchMarking);
+    halfway.position.set(67, 0.45, 0);
     worldRoot.add(halfway);
+    [-1, 1].forEach((side) => {
+      const boxEndZ = side * 24.45;
+      const boxInnerZ = side * 18.2;
+      const boxDepth = new THREE.Mesh(new THREE.BoxGeometry(13.1, 0.03, 0.16), pitchMarking);
+      boxDepth.position.set(67, 0.45, boxInnerZ);
+      worldRoot.add(boxDepth);
+      [-6.55, 6.55].forEach((offsetX) => {
+        const boxSide = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.03, 6.35), pitchMarking);
+        boxSide.position.set(67 + offsetX, 0.45, (boxEndZ + boxInnerZ) / 2);
+        worldRoot.add(boxSide);
+      });
+    });
     const stadiumMark = new THREE.Mesh(
-      new RoundedBoxGeometry(6.6, 0.06, 3.2, 3, 0.16),
-      makeInteriorSign("67", "#9fba8a", "#f5f1e9"),
+      new RoundedBoxGeometry(9.4, 0.06, 5.2, 3, 0.22),
+      makeInteriorSign("67", "#94ae7d", "#fffaf0"),
     );
-    stadiumMark.position.set(67, 0.47, -5.6);
+    stadiumMark.position.set(67, 0.47, 1.6);
     worldRoot.add(stadiumMark);
-    const cityPark = roundedSlab([45, 0.34, 44], DIORAMA_PALETTE.sage, 4.4);
-    cityPark.position.set(67, 0.16, 53);
+    const cityPark = roundedSlab([86, 0.34, 65], DIORAMA_PALETTE.sage, 5.8);
+    cityPark.position.set(91, 0.16, 78.5);
     worldRoot.add(cityPark);
-    addParkPath(worldRoot, [[67, 31.2], [67, 39], [65, 46], [62, 54], [61, 62], [61, 74.6]], 2.35);
-    addParkPath(worldRoot, [[62, 53], [67, 48], [74, 44], [83.5, 41]], 2.05);
-    addParkPath(worldRoot, [[61.5, 58], [56, 61.5], [49, 64.5], [44.8, 69]], 1.95);
-    addParkPath(worldRoot, [[82, 42], [86, 49], [87.5, 57], [88.2, 69.5]], 1.9);
-    const pondCenterX = 73;
-    const pondCenterZ = 58;
+    // The target park uses a few legible, continuous paths. Keep every ribbon
+    // outside the water silhouettes instead of cutting diagonal strips through
+    // the ponds as the previous placeholder network did.
+    addParkPath(worldRoot, [[47, 109], [48, 94], [50, 78], [52, 65], [53, 48]], 2.35);
+    addParkPath(worldRoot, [[52, 47], [59, 43.5], [68, 45], [72.5, 52.5], [69, 61], [61, 65], [52, 61]], 2.15, DIORAMA_PALETTE.path, true);
+    addParkPath(worldRoot, [[69, 60], [73, 65], [77, 70]], 1.95);
+    addParkPath(worldRoot, [[73, 70], [87, 67.5], [103, 70], [114, 79], [116, 94], [109, 106], [94, 111], [77, 108], [67, 98], [66, 84]], 2.3, DIORAMA_PALETTE.path, true);
+    addParkPath(worldRoot, [[94, 110], [94, 116]], 2.15);
+    const pondCenterX = 91;
+    const pondCenterZ = 87.5;
+    const pondBridgeCenterX = 102;
+    const pondBridgeCenterZ = 87.5;
     const pondBridgeHalfWidth = 1.75;
-    const pondBridgeHalfLength = 10.5;
+    const pondBridgeHalfLength = 9.5;
     const pondBridgeRailOffset = 1.5;
-    const pondBridgeRailHalfLength = 10.05;
+    const pondBridgeRailHalfLength = 9.05;
     const pondBridgeDeckTop = 0.61;
-    addKidneyPond(worldRoot, pondCenterX, pondCenterZ, 28.2, 19.2, 0.36);
+    addKidneyPond(worldRoot, pondCenterX, pondCenterZ, 40.5, 27.8, 0.36);
     swimZones.push({
       id: "green-park-pond",
       label: "GREEN PARK POND",
       surfaceY: 0.36,
       contains: (x, z) => {
-        const dx = Math.abs(x - pondCenterX);
-        const dz = Math.abs(z - pondCenterZ);
+        const dx = Math.abs(x - pondBridgeCenterX);
+        const dz = Math.abs(z - pondBridgeCenterZ);
         const onBridgeLane = dx <= pondBridgeHalfWidth && dz <= pondBridgeHalfLength + 0.2;
-        return !onBridgeLane && ((x - pondCenterX) / 14.7) ** 2 + ((z - pondCenterZ) / 9.7) ** 2 < 0.965;
+        return !onBridgeLane && ((x - pondCenterX) / 20.7) ** 2 + ((z - pondCenterZ) / 14.3) ** 2 < 0.965;
       },
     });
-    addKidneyPond(worldRoot, 51, 42, 13.8, 8.8, 0.405);
+    addKidneyPond(worldRoot, 65.2, 75.8, 16.6, 13.8, 0.405);
     swimZones.push({
       id: "green-park-pool",
       label: "GREEN PARK POOL",
       surfaceY: 0.405,
-      contains: (x, z) => ((x - 51) / 6.45) ** 2 + ((z - 42) / 4.05) ** 2 < 0.9,
+      contains: (x, z) => ((x - 65.2) / 7.8) ** 2 + ((z - 75.8) / 6.45) ** 2 < 0.9,
     });
-    const playgroundPigs = addParkPlayground(worldRoot, 52, 67);
+    const playgroundPigs = addParkPlayground(worldRoot, 60.6, 54.6);
     worldBlockers.push((x, z) => playgroundPigs.some((pig) => {
       if (pig === activePigMount) return false;
       pig.root.updateWorldMatrix(true, false);
       pig.root.getWorldPosition(pigBlockerPosition);
       return Math.hypot(x - pigBlockerPosition.x, z - pigBlockerPosition.z) < pig.colliderRadius;
     }));
-    addParkPicnicTable(worldRoot, 57.5, 36.4, 0.08);
-    addParkPicnicTable(worldRoot, 65, 36.8, -0.08);
-    addParkPicnicTable(worldRoot, 73.3, 37.2, 0.1);
-    addParkTrashCan(worldRoot, 46.5, 37.5);
-    addPastelPlayArch(worldRoot, 82.1, 72.1, DIORAMA_PALETTE.coral, -0.18);
-    addPastelPlayArch(worldRoot, 85.3, 70.3, DIORAMA_PALETTE.powderBlue, 0.2);
-    addPastelPlayArch(worldRoot, 88.1, 67.1, DIORAMA_PALETTE.butter, -0.12);
-    addParkRockCluster(worldRoot, 45.3, 43.5, 0.82);
-    addParkRockCluster(worldRoot, 87, 36.2, 1.08);
-    addParkRockCluster(worldRoot, 86.9, 74, 0.78);
-    [[48, 48, 0.2], [57, 47, -0.4], [46, 61, 0.5], [78, 72.8, -0.2], [88, 54, 0.4], [65, 72.8, -0.5]].forEach(
+    addParkPicnicTable(worldRoot, 72, 50, 0.08);
+    addParkPicnicTable(worldRoot, 81, 52, -0.08);
+    addParkPicnicTable(worldRoot, 91, 55, 0.1);
+    addParkTrashCan(worldRoot, 50, 49);
+    addPastelPlayArch(worldRoot, 116, 76, DIORAMA_PALETTE.coral, -0.18);
+    addPastelPlayArch(worldRoot, 121, 83, DIORAMA_PALETTE.powderBlue, 0.2);
+    addPastelPlayArch(worldRoot, 124, 91, DIORAMA_PALETTE.butter, -0.12);
+    addParkRockCluster(worldRoot, 51, 94, 0.82);
+    addParkRockCluster(worldRoot, 106, 50, 1.08);
+    addParkRockCluster(worldRoot, 127, 103, 0.78);
+    [[52, 70, 0.2], [72, 64, -0.4], [50, 100, 0.5], [105, 104, -0.2], [119, 61, 0.4], [82, 107, -0.5]].forEach(
       ([x, z, rotation]) => addGrassTuft(worldRoot, x, z, rotation),
     );
     // The deck overlaps both pond banks so its rounded ends read as real
@@ -5943,144 +6229,220 @@ export default function WorldPage() {
       DIORAMA_PALETTE.wood,
       0.72,
     );
-    pondBridge.position.set(pondCenterX, pondBridgeDeckTop - 0.14, pondCenterZ);
+    pondBridge.position.set(pondBridgeCenterX, pondBridgeDeckTop - 0.14, pondBridgeCenterZ);
     worldRoot.add(pondBridge);
     [-pondBridgeRailOffset, pondBridgeRailOffset].forEach((offsetX) => {
       const rail = roundedBox([0.12, 0.14, pondBridgeRailHalfLength * 2], DIORAMA_PALETTE.woodDark, 0.05);
-      rail.position.set(pondCenterX + offsetX, 1.18, pondCenterZ);
+      rail.position.set(pondBridgeCenterX + offsetX, 1.18, pondBridgeCenterZ);
       worldRoot.add(rail);
       [-9.4, -5.65, -1.9, 1.9, 5.65, 9.4].forEach((offsetZ) => {
+        if (Math.abs(offsetZ) > pondBridgeRailHalfLength) return;
         const post = roundedBox([0.14, 1.08, 0.14], DIORAMA_PALETTE.woodDark, 0.05);
-        post.position.set(pondCenterX + offsetX, 0.82, pondCenterZ + offsetZ);
+        post.position.set(pondBridgeCenterX + offsetX, 0.82, pondBridgeCenterZ + offsetZ);
         worldRoot.add(post);
       });
     });
-    for (let plank = -9; plank <= 9; plank += 1) {
+    for (let plank = -8; plank <= 8; plank += 1) {
       const seam = roundedBox([pondBridgeHalfWidth * 2 - 0.24, 0.018, 0.035], "#ad9277", 0.01);
-      seam.position.set(pondCenterX, pondBridgeDeckTop + 0.012, pondCenterZ + plank * 1.04);
+      seam.position.set(pondBridgeCenterX, pondBridgeDeckTop + 0.012, pondBridgeCenterZ + plank * 1.04);
       seam.castShadow = false;
       worldRoot.add(seam);
     }
     // Rails are physical boundaries. The end openings remain clear for a
     // straight approach from either bank, while the sides cannot be crossed.
     worldBlockers.push((x, z) => {
-      const dx = Math.abs(x - pondCenterX);
-      const dz = Math.abs(z - pondCenterZ);
+      const dx = Math.abs(x - pondBridgeCenterX);
+      const dz = Math.abs(z - pondBridgeCenterZ);
       return dz <= pondBridgeRailHalfLength
         && Math.abs(dx - pondBridgeRailOffset) <= 0.16;
     });
 
-    // Old town, central skyline and the southern market blocks.
-    const palettes = ["#e3afa6", "#b9c8ad", "#d8b3bd", "#b6c8d0", "#e1cb98", "#cdb8ad"];
-    const blockBuildings: Array<[number, number, number, number, number]> = [
-      [-80, -31, 13, 10, 7], [-79, -16, 13, 11, 6], [-80, 5, 14, 12, 8], [-48, 8, 11, 12, 7],
-      [-21, -17, 11, 11, 15], [0, -20, 12, 10, 19], [21, -17, 11, 11, 14], [-22, 4, 11, 11, 12], [22, 4, 11, 11, 13],
-      [-79, 71, 15, 8, 6],
-      [-20, 41, 12, 12, 13], [20, 41, 12, 12, 14],
-      [112, 8, 13, 15, 8], [119, 50, 12, 14, 7], [116, 69, 14, 10, 6],
-    ];
-    blockBuildings.forEach(([x, z, w, d, h], index) => {
-      addBuilding(worldRoot, colliders, x, z, w, d, h, palettes[index % palettes.length]);
+    // The left canal is restored exactly where the source keeps it: buffered
+    // from Old Town, bending through the southwest district and passing under
+    // the single Southside bridge. It is real swim water, not a flat map image.
+    const canalWidth = 13.2;
+    const canalSamples = addReferenceCanal(worldRoot, [
+      [-133.6, -43.2], [-130, 25.7], [-123.5, 44.1], [-108.4, 58.3],
+      [-93.2, 74.4], [-77.1, 91.3], [-57.4, 112], [-59.7, 135],
+    ], canalWidth);
+    const canalBridgeCenterX = -60;
+    const canalBridgeCenterZ = 116;
+    swimZones.push({
+      id: "old-town-canal",
+      label: "OLD TOWN CANAL",
+      surfaceY: 0.13,
+      contains: (x, z) => (
+        distanceToPolylineXZ(x, z, canalSamples) < canalWidth * 0.47
+        && !(Math.abs(x - canalBridgeCenterX) <= 9.4 && Math.abs(z - canalBridgeCenterZ) <= 5.4)
+      ),
     });
-    VENUES.forEach((venue) => addVenueBuilding(worldRoot, colliders, venue));
-    // The former canal strip is now a continuous, walkable west-side
-    // neighborhood. Two ordered building rows fill each parcel without
-    // touching the x=-96 road, its sidewalks or the sports block above.
-    const westNeighborhood: Array<[number, number, number, number, number]> = [
-      [-126, -31, 11, 9, 6], [-109, -31, 9, 9, 7],
-      [-126, -15, 11, 9, 5], [-109, -14, 9, 10, 8],
-      [-126, 3, 11, 9, 7], [-109, 4, 9, 9, 6],
-      [-109, 37, 9, 9, 6], [-109, 54, 9, 10, 8], [-109, 69, 9, 9, 6],
-      [-109, 97, 9, 9, 6], [-109, 115, 9, 10, 7], [-126, 124, 11, 9, 6],
+    const canalBridge = roundedSlab([18.8, 0.28, 10.2], "#a89f9b", 0.9);
+    canalBridge.position.set(canalBridgeCenterX, 0.25, canalBridgeCenterZ);
+    worldRoot.add(canalBridge);
+    // The source separates the southwest into sage garden plots west of the
+    // canal and a compact clay urban bank to its east.  This authored polygon
+    // replaces the former single rectangular city slab without covering water.
+    addGroundPolygon(worldRoot, [
+      [-116, 46], [-45, 46], [-45, 111], [-53, 111], [-69, 92], [-86, 74], [-103, 57],
+    ], "#ddd1ca", 0.102);
+
+    const palettes = ["#ead5d2", "#dec8c5", "#e7d9d2", "#d8c9c4", "#e6d7cb", "#d7c6c1"];
+
+    // Five northern backing buildings, plus two headland buildings, reproduce
+    // the skyline row behind the skatepark and amusement park.
+    const northBuildings: Array<[number, number, number, number, number]> = [
+      [-12.5, -125, 10, 9, 12], [3, -125, 12, 9, 14], [19, -125, 12, 9, 11], [32, -125, 10, 9, 13],
+      [55.5, -125, 9, 9, 10], [65, -125, 7, 9, 8],
     ];
-    westNeighborhood.forEach(([x, z, width, depth, height], index) => {
-      addBuilding(worldRoot, colliders, x, z, width, depth, height, palettes[(index + 2) % palettes.length]);
-    });
-    const oldTownCourt = roundedSlab([16, 0.24, 12], "#a9c28f", 1.4);
-    oldTownCourt.position.set(-61, 0.2, 11);
-    worldRoot.add(oldTownCourt);
-    addFountain(worldRoot, 0, 4);
-    addFountain(worldRoot, 0, 42);
-    blockCircle(0, 4, 5.25);
-    blockCircle(0, 42, 5.25);
-    [4, 42].forEach((centerZ) => {
-      [[-7.8, centerZ - 6], [7.8, centerZ - 6], [-7.8, centerZ + 6], [7.8, centerZ + 6]].forEach(
-        ([x, z], index) => addPlanter(worldRoot, x, z, index % 2 === 0 ? 0.12 : -0.12),
-      );
-      addPlanter(worldRoot, 0, centerZ + 8.4, Math.PI / 2);
-      addPlazaLights(worldRoot, 0, centerZ);
+    northBuildings.forEach(([x, z, width, depth, height], index) => {
+      addBuilding(worldRoot, colliders, x, z, width, depth, height, palettes[index % palettes.length]);
     });
 
-    // Building rows finish the island as a coherent city, without blocking roads.
-    [-123, 123].forEach((z, row) => {
-      [-77, -58, -18, 0, 18, 58, 77].forEach((x, index) => {
-        if (z === -123 && (x === -77 || x === -58)) return;
-        if (z === 123 && x === 0) return;
-        addBuilding(worldRoot, colliders, x, z, 12 + (index % 2) * 2, 9, 5 + ((index + row) % 3) * 2, palettes[(index + row) % palettes.length]);
-      });
+    // Old Town is a tight perimeter around one basketball court and narrow
+    // alleys; its six interactive venues occupy the authored shopfronts.
+    const oldTownBuildings: Array<[number, number, number, number, number]> = [
+      // Outer side walls continue the four authored shopfronts around the block.
+      [-112, -10, 10, 12, 10], [-53.5, -10, 9, 12, 11],
+      // Two long court-facing bars reproduce the compact northern courtyard edge.
+      [-91, -13.5, 18, 8, 10], [-68, -13.5, 14, 8, 11],
+      // Narrow side wings keep the basketball court visible while closing the alleys.
+      [-100, 1, 7, 13, 9], [-64.5, 1, 4.6, 13, 10],
+      [-91, 18, 18, 8, 10], [-69.2, 18, 14, 8, 11],
+      // The reference has a continuous five-building southern frontage.
+      [-107, 30, 9, 8, 9], [-95, 30, 9, 8, 10], [-82, 30, 9, 8, 9],
+      [-69, 30, 9, 8, 11], [-55, 30, 9, 8, 9],
+    ];
+    oldTownBuildings.forEach(([x, z, width, depth, height], index) => {
+      addBuilding(worldRoot, colliders, x, z, width, depth, height, palettes[(index + 2) % palettes.length]);
     });
-    [-123, 123].forEach((x, side) => {
-      [-34, -8, 44, 68, 104].forEach((z, index) => {
-        if (x < 0 && z < 25) return;
-        if (x > 0 && (z === -34 || z === 44 || z === 68)) return;
-        addBuilding(worldRoot, colliders, x, z, 11, 13, 5 + (index % 3), palettes[(index + side + 2) % palettes.length]);
-      });
+    const oldTownCourt = roundedSlab([27, 0.24, 18], "#b0bf99", 1.8);
+    oldTownCourt.position.set(-82, 0.2, 0);
+    worldRoot.add(oldTownCourt);
+    addCourt(worldRoot, -82, 0, 20, 12, "#91b18f");
+
+    // Eight individually sized towers surround the exact open civic square.
+    const centralTowers: Array<[number, number, number, number, number]> = [
+      // Four tall rounded corner masses and four stepped inner towers form the
+      // strong eight-building skyline seen in the selected aerial reference.
+      [-28.5, -21.5, 11.4, 18, 29], [-14, -27.4, 12.5, 12.5, 23],
+      [13.5, -27.4, 12.5, 12.5, 25], [29, -21, 11.4, 18, 30],
+      [-28.3, 20.8, 11.4, 18, 28], [-13.6, 26.5, 12.5, 12.5, 22],
+      [14, 26.3, 12.5, 12.5, 24], [29.3, 20.5, 11.4, 18, 29],
+    ];
+    centralTowers.forEach(([x, z, width, depth, height], index) => {
+      addBuilding(worldRoot, colliders, x, z, width, depth, height, palettes[index % palettes.length], "#e3c0b9");
     });
-    [-74, -54, -18, 18, 54, 74].forEach((x, index) => {
-      addBuilding(worldRoot, colliders, x, 101, 13, 10, 5 + (index % 2) * 2, palettes[(index + 1) % palettes.length]);
+    addFountain(worldRoot, 0, -1.4);
+    blockCircle(0, -1.4, 5.25);
+    [[-15, -15], [15, -15], [-15, 15], [15, 15]].forEach(([x, z], index) => {
+      addTree(worldRoot, x, z, 0.82 + (index % 2) * 0.06);
     });
-    addCivicDome(worldRoot, 0, 116);
-    blockBox(0, 116, 15.5, 16.2);
+    addPlazaLights(worldRoot, 0, -1.4);
+
+    // Dense southwest blocks remain northeast of the measured canal buffer.
+    const southwestBuildings: Array<[number, number, number, number, number]> = [
+      // Rows contract eastward with the canal bend instead of forming a loose grid.
+      [-92.3, 54, 10, 10, 10], [-80, 54, 11, 10, 11],
+      [-65.5, 54, 14, 10, 9], [-51.5, 54, 10, 10, 10],
+      [-74.2, 73, 10, 10, 10], [-57, 73, 16, 10, 11],
+      [-61.8, 87, 10, 8, 10], [-50.5, 87, 8, 8, 9],
+      [-50, 101, 6, 5, 9],
+    ];
+    southwestBuildings.forEach(([x, z, width, depth, height], index) => {
+      addBuilding(worldRoot, colliders, x, z, width, depth, height, palettes[(index + 1) % palettes.length]);
+    });
+
+    // Market Square is a perimeter of shops around the open pavilion court.
+    const marketBuildings: Array<[number, number, number, number, number]> = [
+      [-10, 54, 13.5, 10, 11], [10, 54, 13.5, 10, 12],
+      [-27, 72, 13, 12, 10], [-27, 93, 13, 13, 11], [27, 93, 13, 8, 10],
+      [-11, 105, 14, 9, 11], [17.5, 105, 27, 9, 10],
+    ];
+    marketBuildings.forEach(([x, z, width, depth, height], index) => {
+      addBuilding(worldRoot, colliders, x, z, width, depth, height, palettes[(index + 3) % palettes.length]);
+    });
+
+    VENUES.forEach((venue) => addVenueBuilding(worldRoot, colliders, venue));
+    addCivicDome(worldRoot, 0, 78);
+    blockBox(0, 78, 15.5, 16.2);
+    [[-18, 64], [18, 64], [-18, 92], [18, 92]].forEach(([x, z], index) => {
+      addPlanter(worldRoot, x, z, index % 2 === 0 ? 0.12 : -0.12);
+    });
+    addPlazaLights(worldRoot, 0, 78);
+
+    // Detached houses occupy the green southwest bank and the one shallow
+    // Southside frontage row visible at the bottom of the selected source.
+    const referenceHouses: Array<[number, number, number, number, 1 | 2, string, string]> = [
+      [-126, 66, 11, 9, 1, "#e8d7d1", "#d89b98"], [-112, 88, 12, 10, 2, "#e4d8cb", "#8fb0a1"],
+      [-101, 104, 13, 9, 1, "#eadbd5", "#d3b46f"], [-86, 104, 11, 8, 1, "#dfd6cb", "#82aab5"],
+      // A single shallow residential frontage fills Southside without crossing
+      // either civic avenue or the canal bridge approach.
+      [-128, 128, 12, 10, 1, "#ead8d2", "#d89693"], [-111, 128, 13, 10, 2, "#e2dacd", "#8caf9d"],
+      [-94, 128, 12, 10, 1, "#e8d8d3", "#d7b46f"], [-77, 128, 13, 10, 1, "#e5d8d1", "#83a7b5"],
+      [-28, 128, 12.4, 10, 2, "#e2d4cf", "#83a8b6"],
+      [-10, 128, 13, 10, 1, "#eadbd5", "#d89a96"], [10, 128, 13, 10, 2, "#e3dbce", "#8da996"],
+      [30.5, 128, 12, 10, 1, "#ead8d2", "#d6b46e"], [59.5, 128, 15, 10, 1, "#e5d8d1", "#83a7b5"],
+      [81.5, 128, 15, 10, 2, "#e1d5d0", "#80a6b4"], [104, 128, 15, 10, 1, "#e6dbd2", "#d59394"],
+      [126, 128, 12, 10, 1, "#e2d8cb", "#8bad99"],
+    ];
+    referenceHouses.forEach(([x, z, width, depth, floors, color, accent]) => {
+      addReferenceHouse(worldRoot, colliders, x, z, width, depth, floors, color, accent);
+    });
 
     // Landscaping is placed only on parks, plazas and verges—not on roads.
     const treePoints: Array<[number, number, number]> = [
-      [46, 34, 1.15], [46, 52, 1.05], [88.5, 35, 1.1], [89, 75, 1.2], [60, 74, 0.95], [89, 51, 1],
-      [-132, -96, 1], [-127, 93, 1.1], [-77, 91, 0.92], [-57, 91, 1.05], [-19, 91, 1], [19, 91, 1.05],
-      [54, 91, 1], [79, 91, 1.12], [128, -116, 1.1], [112, 91, 1.05], [-45, -94, 0.95], [47, -113, 1],
-      [-87, 13, 0.92], [-46, -31, 0.9], [-47, 13, 0.95], [-28, 31, 0.9], [28, 31, 0.9],
+      // North headlands and the sports/race borders.
+      [-132, -96, 0.9], [-108, -129, 0.8], [-98, -102, 0.78], [-109, -49, 0.84],
+      [49, -129, 0.84], [69, -130, 0.9], [85, -126, 0.94], [86, -116, 0.82], [87, -48, 0.88],
+      // Canal banks and the low southwest residential gardens.
+      [-130, 48, 0.94], [-119, 57, 0.86], [-115, 73, 0.9], [-103, 83, 0.82],
+      [-94, 98, 0.88], [-76, 104, 0.8], [-126, 105, 0.92], [-110, 111, 0.82],
+      // Green Park's open belt and dense eastern forest, matching the source.
+      [51, 50, 0.9], [73, 49, 0.86], [92, 51, 0.92], [105, 51, 0.9],
+      [52, 105, 0.92], [67, 107, 0.86], [83, 108, 0.9], [101, 108, 0.94],
+      [113, 51, 0.92], [123, 51, 1.02], [131, 53, 0.94], [117, 61, 0.9],
+      [127, 63, 1.05], [132, 69, 0.92], [117, 72, 0.88], [130, 78, 1.02],
+      [116, 93, 0.94], [129, 94, 1.04], [115, 104, 0.88], [128, 107, 0.98],
+      // Sparse Southside garden trees.
+      [-132, 124, 0.72], [-95, 124, 0.7], [-47, 128, 0.72], [48, 128, 0.72], [95, 125, 0.7],
     ];
     treePoints.forEach(([x, z, scale]) => addTree(worldRoot, x, z, scale));
-    [[49, 48], [54, 34], [65, 74], [81, 36], [89, 59], [77, 34], [48, 58], [89, 72]].forEach(([x, z], index) => {
+    [[111, 58], [124, 72], [119, 83], [132, 86], [121, 99], [132, 103]].forEach(([x, z], index) => {
       addTree(worldRoot, x, z, 0.82 + (index % 3) * 0.08);
     });
+    const greenForestTrees: Array<[number, number, number]> = [
+      [111, 47, 1.18], [118, 46, 1.28], [126, 47, 1.22], [132, 48, 1.16],
+      [113, 55, 1.24], [121, 54, 1.34], [129, 56, 1.26], [134, 59, 1.18],
+      [112, 64, 1.18], [119, 63, 1.28], [126, 65, 1.34], [133, 68, 1.24],
+      [114, 73, 1.25], [122, 72, 1.33], [130, 75, 1.2],
+      [116, 81, 1.2], [124, 82, 1.32], [132, 84, 1.24],
+      [115, 91, 1.27], [123, 90, 1.36], [131, 93, 1.22],
+      [113, 101, 1.18], [121, 100, 1.28], [129, 102, 1.33],
+      [110, 109, 1.2], [118, 108, 1.3], [126, 110, 1.26], [133, 108, 1.18],
+    ];
+    greenForestTrees.forEach(([x, z, scale]) => addTree(worldRoot, x, z, scale));
 
     // Soft miniature street furniture gives the parks and plazas the same
     // finished, lived-in scale as the supplied diorama references.
     [
       [-8, 4, Math.PI / 2], [8, 4, -Math.PI / 2],
-      [-8, 42, Math.PI / 2], [8, 42, -Math.PI / 2],
-      [43.8, 70, 0], [49, 57, Math.PI / 2], [84, 40, 0],
+      [-18, 76, Math.PI / 2], [18, 82, -Math.PI / 2],
+      [52, 91, 0], [75, 57, Math.PI / 2], [102, 62, 0], [104, 104, Math.PI],
     ].forEach(([x, z, rotation]) => seatSpots.push(addBench(worldRoot, x, z, rotation)));
-    [[-8, -2], [8, 10], [-8, 36], [8, 48], [62, 63], [84, 44], [58, 34]].forEach(([x, z]) => addLamp(worldRoot, x, z, 0.9));
-    [[45.5, 72], [47, 33], [88, 36], [88, 70], [-10, 12], [10, 34]].forEach(([x, z], index) => {
+    [[-8, -2], [8, 10], [58, 62], [78, 56], [103, 64], [108, 103]].forEach(([x, z]) => addLamp(worldRoot, x, z, 0.9));
+    [[48, 62], [55, 101], [108, 49], [110, 107], [-10, 12], [10, 34]].forEach(([x, z], index) => {
       addBush(worldRoot, x, z, 0.78 + (index % 2) * 0.12);
     });
 
     // Load supplied web-optimized 3D assets as detail passes.
     const loader = new GLTFLoader();
-    // Compact authored palms stay on the existing landscaped corners while
-    // matching the city's soft mint-and-clay diorama language.
-    [
-      [86, -96, 0.94, 0.15],
-      [106, -64, 0.9, 1.7],
-      [111, 40, 0.88, 3.4],
-      [106, 71, 0.92, 5.1],
-    ].forEach(([x, z, scale, rotation]) => addPalmTree(worldRoot, x, z, scale, rotation));
-    [[109, -123, 0], [109, 101, Math.PI]].forEach(([x, z]) => blockBox(x, z, 8, 6));
-    loader.load("/models/diorama/pastel-house.glb", (gltf) => {
-      const template = gltf.scene;
-      tuneImportedModel(template);
-      const bounds = new THREE.Box3().setFromObject(template);
-      const size = bounds.getSize(new THREE.Vector3());
-      const scale = 5.8 / Math.max(size.y, 1);
-      [[109, -123, 0], [109, 101, Math.PI]].forEach(([x, z, rotation]) => {
-        const house = template.clone(true);
-        house.scale.setScalar(scale);
-        house.position.set(x, 0.06, z);
-        house.rotation.y = rotation;
-        worldRoot.add(house);
-      });
-    });
+    // The coastal crescent in the approved plan uses tiny umbrellas and benches,
+    // not realistic palms or offshore houses. Keep its silhouette open to sea.
+    addMarinaUmbrella(worldRoot, 108, -18, "#ef9b8e");
+    addMarinaUmbrella(worldRoot, 115, 3, "#e9c972");
+    addMarinaUmbrella(worldRoot, 121, 22, "#8fb8c7");
+    seatSpots.push(addBench(worldRoot, 109, -4, Math.PI / 2));
+    seatSpots.push(addBench(worldRoot, 123, 12, -Math.PI / 2));
     loader.load("/models/diorama/cloud.glb", (gltf) => {
       const template = gltf.scene;
       tuneImportedModel(template);
@@ -6441,10 +6803,24 @@ export default function WorldPage() {
     const collidesInterior = (x: number, z: number) => intersects(interiorColliders, x, z);
     const swimZoneAt = (x: number, z: number) => swimZones.find((zone) => zone.contains(x, z)) ?? null;
     worldRoot.updateMatrixWorld(true);
+    // `addMasterSkatepark` still authors its playable meshes in the legacy local
+    // footprint. The reference layout scales and translates that complete rig,
+    // so surface sampling and its cache must use the transformed world bounds.
+    const skateparkSurfaceBounds = {
+      minX: skateparkRoot.position.x - 30.5 * skateparkRoot.scale.x,
+      maxX: skateparkRoot.position.x + 30.5 * skateparkRoot.scale.x,
+      minZ: skateparkRoot.position.z - 101 * skateparkRoot.scale.z,
+      maxZ: skateparkRoot.position.z - 49.5 * skateparkRoot.scale.z,
+    };
+    const skateparkCacheRowWidth = Math.ceil((skateparkSurfaceBounds.maxZ - skateparkSurfaceBounds.minZ) * 10) + 1;
     const skateSurfaceAt = (x: number, z: number) => {
-      const insideSkatepark = x >= -30.5 && x <= 30.5 && z >= -101 && z <= -49.5;
+      const insideSkatepark = x >= skateparkSurfaceBounds.minX
+        && x <= skateparkSurfaceBounds.maxX
+        && z >= skateparkSurfaceBounds.minZ
+        && z <= skateparkSurfaceBounds.maxZ;
       const cacheKey = insideSkatepark
-        ? (Math.round((x + 31) * 10) * 1024 + Math.round((z + 102) * 10))
+        ? (Math.round((x - skateparkSurfaceBounds.minX) * 10) * skateparkCacheRowWidth
+          + Math.round((z - skateparkSurfaceBounds.minZ) * 10))
         : -1;
       if (cacheKey >= 0) {
         const cachedHeight = skateHeightCache.get(cacheKey);
@@ -6455,40 +6831,47 @@ export default function WorldPage() {
       // Match the authored asphalt and pavement elevations. This keeps feet,
       // wheels and shadows on top of the road system instead of clipping into
       // its raised meshes.
-      const onRoad = ROAD_X.some((roadX) => Math.abs(x - roadX) <= 5)
-        || ROAD_Z.some((roadZ) => Math.abs(z - roadZ) <= 5);
+      const onRoad = roadSurfaceRects.some((road) => (
+        x >= road.minX && x <= road.maxX && z >= road.minZ && z <= road.maxZ
+      ));
       if (onRoad) {
         height = Math.max(height, 0.165);
       } else {
-        let onSidewalk = false;
-        for (const [fromX, toX] of blockXBands) {
-          if (x < fromX || x > toX) continue;
-          for (const [fromZ, toZ] of blockZBands) {
-            if (z < fromZ || z > toZ) continue;
-            const edgeDistance = Math.min(x - fromX, toX - x, z - fromZ, toZ - z);
-            if (edgeDistance <= 2.65) onSidewalk = true;
-            break;
-          }
-          break;
-        }
+        const onSidewalk = sidewalkSurfaceBlocks.some((block) => {
+          if (x < block.fromX || x > block.toX || z < block.fromZ || z > block.toZ) return false;
+          const edgeDistance = Math.min(
+            x - block.fromX,
+            block.toX - x,
+            z - block.fromZ,
+            block.toZ - z,
+          );
+          return edgeDistance <= 2.65;
+        });
         if (onSidewalk) height = Math.max(height, 0.245);
       }
 
       // Raised public spaces are real walkable geometry. Matching their top
       // heights here keeps feet above the diorama pads instead of clipping
-      // through the park, stadium, sports field or bridge.
-      if (Math.abs(x + 118) <= 14 && Math.abs(z + 75) <= 11) height = Math.max(height, 0.395);
-      if (Math.abs(x - 67) <= 8.5 && Math.abs(z + 11.5) <= 14) height = Math.max(height, 0.455);
-      if (Math.abs(x - 67) <= 22.5 && Math.abs(z - 53) <= 22) height = Math.max(height, 0.385);
-      if (Math.hypot(x - 52, z - 67) <= 6.8) height = Math.max(height, 0.435);
+      // through the reference sports, park, stadium, marina or bridge meshes.
+      if (Math.abs(x + 105) <= 5 && Math.abs(z + 94) <= 13) height = Math.max(height, 0.285);
+      if (Math.abs(x + 59) <= 14 && Math.abs(z + 62.5) <= 11) height = Math.max(height, 0.395);
+      if (((x + 94) / 13.8) ** 2 + ((z + 63) / 12.42) ** 2 <= 1) height = Math.max(height, 0.465);
+      if (Math.abs(x + 82) <= 10 && Math.abs(z) <= 6) height = Math.max(height, 0.405);
+      if (Math.abs(x - 67) <= 13.5 && Math.abs(z) <= 25.1) height = Math.max(height, 0.455);
+      if (insideRoundedRectangle(x, z, 91, 78.5, 43, 32.5, 5.8)) height = Math.max(height, 0.385);
+      if (Math.hypot(x - 60.6, z - 54.6) <= 10.25) height = Math.max(height, 0.435);
       if (
-        Math.abs(x - pondCenterX) <= pondBridgeHalfWidth
-        && Math.abs(z - pondCenterZ) <= pondBridgeHalfLength
+        Math.abs(x - pondBridgeCenterX) <= pondBridgeHalfWidth
+        && Math.abs(z - pondBridgeCenterZ) <= pondBridgeHalfLength
       ) height = Math.max(height, pondBridgeDeckTop + 0.055);
-      if (x >= 104.05 && x <= 107.7 && z >= -97.3 && z <= -53.7) height = Math.max(height, 0.385);
-      if (x >= 107.85 && x <= 133.15 && marinaDockRows.some((dockZ) => Math.abs(z - dockZ) <= 1.16)) height = Math.max(height, 0.365);
-      if (x >= -136.5 && x <= -101.5 && z >= -135 && z <= -113.5) height = Math.max(height, 0.395);
-      if (x >= 44 && x <= 90 && z >= -98.5 && z <= -51.5) height = Math.max(height, 0.485);
+      if (x >= 94 && x <= 97.6 && z >= -107.2 && z <= -45.8) height = Math.max(height, 0.385);
+      if (x >= 96 && x <= 128 && marinaDockRows.some((dockZ) => Math.abs(z - dockZ) <= 1.16)) height = Math.max(height, 0.365);
+      if (Math.abs(x + 115) <= 19 && Math.abs(z + 116) <= 17) height = Math.max(height, 0.395);
+      if (insideRoundedRectangle(x, z, 69, -76.5, 22.5, 31, 3.2)) height = Math.max(height, 0.485);
+      if (
+        Math.abs(x - canalBridgeCenterX) <= 9.4
+        && Math.abs(z - canalBridgeCenterZ) <= 5.1
+      ) height = Math.max(height, 0.445);
 
       if (insideSkatepark) {
         skateSurfaceOrigin.set(x, 24, z);
@@ -7231,9 +7614,24 @@ export default function WorldPage() {
 
       if (mapOpenRef.current && !currentVenue) {
         const savedFog = scene.fog;
+        const mapFrameSize = Math.max(1, Math.min(mount.clientWidth, mount.clientHeight));
+        const mapFrameX = Math.floor((mount.clientWidth - mapFrameSize) / 2);
+        const mapFrameY = Math.floor((mount.clientHeight - mapFrameSize) / 2);
         scene.fog = overviewFog;
         updateMapPinPositions();
+        // The reference map is a square product view. Clear the surrounding
+        // canvas, then render the live city into the same centered 1:1 frame
+        // used by the DOM pin stage below.
+        renderer.setScissorTest(false);
+        renderer.setViewport(0, 0, mount.clientWidth, mount.clientHeight);
+        renderer.setClearColor("#b2d4e9", 1);
+        renderer.clear(true, true, true);
+        renderer.setViewport(mapFrameX, mapFrameY, mapFrameSize, mapFrameSize);
+        renderer.setScissor(mapFrameX, mapFrameY, mapFrameSize, mapFrameSize);
+        renderer.setScissorTest(true);
         renderer.render(scene, overviewCamera);
+        renderer.setScissorTest(false);
+        renderer.setViewport(0, 0, mount.clientWidth, mount.clientHeight);
         scene.fog = savedFog;
       } else {
         const portrait = mount.clientWidth < 720;

@@ -137,6 +137,37 @@
 
 passed
 
+## Exact 588 × 588 master-city layout rebuild
+
+### Source and visual evidence
+
+- Exact source plan: `/tmp/codex-remote-attachments/019fbafb-ac9c-7883-b039-7e39958a743b/42C03B50-3AA5-4337-823D-4F535960C891/2-Fotoğraf-2.jpg`.
+- Extracted square source: `/tmp/67verse-reference-map-crop.jpg`.
+- Final desktop overview: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/reference-layout-desktop-final.png`.
+- Final mobile overview at `390 × 844`: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/reference-layout-mobile-final.png`.
+- Required side-by-side comparison input: `/Users/oscarbrendon/Documents/Codex/2026-08-01/e/artifacts/reference-layout-comparison-final.png`.
+
+### Comparison history and fixes
+
+- **P0 uniform-grid mismatch:** the former city used a symmetric 5 × 5 parcel grid that could not reproduce the supplied authored district plan. It was replaced with measured road segments, intersections, parcel bounds, coastline, canal, and district anchors taken from the square source.
+- **P0 district hierarchy mismatch:** Race Loop, Sports Campus, Master Skatepark and Waterfront now form the upper leisure band; Old Town, the eight-tower 67 Central axis and the long 67 Stadium occupy the middle; Market Square and Green Park form the lower band; Southside is a shallow southern frontage.
+- **P0 landmark silhouette mismatch:** Race, the sports hall/track/baseball field, functional skatepark, Ferris wheel, two carousels, coaster, marina, stadium, Green Park ponds/play circle and bridge were rebuilt or rescaled to the measured source footprints without replacing them with a screenshot.
+- **P1 sparse city massing:** Old Town, 67 Central, Market Square, the southwest canal wedge and Southside were densified with authored pastel buildings. Final static audit reports zero building-to-building and zero building-to-road overlaps; the narrowest canal clearance remains `6.601 m` against a `6.6 m` water half-width.
+- **P1 overview distortion:** the map now renders through a centered square orthographic viewport, keeps parallel roads parallel, and projects every DOM pin from its real Three.js POI instead of a fake grid.
+- **P1 arrival safety:** all district travel points were moved from road centers to authored entrances or sidewalks. The final mobile Green Park travel test arrived in free walk mode at `(60.00, 108.00)`.
+
+### Final findings
+
+- The source image is never embedded in the product. Roads, buildings, trees, water, shops, stadium, rides, skate surfaces, interiors and props remain live Three.js geometry.
+- Venue entry, shop economy, character customization, walk/skate/bike/swim movement, spring-pig riding, amusement ride anchors, Green Park bridge support and district travel remain active.
+- The square desktop and mobile overview contains the complete measured city and all ten projected district markers without cropping.
+- Browser QA found no warning or error messages; only normal Vite connection and React development information was logged.
+- `git diff --check` and the complete five-stage `npm run build` passed. The build retains only the existing bundle-size advisory.
+
+## Final result
+
+passed
+
 ## Exact soft-pastel product family and oblique aerial pass
 
 ### Source and combined review input
@@ -319,3 +350,12 @@ passed
 ## Final result
 
 passed
+
+## Latest exact master-city acceptance
+
+- Compared the supplied `588 × 588` source and the final live square overview together in `artifacts/reference-layout-comparison-final.png`.
+- Verified the final `390 × 844` mobile overview, all ten real POI projections, and Green Park district travel to free walk mode at `(60.00, 108.00)`.
+- Verified zero building-to-building and zero building-to-road overlaps, safe canal clearance, a clean browser run, `git diff --check`, and the complete production build.
+- No remaining actionable P0, P1, or P2 issue was found in the exact master-city layout scope.
+
+final result: passed

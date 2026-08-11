@@ -1801,8 +1801,13 @@
 
 .mapPinStage {
   position: absolute;
-  inset: 0;
+  top: 50%;
+  left: 50%;
+  width: min(100dvw, 100dvh);
+  height: min(100dvw, 100dvh);
+  overflow: hidden;
   pointer-events: none;
+  transform: translate(-50%, -50%);
 }
 
 .mapPin {
@@ -2634,13 +2639,13 @@
     width: 64px;
     flex-direction: column;
     gap: 1px;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -13.5px);
     transform-origin: center center;
   }
 
   .mapPin:hover,
   .mapPin:focus-visible {
-    transform: translate(-50%, -50%) scale(1.04);
+    transform: translate(-50%, -13.5px) scale(1.04);
   }
 
   .mapPin > i {
